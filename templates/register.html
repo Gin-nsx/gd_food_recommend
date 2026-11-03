@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+
+{% block title %}注册 - 广东美食推荐{% endblock %}
+
+{% block content %}
+
+<style>
+    .register-box {
+        max-width: 420px;
+        margin: 30px auto;
+        background: white;
+        padding: 35px 45px;
+        border-radius: 16px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    }
+    .register-box h2 {
+        text-align: center;
+        color: #c0392b;
+        font-size: 26px;
+        margin-bottom: 20px;
+    }
+    .register-box label {
+        display: block;
+        font-weight: 600;
+        margin: 12px 0 4px;
+        color: #333;
+    }
+    .register-box input,
+    .register-box select {
+        width: 100%;
+        padding: 10px 14px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        font-size: 15px;
+    }
+    .register-box .btn {
+        width: 100%;
+        padding: 12px;
+        background: #c0392b;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 18px;
+        font-weight: 600;
+        cursor: pointer;
+        margin-top: 18px;
+    }
+    .register-box .btn:hover { background: #a93226; }
+    .register-box .link {
+        text-align: center;
+        margin-top: 14px;
+        color: #7f8c8d;
+    }
+    .register-box .link a { color: #3498db; text-decoration: none; }
+    .register-box .role-hint {
+        font-size: 13px;
+        color: #7f8c8d;
+        margin-top: 4px;
+    }
+    .hidden { display: none; }
+</style>
+
+<div class="register-box">
+    <h2>📝 注册</h2>
+    <form method="POST">
+        <label>用户名</label>
+        <input type="text" name="username" placeholder="请输入用户名" required>
+
+        <label>密码</label>
+        <input type="password" name="password" placeholder="至少6位" required>
+
+        <label>角色</label>
+        <select name="role" id="roleSelect">
+            <option value="user">普通用户</option>
+            <option value="merchant">商家</option>
+        </select>
+        <div class="role-hint">选择"商家"后，需管理员审核通过才能上传美食</div>
+
+        <div id="addressField" class="hidden">
+            <label>店铺地址</label>
+            <input type="text" name="merchant_address" placeholder="请输入店铺地址">
+        </div>
+
+        <button type="submit" class="btn">注 册</button>
+    </form>
+    <div class="link">已有账号？<a href="{{ url_for('auth.login_page') }}">去登录</a></div>
+</div>
+
+<script>
+    document.getElementById('roleSelect').addEventListener('change', function() {
+        var addrField = document.getElementById('addressField');
+        if (this.value === 'merchant') {
+            addrField.classList.remove('hidden');
+        } else {
+            addrField.classList.add('hidden');
+        }
+    });
+</script>
+
+{% endblock %}

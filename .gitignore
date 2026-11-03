@@ -1,0 +1,34 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# 虚拟环境（体积巨大，绝不提交）
+venv/
+.venv/
+env/
+ENV/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+.DS_Store
+
+# 环境变量 / 敏感信息
+.env
+.env.local
+
+# 日志与缓存
+*.log
+*.sqlite3
+db.sqlite3
+
+# 上传的图片（如启用本地上传）
+static/uploads/
+
+# 数据库导出文件
+*.sql
+!schema.sql

@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block title %}推荐效果评估 - 广东美食推荐{% endblock %}
+
+{% block content %}
+
+<style>
+    .eval-title {
+        font-size: 26px;
+        color: #2c3e50;
+        margin-bottom: 8px;
+    }
+    .eval-subtitle {
+        font-size: 14px;
+        color: #95a5a6;
+        margin-bottom: 24px;
+    }
+    .eval-table {
+        width: 100%;
+        border-collapse: collapse;
+        background: white;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+    .eval-table th {
+        background: #c0392b;
+        color: white;
+        padding: 14px;
+        font-size: 15px;
+        text-align: center;
+    }
+    .eval-table td {
+        padding: 14px;
+        text-align: center;
+        font-size: 15px;
+        border-bottom: 1px solid #f0ece8;
+    }
+    .eval-table tr:last-child td { border-bottom: none; }
+    .eval-table tr:hover { background: #faf8f6; }
+    .eval-num {
+        font-weight: 700;
+        color: #2c3e50;
+        font-size: 17px;
+    }
+    .eval-good { color: #27ae60; }
+    .eval-mid { color: #f39c12; }
+    .eval-warn {
+        background: #fef9e7;
+        color: #b7950b;
+        padding: 12px 20px;
+        border-radius: 8px;
+        font-size: 14px;
+        margin-top: 20px;
+        border: 1px solid #f7dc6f;
+    }
+</style>
+
+<div style="display: flex; justify-content: space-between; align-items: center;">
+    <h2 class="eval-title">📊 推荐效果评估</h2>
+    <a href="{{ url_for('admin.admin_dashboard') }}"
+       style="color: #7f8c8d; text-decoration: none; font-size: 14px;
+              padding: 8px 16px; border: 1px solid #ddd; border-radius: 8px;">
+        ← 返回管理后台
+    </a>
+</div>
+<p class="eval-subtitle">
+    使用留出法（20%测试集）评估协同过滤算法在不同K值下的预测精度，MAE和RMSE越小越好
+</p>
+
+<table class="eval-table">
+    <thead>
+        <tr>
+            <th>K值（近邻数）</th>
+            <th>MAE（平均绝对误差）</th>
+            <th>RMSE（均方根误差）</th>
+            <th>有效预测数</th>
+            <th>测试集总数</th>
+            <th>状态</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for r in results %}
+        <tr>
+            <td class="eval-num">K = {{ r.k }}</td>
+            <td>
+                {% if r.mae is not none %}
+                    <span class="eval-num {% if r.mae < 0.8 %}eval-good{% elif r.mae < 1.2 %}eval-mid{% endif %}">
+                        {{ r.mae }}
+                    </span>
+                {% else %}
+                    <span style="color:#bbb;">—</span>
+                {% endif %}
+            </td>
+            <td>
+                {% if r.rmse is not none %}
+                    <span class="eval-num {% if r.rmse < 1.0 %}eval-good{% elif r.rmse < 1.5 %}eval-mid{% endif %}">
+                        {{ r.rmse }}
+                    </span>
+                {% else %}
+                    <span style="color:#bbb;">—</span>
+                {% endif %}
+            </td>
+            <td>{{ r.count }}</td>
+            <td>{{ r.total_ratings or 0 }}</td>
+            <td>
+                {% if r.mae is not none %}
+                    <span style="color:#27ae60;">✅ 有效</span>
+                {% else %}
+                    <span style="color:#e67e22;">⚠️ {{ r.msg or '数据不足' }}</span>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<div class="eval-warn">
+    <strong>💡 说明：</strong>
+    当前数据库评分数据较少（共15条），评估结果的统计意义有限。随着评分数据增多，评估结果会更稳定。
+    论文中可重点分析趋势：K值过小容易过拟合，K值过大容易引入噪声，一般取K=5~10效果较优。
+</div>
+
+{% endblock %}

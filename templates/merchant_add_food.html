@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block title %}上传美食 - 商家中心{% endblock %}
+
+{% block content %}
+
+<style>
+    .form-box {
+        max-width: 600px;
+        margin: 0 auto;
+        background: white;
+        padding: 35px 40px;
+        border-radius: 16px;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    }
+    .form-box label {
+        display: block;
+        font-weight: 600;
+        margin: 14px 0 4px;
+        color: #333;
+    }
+    .form-box input, .form-box select, .form-box textarea {
+        width: 100%;
+        padding: 10px 14px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        font-size: 15px;
+    }
+    .form-box textarea {
+        height: 80px;
+        resize: vertical;
+    }
+    .form-box .btn {
+        width: 100%;
+        padding: 12px;
+        background: #c0392b;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 18px;
+        font-weight: 600;
+        cursor: pointer;
+        margin-top: 20px;
+    }
+    .form-box .btn:hover { background: #a93226; }
+    .form-box .hint {
+        font-size: 13px;
+        color: #7f8c8d;
+        margin-top: 4px;
+    }
+</style>
+
+<h2 style="text-align:center; color:#c0392b; margin-bottom:24px;">➕ 上传新美食</h2>
+
+<div class="form-box">
+    <form method="POST">
+        <label>美食名称 <span style="color:#e74c3c;">*</span></label>
+        <input type="text" name="name" placeholder="如：秘制叉烧肠粉" required>
+
+        <label>分类</label>
+        <select name="category_id">
+            <option value="">未分类</option>
+            {% for cat in categories %}
+                <option value="{{ cat.id }}">{{ cat.name }}</option>
+            {% endfor %}
+        </select>
+
+        <label>价格（元） <span style="color:#e74c3c;">*</span></label>
+        <input type="number" name="price" step="0.01" placeholder="如 15.00" required>
+
+        <label>原材料</label>
+        <input type="text" name="ingredients" placeholder="如：肠粉、叉烧、特制酱汁、生菜">
+        <div class="hint">多个原材料用中文逗号分隔</div>
+
+        <label>口味描述</label>
+        <textarea name="description" placeholder="描述该美食的口味特点..."></textarea>
+
+        <button type="submit" class="btn">提交审核</button>
+    </form>
+</div>
+
+{% endblock %}

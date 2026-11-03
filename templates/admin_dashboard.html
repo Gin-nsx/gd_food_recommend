@@ -1,0 +1,292 @@
+{% extends "base.html" %}
+
+{% block title %}管理后台 - 广东美食推荐{% endblock %}
+
+{% block content %}
+
+<style>
+    .stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 16px;
+        margin-bottom: 30px;
+    }
+    .stat-card {
+        background: white;
+        padding: 20px;
+        border-radius: 12px;
+        text-align: center;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    .stat-card .num {
+        font-size: 32px;
+        font-weight: 700;
+        color: #c0392b;
+    }
+    .stat-card .label {
+        font-size: 14px;
+        color: #7f8c8d;
+    }
+    .section {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 24px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    .section h3 {
+        color: #2c3e50;
+        margin-bottom: 16px;
+        padding-bottom: 8px;
+        border-bottom: 2px solid #f0ece8;
+    }
+    .table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    .table th {
+        text-align: left;
+        padding: 10px 12px;
+        background: #f8f4f0;
+        font-weight: 600;
+    }
+    .table td {
+        padding: 10px 12px;
+        border-bottom: 1px solid #eee;
+    }
+    .btn {
+        display: inline-block;
+        padding: 4px 14px;
+        border-radius: 6px;
+        color: white;
+        text-decoration: none;
+        font-size: 13px;
+    }
+    .btn-success { background: #27ae60; }
+    .btn-success:hover { background: #1e8449; }
+    .btn-danger { background: #e74c3c; }
+    .btn-danger:hover { background: #c0392b; }
+    .btn-primary { background: #3498db; }
+    .btn-primary:hover { background: #2980b9; }
+    .status-pending { color: #f39c12; font-weight: 600; }
+    .status-approved { color: #27ae60; font-weight: 600; }
+    .no-data { color: #999; padding: 20px 0; }
+
+    .eval-entry {
+        display: block;
+        background: white;
+        border-radius: 16px;
+        padding: 24px 30px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        text-decoration: none;
+        border: 1px solid #eee;
+        transition: 0.3s;
+    }
+    .eval-entry:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+    }
+        .charts-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+        margin-bottom: 24px;
+    }
+    .chart-box {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    .chart-box h3 {
+        color: #2c3e50;
+        margin-bottom: 16px;
+        padding-bottom: 8px;
+        border-bottom: 2px solid #f0ece8;
+        font-size: 16px;
+    }
+    .chart-container {
+        width: 100%;
+        height: 280px;
+    }
+    @media (max-width: 768px) {
+        .charts-row { grid-template-columns: 1fr; }
+    }
+</style>
+
+<h1 style="color:#c0392b; font-size:28px;">⚙️ 管理后台</h1>
+<p style="color:#7f8c8d; margin-bottom:20px;">欢迎回来，管理员 {{ session.get('username') }}</p>
+
+<div class="stats">
+    <div class="stat-card"><div class="num">{{ total_users }}</div><div class="label">总用户</div></div>
+    <div class="stat-card"><div class="num">{{ total_foods }}</div><div class="label">总美食</div></div>
+    <div class="stat-card"><div class="num" style="color:#f39c12;">{{ pending_merchants }}</div><div class="label">待审核商家</div></div>
+    <div class="stat-card"><div class="num" style="color:#f39c12;">{{ pending_foods }}</div><div class="label">待审核美食</div></div>
+</div>
+
+<!-- 图表区 -->
+<div class="charts-row">
+    <div class="chart-box">
+        <h3>📊 美食分类分布</h3>
+        <div id="categoryChart" class="chart-container"></div>
+    </div>
+    <div class="chart-box">
+        <h3>⭐ 评分分布</h3>
+        <div id="ratingChart" class="chart-container"></div>
+    </div>
+</div>
+
+<div class="chart-box" style="margin-bottom: 24px;">
+    <h3>📈 用户注册趋势</h3>
+    <div id="userGrowthChart" class="chart-container"></div>
+</div>
+
+<div class="section">
+    <h3>📋 待审核商家</h3>
+    {% if merchants %}
+        <table class="table">
+            <tr><th>用户名</th><th>地址</th><th>注册时间</th><th>操作</th></tr>
+            {% for m in merchants %}
+            <tr>
+                <td>{{ m.username }}</td>
+                <td>{{ m.merchant_address or '未填写' }}</td>
+                <td>{{ m.created_at }}</td>
+                <td>
+                    <a href="{{ url_for('admin.approve_merchant', user_id=m.id) }}" class="btn btn-success">通过</a>
+                    <a href="{{ url_for('admin.reject_merchant', user_id=m.id) }}" class="btn btn-danger">拒绝</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+    {% else %}
+        <div class="no-data">✅ 暂无待审核商家</div>
+    {% endif %}
+</div>
+
+<div class="section">
+    <h3>📋 待审核美食</h3>
+    {% if foods %}
+        <table class="table">
+            <tr><th>名称</th><th>商家</th><th>价格</th><th>操作</th></tr>
+            {% for f in foods %}
+            <tr>
+                <td>{{ f.name }}</td>
+                <td>{{ f.merchant_name }}</td>
+                <td>¥{{ f.price }}</td>
+                <td>
+                    <a href="{{ url_for('admin.approve_food', food_id=f.id) }}" class="btn btn-success">通过</a>
+                    <a href="{{ url_for('admin.reject_food', food_id=f.id) }}" class="btn btn-danger">拒绝</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+    {% else %}
+        <div class="no-data">✅ 暂无待审核美食</div>
+    {% endif %}
+</div>
+
+<div style="margin-top: 12px; display: flex; gap: 12px; flex-wrap: wrap;">
+    <a href="{{ url_for('admin.manage_users') }}" class="btn btn-primary" style="padding:10px 24px;">👥 管理所有用户</a>
+    <a href="{{ url_for('admin.admin_reports') }}" class="btn btn-danger" style="padding:10px 24px;">🚨 举报管理</a>
+</div>
+
+<!-- 推荐效果评估入口 -->
+<a href="{{ url_for('recommend.evaluate_page') }}" class="eval-entry" style="margin-top: 24px;">
+    <div style="display: flex; align-items: center; justify-content: space-between;">
+        <div>
+            <h3 style="font-size: 20px; color: #2c3e50; margin-bottom: 6px;">📊 推荐效果评估</h3>
+            <p style="font-size: 14px; color: #95a5a6; margin: 0;">
+                查看协同过滤算法在不同K值下的MAE和RMSE指标
+            </p>
+        </div>
+        <div style="font-size: 32px; color: #c0392b;">→</div>
+    </div>
+</a>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 1. 美食分类分布（饼图）
+    fetch('{{ url_for("admin.stats_by_category") }}')
+        .then(r => r.json())
+        .then(data => {
+            const chart = echarts.init(document.getElementById('categoryChart'));
+            chart.setOption({
+                tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
+                legend: { orient: 'vertical', left: 'left', textStyle: { fontSize: 12 } },
+                series: [{
+                    type: 'pie',
+                    radius: ['40%', '70%'],
+                    center: ['65%', '50%'],
+                    data: data,
+                    label: { formatter: '{b}\n{c}道', fontSize: 12 },
+                    itemStyle: { borderRadius: 6, borderColor: '#fff', borderWidth: 2 }
+                }],
+                color: ['#c0392b', '#e67e22', '#f39c12', '#27ae60', '#3498db', '#9b59b6', '#1abc9c', '#e74c3c', '#34495e']
+            });
+        });
+
+    // 2. 评分分布（柱状图）
+    fetch('{{ url_for("admin.stats_rating_dist") }}')
+        .then(r => r.json())
+        .then(data => {
+            const chart = echarts.init(document.getElementById('ratingChart'));
+            chart.setOption({
+                tooltip: { trigger: 'axis' },
+                grid: { left: '10%', right: '5%', top: '10%', bottom: '10%' },
+                xAxis: { type: 'category', data: data.labels },
+                yAxis: { type: 'value', minInterval: 1 },
+                series: [{
+                    type: 'bar',
+                    data: data.values,
+                    barWidth: '50%',
+                    itemStyle: { color: '#c0392b', borderRadius: [6, 6, 0, 0] },
+                    label: { show: true, position: 'top', fontSize: 12 }
+                }]
+            });
+        });
+
+    // 3. 用户注册趋势（折线图）
+    fetch('{{ url_for("admin.stats_user_growth") }}')
+        .then(r => r.json())
+        .then(data => {
+            const chart = echarts.init(document.getElementById('userGrowthChart'));
+            chart.setOption({
+                tooltip: { trigger: 'axis' },
+                grid: { left: '8%', right: '5%', top: '15%', bottom: '15%' },
+                xAxis: { type: 'category', data: data.labels, boundaryGap: false },
+                yAxis: { type: 'value', minInterval: 1 },
+                series: [{
+                    type: 'line',
+                    data: data.values,
+                    smooth: true,
+                    symbol: 'circle',
+                    symbolSize: 8,
+                    lineStyle: { color: '#c0392b', width: 3 },
+                    itemStyle: { color: '#c0392b' },
+                    areaStyle: {
+                        color: {
+                            type: 'linear', x: 0, y: 0, x2: 0, y2: 1,
+                            colorStops: [
+                                { offset: 0, color: 'rgba(192,57,43,0.35)' },
+                                { offset: 1, color: 'rgba(192,57,43,0.02)' }
+                            ]
+                        }
+                    },
+                    label: { show: true, position: 'top', fontSize: 12 }
+                }]
+            });
+        });
+
+    // 响应式重绘
+    window.addEventListener('resize', function() {
+        ['categoryChart', 'ratingChart', 'userGrowthChart'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el && echarts.getInstanceByDom(el)) {
+                echarts.getInstanceByDom(el).resize();
+            }
+        });
+    });
+});
+</script>
+
+{% endblock %}

@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+
+{% block title %}我的收藏 - 广东美食推荐{% endblock %}
+
+{% block content %}
+
+<style>
+    .favorites-list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+    .favorite-item {
+        background: white;
+        border-radius: 12px;
+        padding: 14px 20px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border: 1px solid #eee;
+        transition: 0.3s;
+    }
+    .favorite-item .left {
+        flex: 1;
+        cursor: pointer;
+    }
+    .favorite-item .left:hover .name {
+        color: #c0392b;
+    }
+    .favorite-item .name {
+        font-size: 17px;
+        font-weight: 600;
+        color: #2c3e50;
+        transition: 0.3s;
+    }
+    .favorite-item .meta {
+        font-size: 14px;
+        color: #7f8c8d;
+    }
+    .favorite-item .meta .price {
+        color: #e74c3c;
+        font-weight: 600;
+    }
+    .favorite-item .meta .rating {
+        color: #f39c12;
+    }
+    .btn-remove {
+        padding: 6px 16px;
+        background: #e74c3c;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        font-size: 13px;
+        cursor: pointer;
+        transition: 0.3s;
+    }
+    .btn-remove:hover {
+        background: #c0392b;
+    }
+    .empty {
+        text-align: center;
+        padding: 50px 0;
+        color: #999;
+        font-size: 17px;
+    }
+    .empty span {
+        font-size: 44px;
+        display: block;
+        margin-bottom: 14px;
+    }
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 18px;
+    }
+    .page-header h2 {
+        color: #2c3e50;
+        font-size: 22px;
+    }
+    .page-header .count {
+        color: #7f8c8d;
+        font-size: 14px;
+    }
+</style>
+
+<div class="page-header">
+    <h2>❤️ 我的收藏</h2>
+    <span class="count">共 {{ favorites|length }} 条</span>
+</div>
+
+{% if favorites %}
+    <div class="favorites-list">
+        {% for f in favorites %}
+        <div class="favorite-item">
+            <div class="left" onclick="location.href='{{ url_for('food.food_detail', food_id=f.id) }}'">
+                <div class="name">{{ f.name }}</div>
+                <div class="meta">
+                    <span class="rating">⭐ {{ f.avg_rating or '暂无' }}</span>
+                    &nbsp;·&nbsp;
+                    <span class="price">¥{{ f.price }}</span>
+                    &nbsp;·&nbsp;
+                    🏠 {{ f.merchant_name or '未知商家' }}
+                </div>
+            </div>
+            <button class="btn-remove" onclick="removeFavorite({{ f.id }})">取消收藏</button>
+        </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="empty">
+        <span>📭</span>
+        还没有收藏任何美食<br>
+        <span style="font-size:14px; color:#bbb;">去首页逛逛吧 →</span>
+    </div>
+{% endif %}
+
+<script>
+    function removeFavorite(foodId) {
+        if (!confirm('确定取消收藏吗？')) return;
+
+        fetch('/user/favorite/remove/' + foodId, {
+            method: 'POST'
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert(data.message);
+            }
+        });
+    }
+</script>
+
+{% endblock %}

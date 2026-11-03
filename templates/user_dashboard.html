@@ -1,0 +1,301 @@
+{% extends "base.html" %}
+
+{% block title %}个人中心 - 广东美食推荐{% endblock %}
+
+{% block content %}
+
+<style>
+    .profile-container {
+        display: grid;
+        grid-template-columns: 220px 1fr;
+        gap: 30px;
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+    .profile-sidebar {
+        background: white;
+        border-radius: 16px;
+        padding: 24px 16px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        height: fit-content;
+    }
+    .profile-sidebar .avatar {
+        text-align: center;
+        font-size: 48px;
+        margin-bottom: 8px;
+    }
+    .profile-sidebar .username {
+        text-align: center;
+        font-size: 18px;
+        font-weight: 700;
+        color: #2c3e50;
+    }
+    .profile-sidebar .role {
+        text-align: center;
+        font-size: 13px;
+        color: #7f8c8d;
+        margin-bottom: 16px;
+    }
+    .profile-sidebar .menu {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        border-top: 1px solid #eee;
+        padding-top: 12px;
+    }
+    .profile-sidebar .menu li {
+        margin-bottom: 2px;
+    }
+    .profile-sidebar .menu a {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 14px;
+        border-radius: 8px;
+        color: #2c3e50;
+        text-decoration: none;
+        transition: 0.3s;
+        font-size: 14px;
+    }
+    .profile-sidebar .menu a:hover {
+        background: #f8f4f0;
+    }
+    .profile-sidebar .menu a.active {
+        background: #fde8e8;
+        color: #c0392b;
+    }
+    .profile-sidebar .menu a .badge {
+        background: #c0392b;
+        color: white;
+        padding: 1px 10px;
+        border-radius: 20px;
+        font-size: 12px;
+    }
+    .profile-sidebar .menu a .badge-gray {
+        background: #bdc3c7;
+        color: white;
+        padding: 1px 10px;
+        border-radius: 20px;
+        font-size: 12px;
+    }
+
+    .profile-content {
+        background: white;
+        border-radius: 16px;
+        padding: 28px 32px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        min-height: 400px;
+    }
+    .profile-content h3 {
+        color: #2c3e50;
+        font-size: 20px;
+        margin-bottom: 16px;
+        padding-bottom: 12px;
+        border-bottom: 2px solid #f0ece8;
+    }
+
+    .info-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px 40px;
+    }
+    .info-grid .item {
+        display: flex;
+        justify-content: space-between;
+        padding: 8px 0;
+        border-bottom: 1px solid #f8f4f0;
+    }
+    .info-grid .item .label {
+        color: #7f8c8d;
+        font-size: 14px;
+    }
+    .info-grid .item .value {
+        color: #2c3e50;
+        font-weight: 500;
+        font-size: 14px;
+    }
+
+    .quick-stats {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 16px;
+        margin-top: 24px;
+    }
+    .quick-stats .stat {
+        background: #f8f4f0;
+        border-radius: 12px;
+        padding: 16px;
+        text-align: center;
+    }
+    .quick-stats .stat .num {
+        font-size: 26px;
+        font-weight: 700;
+        color: #c0392b;
+    }
+    .quick-stats .stat .label {
+        font-size: 13px;
+        color: #7f8c8d;
+    }
+
+    .pref-section {
+        margin-top: 24px;
+        padding-top: 20px;
+        border-top: 2px solid #f0ece8;
+    }
+    .pref-section h4 {
+        color: #2c3e50;
+        font-size: 16px;
+        margin-bottom: 12px;
+    }
+    .pref-section .pref-row {
+        display: flex;
+        gap: 30px;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+    .pref-section .pref-row label {
+        font-weight: 600;
+        color: #2c3e50;
+        font-size: 14px;
+        min-width: 70px;
+    }
+    .pref-section .pref-row input {
+        flex: 1;
+        min-width: 200px;
+        padding: 8px 14px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        font-size: 14px;
+    }
+    .pref-section .pref-row .hint {
+        font-size: 12px;
+        color: #999;
+    }
+    .pref-section .btn-save {
+        padding: 8px 28px;
+        background: #c0392b;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 14px;
+        cursor: pointer;
+        transition: 0.3s;
+    }
+    .pref-section .btn-save:hover {
+        background: #a93226;
+    }
+
+    @media (max-width: 768px) {
+        .profile-container {
+            grid-template-columns: 1fr;
+        }
+        .info-grid {
+            grid-template-columns: 1fr;
+        }
+        .quick-stats {
+            grid-template-columns: 1fr 1fr;
+        }
+        .pref-section .pref-row {
+            flex-direction: column;
+            align-items: stretch;
+        }
+    }
+</style>
+
+<div class="profile-container">
+    <!-- 侧边栏 -->
+    <div class="profile-sidebar">
+        <div class="avatar">👤</div>
+        <div class="username">{{ user.username }}</div>
+        <div class="role">
+            {% if user.role == 'admin' %}管理员
+            {% elif user.role == 'merchant' %}商家
+            {% else %}普通用户{% endif %}
+        </div>
+        <ul class="menu">
+            <li><a href="{{ url_for('user.user_dashboard') }}" class="active">📋 我的信息</a></li>
+            <li><a href="{{ url_for('user.user_favorites') }}">❤️ 我的收藏 <span class="badge-gray">{{ favorite_count }}</span></a></li>
+            <li><a href="{{ url_for('food.history') }}">🕐 浏览记录 <span class="badge-gray">{{ history_count }}</span></a></li>
+            <li><a href="{{ url_for('user.user_blacklist') }}">🚫 黑名单 <span class="badge-gray">{{ blacklist_count }}</span></a></li>
+            <li><a href="{{ url_for('food.my_reports') }}">📮 我的举报</a></li>
+        </ul>
+    </div>
+
+    <!-- 主内容 -->
+    <div class="profile-content">
+        <h3>📋 个人信息</h3>
+        <div class="info-grid">
+            <div class="item"><span class="label">用户名</span><span class="value">{{ user.username }}</span></div>
+            <div class="item"><span class="label">角色</span><span class="value">
+                {% if user.role == 'admin' %}管理员
+                {% elif user.role == 'merchant' %}商家
+                {% else %}普通用户{% endif %}
+            </span></div>
+            <div class="item"><span class="label">账号状态</span><span class="value">
+                {% if user.is_active %}✅ 启用{% else %}❌ 已禁用{% endif %}
+            </span></div>
+            <div class="item"><span class="label">注册时间</span><span class="value">{{ user.created_at }}</span></div>
+            {% if user.role == 'merchant' %}
+            <div class="item"><span class="label">店铺地址</span><span class="value">{{ user.merchant_address or '未填写' }}</span></div>
+            <div class="item"><span class="label">商家状态</span><span class="value">
+                {% if user.merchant_status == 'approved' %}✅ 已通过
+                {% elif user.merchant_status == 'pending' %}⏳ 待审核
+                {% else %}❌ 已拒绝{% endif %}
+            </span></div>
+            {% endif %}
+        </div>
+
+        <!-- 过敏/忌口设置 -->
+        <div class="pref-section">
+            <h4>⚠️ 饮食偏好设置</h4>
+            <form id="prefForm">
+                <div class="pref-row">
+                    <label>🚫 过敏</label>
+                    <input type="text" id="allergyInput" placeholder="如：花生、海鲜、芒果..." value="{{ user.allergy or '' }}">
+                    <span class="hint">过敏食物将完全过滤，不会推荐</span>
+                </div>
+                <div class="pref-row" style="margin-top: 12px;">
+                    <label>🙅 忌口</label>
+                    <input type="text" id="tabooInput" placeholder="如：香菜、肥肉、内脏..." value="{{ user.taboo or '' }}">
+                    <span class="hint">含忌口的美食会在首页标出提醒</span>
+                </div>
+                <div style="margin-top: 16px; text-align: right;">
+                    <button type="button" class="btn-save" id="savePrefBtn">保存设置</button>
+                </div>
+            </form>
+            <div id="prefMessage" style="margin-top: 8px; font-size: 14px;"></div>
+        </div>
+
+        <div class="quick-stats">
+            <div class="stat"><div class="num">{{ favorite_count }}</div><div class="label">❤️ 收藏</div></div>
+            <div class="stat"><div class="num">{{ history_count }}</div><div class="label">🕐 浏览记录</div></div>
+            <div class="stat"><div class="num">{{ blacklist_count }}</div><div class="label">🚫 黑名单</div></div>
+            <div class="stat"><div class="num">{{ user.allergy.split(',')|length if user.allergy else 0 }}</div><div class="label">🚫 过敏项</div></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('savePrefBtn').addEventListener('click', function() {
+        const allergy = document.getElementById('allergyInput').value.trim();
+        const taboo = document.getElementById('tabooInput').value.trim();
+        const msg = document.getElementById('prefMessage');
+
+        fetch('/user/update_preferences', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: 'allergy=' + encodeURIComponent(allergy) + '&taboo=' + encodeURIComponent(taboo)
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                msg.innerHTML = '<span style="color:#27ae60;">✅ 保存成功</span>';
+                setTimeout(() => { location.reload(); }, 800);
+            } else {
+                msg.innerHTML = '<span style="color:#e74c3c;">❌ ' + data.message + '</span>';
+            }
+        });
+    });
+</script>
+
+{% endblock %}

@@ -1,0 +1,381 @@
+{% extends "base.html" %}
+
+{% block title %}首页 - 广东美食推荐{% endblock %}
+
+{% block content %}
+
+<style>
+    /* ===== 搜索区域 ===== */
+    .search-section {
+        background: white;
+        border-radius: 16px;
+        padding: 24px 30px;
+        margin-bottom: 16px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        align-items: center;
+    }
+    .search-section .search-input {
+        flex: 1;
+        min-width: 200px;
+        padding: 10px 16px;
+        border: 2px solid #e8e0d8;
+        border-radius: 8px;
+        font-size: 15px;
+        outline: none;
+        transition: 0.3s;
+    }
+    .search-section .search-input:focus {
+        border-color: #c0392b;
+    }
+    .search-section .search-btn {
+        padding: 10px 28px;
+        background: #c0392b;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 15px;
+        cursor: pointer;
+        transition: 0.3s;
+    }
+    .search-section .search-btn:hover {
+        background: #a93226;
+    }
+    .search-section .category-select {
+        padding: 10px 16px;
+        border: 2px solid #e8e0d8;
+        border-radius: 8px;
+        font-size: 15px;
+        background: white;
+        outline: none;
+        cursor: pointer;
+        min-width: 120px;
+    }
+    .search-section .category-select:focus {
+        border-color: #c0392b;
+    }
+    .search-section .clear-btn {
+        padding: 10px 20px;
+        background: #7f8c8d;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 15px;
+        cursor: pointer;
+        text-decoration: none;
+        transition: 0.3s;
+    }
+    .search-section .clear-btn:hover {
+        background: #5d6d7e;
+    }
+    .search-section .result-count {
+        color: #7f8c8d;
+        font-size: 14px;
+        margin-left: auto;
+    }
+
+    /* ===== 过敏/忌口控制栏 ===== */
+    .pref-controls {
+        display: flex;
+        gap: 20px;
+        padding: 10px 0 14px;
+        border-bottom: 1px solid #eee;
+        margin-bottom: 16px;
+        flex-wrap: wrap;
+        align-items: center;
+        background: #faf8f6;
+        border-radius: 10px;
+        padding: 10px 18px;
+        border: 1px solid #eee;
+    }
+    .pref-controls label {
+        font-size: 14px;
+        color: #555;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+    }
+    .pref-controls input[type="checkbox"] {
+        width: 16px;
+        height: 16px;
+        cursor: pointer;
+        accent-color: #c0392b;
+    }
+    .pref-controls .pref-tags {
+        font-size: 13px;
+        color: #999;
+        margin-left: auto;
+    }
+    .pref-controls .pref-tags .allergy-tag {
+        color: #c0392b;
+        font-weight: 500;
+    }
+    .pref-controls .pref-tags .taboo-tag {
+        color: #b7950b;
+        font-weight: 500;
+    }
+
+    /* ===== 美食卡片 ===== */
+    .food-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+        gap: 20px;
+    }
+    .food-card {
+        background: white;
+        border-radius: 16px;
+        padding: 18px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        transition: 0.3s;
+        border: 1px solid #eee;
+        cursor: pointer;
+        position: relative;
+    }
+    .food-card:hover {
+        transform: translateY(-6px);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+    }
+    .food-card .food-image {
+        width: 100%;
+        height: 170px;
+        background: #e8e0d8;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #999;
+        font-size: 14px;
+        margin-bottom: 12px;
+    }
+    .food-card .food-name {
+        font-size: 20px;
+        font-weight: 700;
+        color: #2c3e50;
+        margin-bottom: 6px;
+    }
+    .food-card .food-meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 14px;
+        color: #7f8c8d;
+        margin-bottom: 6px;
+    }
+    .food-card .food-rating {
+        color: #f39c12;
+        font-weight: 700;
+        font-size: 16px;
+    }
+    .food-card .food-price {
+        color: #e74c3c;
+        font-weight: 700;
+        font-size: 18px;
+    }
+    .food-card .food-merchant {
+        font-size: 13px;
+        color: #95a5a6;
+        margin-top: 8px;
+        padding-top: 8px;
+        border-top: 1px solid #f0ece8;
+    }
+    .food-card .food-merchant span {
+        color: #3498db;
+    }
+    .food-card .food-tags {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        margin: 8px 0 4px;
+    }
+    .food-card .food-tags span {
+        background: #f0ece8;
+        padding: 2px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        color: #7f8c8d;
+    }
+
+    /* ===== 过敏/忌口标签（在卡片上） ===== */
+    .food-warnings {
+        margin-top: 8px;
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+    }
+    .food-warnings .warn-allergy {
+        background: #fde8e8;
+        color: #c0392b;
+        padding: 2px 10px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+    .food-warnings .warn-taboo {
+        background: #fef9e7;
+        color: #b7950b;
+        padding: 2px 10px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .no-data {
+        text-align: center;
+        color: #999;
+        font-size: 18px;
+        padding: 60px 0;
+        grid-column: 1 / -1;
+    }
+</style>
+
+<!-- ====== 搜索区域 ====== -->
+<div class="search-section">
+    <form method="GET" action="{{ url_for('index') }}" style="display: contents;">
+        <input type="text" name="q" class="search-input"
+               placeholder="🔍 搜索美食名称或原材料..."
+               value="{{ keyword }}">
+
+        <select name="category" class="category-select" onchange="this.form.submit()">
+            <option value="">所有分类</option>
+            {% for cat in categories %}
+                <option value="{{ cat.id }}" {% if selected_category|string == cat.id|string %}selected{% endif %}>
+                    {{ cat.name }}
+                </option>
+            {% endfor %}
+        </select>
+
+        <button type="submit" class="search-btn">搜索</button>
+    </form>
+
+    {% if keyword or selected_category %}
+        <a href="{{ url_for('index') }}" class="clear-btn">清除筛选</a>
+    {% endif %}
+
+    <span class="result-count">共 {{ foods|length }} 道美食</span>
+</div>
+
+<!-- ====== 过敏/忌口控制栏 ====== -->
+<div class="pref-controls">
+    <label>
+        <input type="checkbox" id="hideAllergy" checked> 🚫 隐藏过敏
+    </label>
+    <label>
+        <input type="checkbox" id="showTabooWarn" checked> 🙅 显示忌口提醒
+    </label>
+    <span class="pref-tags">
+        {% if user_allergy %}
+            <span class="allergy-tag">⚠️ 过敏：{{ user_allergy }}</span>
+        {% endif %}
+        {% if user_allergy and user_taboo %} | {% endif %}
+        {% if user_taboo %}
+            <span class="taboo-tag">🙅 忌口：{{ user_taboo }}</span>
+        {% endif %}
+        {% if not user_allergy and not user_taboo %}
+            <span style="color:#bbb;">未设置过敏/忌口</span>
+        {% endif %}
+    </span>
+</div>
+
+<!-- ====== 美食列表 ====== -->
+<div class="food-grid" id="foodGrid">
+    {% if foods %}
+        {% for food in foods %}
+        <div class="food-card" onclick="location.href='{{ url_for('food.food_detail', food_id=food.id) }}'"
+             data-food-id="{{ food.id }}"
+             data-has-allergy="{% if user_allergy %}{% for a in user_allergy.split(',') %}{% if a.strip() and (a.strip() in food.ingredients or a.strip() in food.name) %}true{% endif %}{% endfor %}{% endif %}">
+            <div class="food-image">📷 美食图片</div>
+            <div class="food-name">{{ food.name }}</div>
+            <div class="food-meta">
+                <span class="food-rating">⭐ {{ food.avg_rating or '暂无' }}</span>
+                <span class="food-price">¥{{ food.price }}</span>
+            </div>
+            <div class="food-tags">
+                <span>👍 {{ food.like_count or 0 }} 人点赞</span>
+            </div>
+            <div class="food-merchant">
+                🏠 店铺：<span>{{ food.merchant_name or '未知商家' }}</span>
+            </div>
+
+            <!-- 过敏/忌口标签 -->
+            <div class="food-warnings">
+                {% if user_allergy %}
+                    {% for a in user_allergy.split(',') %}
+                        {% if a.strip() and (a.strip() in food.ingredients or a.strip() in food.name) %}
+                            <span class="warn-allergy" data-type="allergy">🚫 含过敏：{{ a.strip() }}</span>
+                        {% endif %}
+                    {% endfor %}
+                {% endif %}
+                {% if user_taboo %}
+                    {% for t in user_taboo.split(',') %}
+                        {% if t.strip() and (t.strip() in food.ingredients or t.strip() in food.name) %}
+                            <span class="warn-taboo" data-type="taboo">🙅 含忌口：{{ t.strip() }}</span>
+                        {% endif %}
+                    {% endfor %}
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="no-data">
+            😅 没有找到匹配的美食<br>
+            <span style="font-size:14px; color:#bbb;">试试其他关键词或分类</span>
+        </div>
+    {% endif %}
+</div>
+
+<script>
+    // ===== 获取 DOM 元素 =====
+    const hideAllergyCheckbox = document.getElementById('hideAllergy');
+    const showTabooWarnCheckbox = document.getElementById('showTabooWarn');
+
+    // ===== 功能1：隐藏过敏 =====
+    hideAllergyCheckbox.addEventListener('change', function() {
+        const cards = document.querySelectorAll('.food-card');
+        cards.forEach(card => {
+            // 检查这个卡片是否有过敏标签
+            const allergyTags = card.querySelectorAll('.warn-allergy');
+            if (allergyTags.length > 0) {
+                if (this.checked) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            }
+        });
+    });
+
+    // ===== 功能2：显示/隐藏忌口提醒 =====
+    showTabooWarnCheckbox.addEventListener('change', function() {
+        const tabooTags = document.querySelectorAll('.warn-taboo');
+        tabooTags.forEach(tag => {
+            if (this.checked) {
+                tag.style.display = 'inline';
+            } else {
+                tag.style.display = 'none';
+            }
+        });
+    });
+
+    // ===== 初始化：检查默认状态 =====
+    document.addEventListener('DOMContentLoaded', function() {
+        // 如果"隐藏过敏"默认未选中，但初始状态是选中的，不用额外操作
+        // 如果用户之前设置过偏好，可以从 localStorage 恢复
+        // 这里保持默认状态即可
+        if (!hideAllergyCheckbox.checked) {
+            // 如果用户取消勾选隐藏过敏，显示所有卡片
+            document.querySelectorAll('.food-card').forEach(card => {
+                card.style.display = 'block';
+            });
+        }
+        if (!showTabooWarnCheckbox.checked) {
+            document.querySelectorAll('.warn-taboo').forEach(tag => {
+                tag.style.display = 'none';
+            });
+        }
+    });
+</script>
+
+{% endblock %}

@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+
+{% block title %}黑名单 - 广东美食推荐{% endblock %}
+
+{% block content %}
+
+<style>
+    .blacklist-section {
+        margin-bottom: 28px;
+    }
+    .blacklist-section h3 {
+        color: #2c3e50;
+        font-size: 17px;
+        margin-bottom: 10px;
+        padding-bottom: 8px;
+        border-bottom: 2px solid #f0ece8;
+    }
+    .blacklist-item {
+        background: white;
+        border-radius: 10px;
+        padding: 12px 18px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border: 1px solid #eee;
+        margin-bottom: 6px;
+    }
+    .blacklist-item .info .name {
+        font-size: 15px;
+        font-weight: 600;
+        color: #2c3e50;
+    }
+    .blacklist-item .info .reason {
+        font-size: 13px;
+        color: #7f8c8d;
+    }
+    .blacklist-item .info .time {
+        font-size: 12px;
+        color: #bdc3c7;
+    }
+    .btn-unblacklist {
+        padding: 5px 14px;
+        background: #7f8c8d;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        font-size: 13px;
+        cursor: pointer;
+        transition: 0.3s;
+    }
+    .btn-unblacklist:hover {
+        background: #5d6d7e;
+    }
+    .empty {
+        text-align: center;
+        padding: 30px 0;
+        color: #999;
+        font-size: 15px;
+    }
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 18px;
+    }
+    .page-header h2 {
+        color: #2c3e50;
+        font-size: 22px;
+    }
+</style>
+
+<div class="page-header">
+    <h2>🚫 黑名单</h2>
+</div>
+
+<div class="blacklist-section">
+    <h3>🍽️ 已拉黑的美食</h3>
+    {% if food_blacklist %}
+        {% for item in food_blacklist %}
+        <div class="blacklist-item">
+            <div class="info">
+                <div class="name">{{ item.food_name }}</div>
+                <div class="reason">理由：{{ item.reason }}</div>
+                <div class="time">{{ item.created_at }}</div>
+            </div>
+            <button class="btn-unblacklist" onclick="removeBlacklist({{ item.blacklist_id }})">取消拉黑</button>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="empty">暂无拉黑的美食</div>
+    {% endif %}
+</div>
+
+<div class="blacklist-section">
+    <h3>🏠 已拉黑的商家</h3>
+    {% if merchant_blacklist %}
+        {% for item in merchant_blacklist %}
+        <div class="blacklist-item">
+            <div class="info">
+                <div class="name">{{ item.merchant_name }}</div>
+                <div class="reason">理由：{{ item.reason }}</div>
+                <div class="time">{{ item.created_at }}</div>
+            </div>
+            <button class="btn-unblacklist" onclick="removeBlacklist({{ item.blacklist_id }})">取消拉黑</button>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="empty">暂无拉黑的商家</div>
+    {% endif %}
+</div>
+
+<script>
+    function removeBlacklist(blacklistId) {
+        if (!confirm('确定取消拉黑吗？')) return;
+
+        fetch('/user/blacklist/remove/' + blacklistId, {
+            method: 'POST'
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert(data.message);
+            }
+        });
+    }
+</script>
+
+{% endblock %}

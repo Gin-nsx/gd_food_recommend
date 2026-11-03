@@ -1,0 +1,335 @@
+{% extends "base.html" %}
+
+{% block title %}举报管理 - 广东美食推荐{% endblock %}
+
+{% block content %}
+
+<style>
+    .report-section {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 24px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    .report-section h3 {
+        color: #2c3e50;
+        margin-bottom: 16px;
+        padding-bottom: 8px;
+        border-bottom: 2px solid #f0ece8;
+    }
+    .report-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    .report-table th {
+        text-align: left;
+        padding: 10px 12px;
+        background: #f8f4f0;
+        font-weight: 600;
+        font-size: 13px;
+    }
+    .report-table td {
+        padding: 10px 12px;
+        border-bottom: 1px solid #eee;
+        font-size: 14px;
+        vertical-align: middle;
+    }
+    .status-pending { color: #f39c12; font-weight: 600; }
+    .status-resolved { color: #27ae60; font-weight: 600; }
+    .status-rejected { color: #95a5a6; font-weight: 600; }
+    .btn {
+        display: inline-block;
+        padding: 4px 14px;
+        border-radius: 6px;
+        color: white;
+        text-decoration: none;
+        font-size: 13px;
+        border: none;
+        cursor: pointer;
+    }
+    .btn-success { background: #27ae60; }
+    .btn-success:hover { background: #1e8449; }
+    .btn-secondary { background: #95a5a6; }
+    .btn-secondary:hover { background: #7f8c8d; }
+    .note-text {
+        color: #7f8c8d;
+        font-size: 12px;
+        max-width: 200px;
+        display: inline-block;
+        word-break: break-all;
+    }
+    .link-food {
+        color: #3498db;
+        text-decoration: none;
+        font-weight: 600;
+    }
+    .link-food:hover { text-decoration: underline; }
+    .merchant-tag {
+        font-size: 12px;
+        color: #7f8c8d;
+        display: block;
+        margin-top: 2px;
+    }
+    .comment-preview {
+        max-width: 220px;
+        display: inline-block;
+        color: #555;
+        font-size: 13px;
+    }
+    .comment-source {
+        font-size: 12px;
+        color: #7f8c8d;
+        display: block;
+        margin-top: 2px;
+    }
+
+    /* 自定义弹窗 */
+    .modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0,0,0,0.5);
+        z-index: 9999;
+        align-items: center;
+        justify-content: center;
+    }
+    .modal-overlay.show { display: flex; }
+    .modal-box {
+        background: white;
+        border-radius: 16px;
+        padding: 28px 32px;
+        width: 90%;
+        max-width: 480px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        animation: modalIn 0.25s ease-out;
+    }
+    @keyframes modalIn {
+        from { opacity: 0; transform: translateY(-20px) scale(0.95); }
+        to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    .modal-box h3 {
+        color: #2c3e50;
+        font-size: 20px;
+        margin-bottom: 8px;
+    }
+    .modal-box .modal-tip {
+        color: #999;
+        font-size: 13px;
+        margin-bottom: 16px;
+    }
+    .modal-box textarea {
+        width: 100%;
+        padding: 12px 14px;
+        border: 2px solid #e8e0d8;
+        border-radius: 10px;
+        font-size: 14px;
+        resize: vertical;
+        min-height: 80px;
+        outline: none;
+        transition: 0.2s;
+        font-family: inherit;
+        box-sizing: border-box;
+    }
+    .modal-box textarea:focus {
+        border-color: #c0392b;
+    }
+    .modal-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        margin-top: 18px;
+    }
+    .modal-actions button {
+        padding: 9px 22px;
+        border: none;
+        border-radius: 8px;
+        font-size: 14px;
+        cursor: pointer;
+        transition: 0.2s;
+    }
+    .modal-actions .btn-cancel {
+        background: #f0ece8;
+        color: #7f8c8d;
+    }
+    .modal-actions .btn-cancel:hover { background: #e8e0d8; }
+    .modal-actions .btn-confirm {
+        background: #c0392b;
+        color: white;
+    }
+    .modal-actions .btn-confirm:hover { background: #a93226; }
+</style>
+
+<h1 style="color:#c0392b; font-size:28px;">🚨 举报管理</h1>
+<p style="color:#7f8c8d; margin-bottom:20px;">查看和处理用户提交的举报</p>
+
+<div class="report-section">
+    <h3>🍽️ 美食举报</h3>
+    {% if food_reports %}
+        <table class="report-table">
+            <thead>
+                <tr>
+                    <th>举报人</th>
+                    <th>被举报美食</th>
+                    <th>所属商家</th>
+                    <th>举报原因</th>
+                    <th>时间</th>
+                    <th>状态</th>
+                    <th>处理说明</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in food_reports %}
+                <tr>
+                    <td>{{ r.reporter_name }}</td>
+                    <td>
+                        {% if r.food_id %}
+                            <a class="link-food" href="{{ url_for('food.food_detail', food_id=r.food_id) }}" target="_blank">
+                                {{ r.food_name }}
+                            </a>
+                        {% else %}
+                            {{ r.food_name or '（已删除）' }}
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if r.merchant_name %}
+                            {{ r.merchant_name }}
+                        {% else %}
+                            <span style="color:#bbb;">—</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ r.reason }}</td>
+                    <td>{{ r.created_at }}</td>
+                    <td>
+                        {% if r.status == 'pending' %}<span class="status-pending">⏳ 待处理</span>
+                        {% elif r.status == 'resolved' %}<span class="status-resolved">✅ 已处理</span>
+                        {% else %}<span class="status-rejected">已驳回</span>{% endif %}
+                    </td>
+                    <td>
+                        {% if r.handle_note %}
+                            <span class="note-text">{{ r.handle_note }}</span>
+                        {% else %}—{% endif %}
+                    </td>
+                    <td>
+                        {% if r.status == 'pending' %}
+                        <button class="btn btn-success"
+                                onclick="openHandleModal({{ r.id }}, 'resolved', '{{ (r.food_name or "美食")|replace("'", "\\'") }}')">已处理</button>
+                        <button class="btn btn-secondary"
+                                onclick="openHandleModal({{ r.id }}, 'rejected', '{{ (r.food_name or "美食")|replace("'", "\\'") }}')">驳回</button>
+                        {% else %}—{% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p style="color:#999; padding:16px 0;">✅ 暂无美食举报</p>
+    {% endif %}
+</div>
+
+<div class="report-section">
+    <h3>💬 评论举报</h3>
+    {% if comment_reports %}
+        <table class="report-table">
+            <thead>
+                <tr>
+                    <th>举报人</th>
+                    <th>被举报评论</th>
+                    <th>评论所属美食</th>
+                    <th>举报原因</th>
+                    <th>时间</th>
+                    <th>状态</th>
+                    <th>处理说明</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in comment_reports %}
+                <tr>
+                    <td>{{ r.reporter_name }}</td>
+                    <td>
+                        {% if r.comment_content %}
+                            <span class="comment-preview">"{{ r.comment_content[:40] }}{% if r.comment_content|length > 40 %}...{% endif %}"</span>
+                        {% else %}
+                            <span style="color:#bbb;">（已删除）</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if r.comment_food_id %}
+                            <a class="link-food" href="{{ url_for('food.food_detail', food_id=r.comment_food_id) }}" target="_blank">
+                                {{ r.comment_food_name }}
+                            </a>
+                        {% else %}
+                            <span style="color:#bbb;">—</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ r.reason }}</td>
+                    <td>{{ r.created_at }}</td>
+                    <td>
+                        {% if r.status == 'pending' %}<span class="status-pending">⏳ 待处理</span>
+                        {% elif r.status == 'resolved' %}<span class="status-resolved">✅ 已处理</span>
+                        {% else %}<span class="status-rejected">已驳回</span>{% endif %}
+                    </td>
+                    <td>
+                        {% if r.handle_note %}
+                            <span class="note-text">{{ r.handle_note }}</span>
+                        {% else %}—{% endif %}
+                    </td>
+                    <td>
+                        {% if r.status == 'pending' %}
+                        <button class="btn btn-success"
+                                onclick="openHandleModal({{ r.id }}, 'resolved', '评论')">已处理</button>
+                        <button class="btn btn-secondary"
+                                onclick="openHandleModal({{ r.id }}, 'rejected', '评论')">驳回</button>
+                        {% else %}—{% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p style="color:#999; padding:16px 0;">✅ 暂无评论举报</p>
+    {% endif %}
+</div>
+
+<!-- 处理举报弹窗 -->
+<div class="modal-overlay" id="handleModal">
+    <div class="modal-box">
+        <h3 id="handleModalTitle">🚨 处理举报</h3>
+        <p class="modal-tip" id="handleModalTip">请填写处理说明，提交后用户可在"我的举报"中查看。</p>
+        <form id="handleForm" method="POST" action="">
+            <input type="hidden" name="action" id="handleAction" value="">
+            <textarea name="handle_note" id="handleNote"
+                      placeholder="例如：已核实并下架该美食 / 举报内容不属实，驳回"></textarea>
+            <div class="modal-actions">
+                <button type="button" class="btn-cancel" onclick="closeHandleModal()">取消</button>
+                <button type="submit" class="btn-confirm">确认提交</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function openHandleModal(reportId, action, targetName) {
+        const title = action === 'resolved' ? '✅ 处理举报' : '❌ 驳回举报';
+        const tip = action === 'resolved'
+            ? '请填写处理说明（如：已核实并处理），用户可在"我的举报"中看到。'
+            : '请填写驳回说明，用户可在"我的举报"中看到。';
+
+        document.getElementById('handleModalTitle').textContent = title + '（' + targetName + '）';
+        document.getElementById('handleModalTip').textContent = tip;
+        document.getElementById('handleAction').value = action;
+        document.getElementById('handleNote').value = '';
+        document.getElementById('handleForm').action = '/admin/report/' + reportId + '/handle';
+        document.getElementById('handleModal').classList.add('show');
+    }
+    function closeHandleModal() {
+        document.getElementById('handleModal').classList.remove('show');
+    }
+    document.getElementById('handleModal').addEventListener('click', function(e) {
+        if (e.target === this) closeHandleModal();
+    });
+</script>
+
+{% endblock %}

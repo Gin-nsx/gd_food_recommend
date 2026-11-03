@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+
+{% block title %}猜你喜欢 - 广东美食推荐{% endblock %}
+
+{% block content %}
+
+<style>
+    .food-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+        gap: 20px;
+    }
+    .food-card {
+        background: white;
+        border-radius: 16px;
+        padding: 18px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        transition: 0.3s;
+        border: 1px solid #eee;
+        cursor: pointer;
+        position: relative;
+    }
+    .food-card:hover {
+        transform: translateY(-6px);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+    }
+    .food-card .food-image {
+        width: 100%;
+        height: 170px;
+        background: #e8e0d8;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #999;
+        font-size: 14px;
+        margin-bottom: 12px;
+    }
+    .food-card .food-name {
+        font-size: 20px;
+        font-weight: 700;
+        color: #2c3e50;
+        margin-bottom: 6px;
+    }
+    .food-card .food-meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 14px;
+        color: #7f8c8d;
+        margin-bottom: 6px;
+    }
+    .food-card .food-rating {
+        color: #f39c12;
+        font-weight: 700;
+        font-size: 16px;
+    }
+    .food-card .food-price {
+        color: #e74c3c;
+        font-weight: 700;
+        font-size: 18px;
+    }
+    .food-card .food-merchant {
+        font-size: 13px;
+        color: #95a5a6;
+        margin-top: 8px;
+        padding-top: 8px;
+        border-top: 1px solid #f0ece8;
+    }
+    .food-card .food-merchant span { color: #3498db; }
+    .food-card .food-tags {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        margin: 8px 0 4px;
+    }
+    .food-card .food-tags span {
+        background: #f0ece8;
+        padding: 2px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        color: #7f8c8d;
+    }
+    .warn-taboo {
+        background: #fef9e7;
+        color: #b7950b;
+        padding: 2px 10px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+    .page-title {
+        font-size: 26px;
+        color: #2c3e50;
+        margin-bottom: 8px;
+    }
+    .page-subtitle {
+        font-size: 14px;
+        color: #95a5a6;
+        margin-bottom: 24px;
+    }
+    .no-data {
+        text-align: center;
+        color: #999;
+        font-size: 18px;
+        padding: 60px 0;
+        grid-column: 1 / -1;
+    }
+</style>
+
+<h2 class="page-title">✨ 猜你喜欢</h2>
+<p class="page-subtitle">
+    {% if is_cold_start %}
+        新用户热门推荐 —— 给美食评分后，将解锁专属个性化推荐
+    {% else %}
+        基于与你口味相似的用户为你推荐
+    {% endif %}
+</p>
+
+<div class="food-grid">
+    {% if foods %}
+        {% for food in foods %}
+        <div class="food-card"
+             onclick="location.href='{{ url_for('food.food_detail', food_id=food.id) }}'">
+            <div class="food-image">📷 美食图片</div>
+            <div class="food-name">{{ food.name }}</div>
+            <div class="food-meta">
+                <span class="food-rating">⭐ {{ food.avg_rating or '暂无' }}</span>
+                <span class="food-price">¥{{ food.price }}</span>
+            </div>
+            <div class="food-tags">
+                <span>👍 {{ food.like_count or 0 }} 人点赞</span>
+                {% if food.category_name %}
+                <span>{{ food.category_name }}</span>
+                {% endif %}
+            </div>
+            <div class="food-merchant">
+                🏠 店铺：<span>{{ food.merchant_name or '未知商家' }}</span>
+            </div>
+            {% if food.is_taboo %}
+            <div style="margin-top:8px;">
+                <span class="warn-taboo">🙅 含忌口</span>
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="no-data">
+            😅 暂无推荐内容<br>
+            <span style="font-size:14px; color:#bbb;">
+                去 <a href="{{ url_for('index') }}">首页</a> 给美食评分后，就有个性化推荐啦
+            </span>
+        </div>
+    {% endif %}
+</div>
+
+{% endblock %}

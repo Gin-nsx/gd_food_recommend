@@ -1,0 +1,371 @@
+{% extends "base.html" %}
+
+{% block title %}浏览记录 - 广东美食推荐{% endblock %}
+
+{% block content %}
+
+<style>
+    .history-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+    .history-header h2 {
+        color: #2c3e50;
+        font-size: 24px;
+    }
+    .history-header .count {
+        color: #7f8c8d;
+        font-size: 14px;
+    }
+    .history-header .actions {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+    .btn {
+        padding: 8px 20px;
+        border: none;
+        border-radius: 8px;
+        font-size: 14px;
+        cursor: pointer;
+        transition: 0.3s;
+        color: white;
+    }
+    .btn-danger { background: #e74c3c; }
+    .btn-danger:hover { background: #c0392b; }
+    .btn-danger:disabled { background: #bdc3c7; cursor: not-allowed; }
+    .btn-secondary { background: #7f8c8d; }
+    .btn-secondary:hover { background: #5d6d7e; }
+    .btn-primary { background: #3498db; }
+    .btn-primary:hover { background: #2980b9; }
+
+    .history-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+    .history-item {
+        background: white;
+        border-radius: 12px;
+        padding: 14px 20px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border: 1px solid #eee;
+        transition: 0.3s;
+    }
+    .history-item .left {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        flex: 1;
+        cursor: pointer;
+    }
+    .history-item .left:hover .name {
+        color: #c0392b;
+    }
+    .history-item .info .name {
+        font-size: 18px;
+        font-weight: 600;
+        color: #2c3e50;
+        transition: 0.3s;
+    }
+    .history-item .info .meta {
+        font-size: 14px;
+        color: #7f8c8d;
+    }
+    .history-item .info .meta .price {
+        color: #e74c3c;
+        font-weight: 600;
+    }
+    .history-item .info .meta .rating {
+        color: #f39c12;
+    }
+    .history-item .time {
+        font-size: 13px;
+        color: #95a5a6;
+        white-space: nowrap;
+        margin-right: 16px;
+    }
+    .history-item .checkbox-col {
+        margin-right: 12px;
+    }
+    .history-item .checkbox-col input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
+        cursor: pointer;
+        accent-color: #c0392b;
+    }
+    .btn-delete {
+        background: none;
+        border: none;
+        color: #ccc;
+        font-size: 20px;
+        cursor: pointer;
+        padding: 0 6px;
+        transition: 0.3s;
+        line-height: 1;
+    }
+    .btn-delete:hover {
+        color: #e74c3c;
+        transform: scale(1.2);
+    }
+    .empty-history {
+        text-align: center;
+        padding: 60px 0;
+        color: #999;
+        font-size: 18px;
+    }
+    .empty-history span {
+        font-size: 48px;
+        display: block;
+        margin-bottom: 16px;
+    }
+    .toast {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 14px 24px;
+        border-radius: 10px;
+        color: white;
+        font-size: 15px;
+        z-index: 9999;
+        opacity: 0;
+        transition: opacity 0.4s;
+        pointer-events: none;
+    }
+    .toast.show {
+        opacity: 1;
+    }
+    .toast-success { background: #27ae60; }
+    .toast-error { background: #e74c3c; }
+
+    .batch-bar {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 8px 16px;
+        background: #f8f4f0;
+        border-radius: 8px;
+        display: none;
+    }
+    .batch-bar.show {
+        display: flex;
+    }
+    .batch-bar .info {
+        color: #555;
+        font-size: 14px;
+    }
+</style>
+
+<div class="history-header">
+    <div>
+        <h2>🕐 浏览记录</h2>
+        <span class="count">共 {{ histories|length }} 条记录</span>
+    </div>
+    <div class="actions">
+        <button class="btn btn-primary" id="toggleSelectBtn">☑️ 选择</button>
+        <button class="btn btn-danger" id="batchDeleteBtn" disabled>🗑️ 批量删除</button>
+        {% if histories %}
+            <button class="btn btn-danger" id="clearBtn">🗑️ 清空全部</button>
+        {% endif %}
+    </div>
+</div>
+
+<!-- 批量操作栏 -->
+<div class="batch-bar" id="batchBar">
+    <span class="info">已选 <strong id="selectedCount">0</strong> 条</span>
+    <button class="btn btn-danger" id="batchDeleteConfirmBtn">确认删除选中</button>
+    <button class="btn btn-secondary" id="cancelSelectBtn">取消选择</button>
+</div>
+
+{% if histories %}
+    <div class="history-list" id="historyList">
+        {% for h in histories %}
+        <div class="history-item" id="history-{{ h.id }}">
+            <div class="checkbox-col">
+                <input type="checkbox" class="history-checkbox" data-id="{{ h.id }}">
+            </div>
+            <div class="left" onclick="goToDetail({{ h.food_id }})">
+                <div class="info">
+                    <div class="name">{{ h.name }}</div>
+                    <div class="meta">
+                        <span class="rating">⭐ {{ h.avg_rating or '暂无' }}</span>
+                        &nbsp;·&nbsp;
+                        <span class="price">¥{{ h.price }}</span>
+                        &nbsp;·&nbsp;
+                        🏠 {{ h.merchant_name or '未知商家' }}
+                    </div>
+                </div>
+            </div>
+            <div class="time">{{ h.last_view_time }}</div>
+            <button class="btn-delete" onclick="deleteHistory({{ h.id }})" title="删除">✕</button>
+        </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="empty-history">
+        <span>📭</span>
+        你还没有浏览过任何美食<br>
+        <span style="font-size:14px; color:#bbb;">去首页逛逛吧 →</span>
+    </div>
+{% endif %}
+
+<!-- Toast 消息提示 -->
+<div id="toast" class="toast"></div>
+
+<script>
+    function showToast(message, type) {
+        const toast = document.getElementById('toast');
+        toast.textContent = message;
+        toast.className = 'toast toast-' + type + ' show';
+        clearTimeout(toast._timer);
+        toast._timer = setTimeout(function() {
+            toast.classList.remove('show');
+        }, 2500);
+    }
+
+    function goToDetail(foodId) {
+        location.href = '/food/' + foodId;
+    }
+
+    // ===== 删除单条 =====
+    function deleteHistory(historyId) {
+        if (!confirm('确定删除这条浏览记录吗？')) return;
+
+        fetch('/history/delete/' + historyId, {
+            method: 'POST'
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                const item = document.getElementById('history-' + historyId);
+                if (item) item.remove();
+                showToast('✅ 删除成功', 'success');
+                updateCounts();
+                if (document.querySelectorAll('.history-item').length === 0) {
+                    location.reload();
+                }
+            } else {
+                showToast('❌ ' + data.message, 'error');
+            }
+        });
+    }
+
+    // ===== 清空全部 =====
+    document.getElementById('clearBtn')?.addEventListener('click', function() {
+        if (!confirm('确定清空所有浏览记录吗？此操作不可撤销！')) return;
+
+        fetch('/history/clear', {
+            method: 'POST'
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                showToast('✅ 已清空所有浏览记录', 'success');
+                setTimeout(function() {
+                    location.reload();
+                }, 800);
+            } else {
+                showToast('❌ ' + data.message, 'error');
+            }
+        });
+    });
+
+    // ===== 选择/取消选择 模式切换 =====
+    let selectMode = false;
+    const toggleSelectBtn = document.getElementById('toggleSelectBtn');
+    const batchBar = document.getElementById('batchBar');
+    const batchDeleteBtn = document.getElementById('batchDeleteBtn');
+    const batchDeleteConfirmBtn = document.getElementById('batchDeleteConfirmBtn');
+    const cancelSelectBtn = document.getElementById('cancelSelectBtn');
+    const selectedCount = document.getElementById('selectedCount');
+
+    function updateCounts() {
+        const checked = document.querySelectorAll('.history-checkbox:checked').length;
+        selectedCount.textContent = checked;
+        batchDeleteBtn.disabled = checked === 0;
+        batchDeleteBtn.textContent = checked === 0 ? '🗑️ 批量删除' : '🗑️ 批量删除 (' + checked + ')';
+    }
+
+    function toggleSelectMode(show) {
+        selectMode = show;
+        document.querySelectorAll('.history-checkbox').forEach(cb => {
+            cb.style.display = show ? 'inline-block' : 'none';
+            if (!show) cb.checked = false;
+        });
+        batchBar.classList.toggle('show', show);
+        toggleSelectBtn.textContent = show ? '取消选择' : '☑️ 选择';
+        if (!show) {
+            batchDeleteBtn.disabled = true;
+            batchDeleteBtn.textContent = '🗑️ 批量删除';
+        }
+        updateCounts();
+    }
+
+    toggleSelectBtn.addEventListener('click', function() {
+        toggleSelectMode(!selectMode);
+    });
+
+    cancelSelectBtn.addEventListener('click', function() {
+        toggleSelectMode(false);
+    });
+
+    // 复选框变化时更新计数
+    document.addEventListener('change', function(e) {
+        if (e.target.classList.contains('history-checkbox')) {
+            updateCounts();
+        }
+    });
+
+    // ===== 批量删除（确认） =====
+    batchDeleteConfirmBtn.addEventListener('click', function() {
+        const checked = document.querySelectorAll('.history-checkbox:checked');
+        if (checked.length === 0) {
+            showToast('请先选择要删除的记录', 'error');
+            return;
+        }
+        if (!confirm('确定删除选中的 ' + checked.length + ' 条记录吗？')) return;
+
+        const ids = [];
+        checked.forEach(cb => ids.push(cb.dataset.id));
+
+        fetch('/history/batch_delete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ids: ids })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                ids.forEach(id => {
+                    const item = document.getElementById('history-' + id);
+                    if (item) item.remove();
+                });
+                showToast('✅ 已删除 ' + ids.length + ' 条记录', 'success');
+                toggleSelectMode(false);
+                if (document.querySelectorAll('.history-item').length === 0) {
+                    location.reload();
+                }
+            } else {
+                showToast('❌ ' + data.message, 'error');
+            }
+        });
+    });
+
+    // 刚加载时隐藏所有 checkbox
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.history-checkbox').forEach(cb => {
+            cb.style.display = 'none';
+        });
+        updateCounts();
+    });
+</script>
+
+{% endblock %}
