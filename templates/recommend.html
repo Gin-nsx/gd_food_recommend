@@ -46,15 +46,6 @@
         transition: transform 0.5s ease;
     }
     .food-card:hover .food-image img { transform: scale(1.07); }
-    /* 底部渐变压暗：既提升叠字可读性，也遮住生成图右下角的水印 */
-    .food-card .food-image::after {
-        content: '';
-        position: absolute;
-        left: 0; right: 0; bottom: 0;
-        height: 45%;
-        background: linear-gradient(to top, rgba(25,18,12,0.45), rgba(25,18,12,0));
-        pointer-events: none;
-    }
     .food-card .food-name {
         font-size: 20px;
         font-weight: 700;

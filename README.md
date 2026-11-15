@@ -69,7 +69,7 @@ gd_food_recommend/
 └── static/
     ├── js/
     │   └── echarts.min.js  # ECharts 本地引入
-    └── images/foods/       # 74 张菜品配图（<food_id>.jpg，800×600）
+    └── images/foods/       # 74 张菜品配图（<food_id>.jpg，736×552，4:3）
 ```
 
 > 菜品配图为 AI 生成、统一风格制作，说明见 `static/images/foods/README.md`；
