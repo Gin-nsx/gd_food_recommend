@@ -17,7 +17,8 @@ def insert_data():
             ('粥品',),
             ('煲仔饭',),
             ('云吞面',),
-            ('早茶',)
+            ('早茶',),
+            ('烧腊',)
         ]
         cursor.executemany("INSERT IGNORE INTO categories (name) VALUES (%s)", categories)
         print("✅ 分类插入成功")
@@ -69,6 +70,8 @@ def insert_data():
         cat5 = cursor.fetchone()
         cursor.execute("SELECT id FROM categories WHERE name = '煲仔饭'")
         cat6 = cursor.fetchone()
+        cursor.execute("SELECT id FROM categories WHERE name = '烧腊'")
+        cat7 = cursor.fetchone()
 
         foods = [
             ('秘制叉烧肠粉', merchant1[0], cat1[0], 15, '肠粉、叉烧、特制酱汁、生菜', '咸甜适中，叉烧肥瘦相间', 'food1.jpg',
@@ -80,7 +83,7 @@ def insert_data():
             ('深井烧鹅', merchant2[0], cat2[0], 68, '黑鬃鹅、秘制酱料', '皮脆肉嫩，汁水丰富', 'food4.jpg', 4.9, 0,
              'approved'),
             (
-            '蜜汁叉烧', merchant2[0], cat2[0], 58, '梅头肉、蜜汁', '甜咸适中，外焦里嫩', 'food5.jpg', 4.7, 0, 'approved'),
+            '蜜汁叉烧', merchant2[0], cat7[0], 58, '梅头肉、蜜汁', '甜咸适中，外焦里嫩', 'food5.jpg', 4.7, 0, 'approved'),
             ('杨枝甘露', merchant2[0], cat3[0], 25, '芒果、西柚、椰奶、西米', '酸甜清爽，层次丰富', 'food6.jpg', 4.8, 0,
              'approved'),
             ('虾饺', merchant2[0], cat4[0], 38, '虾仁、笋丁、澄面', '皮薄馅多，鲜甜弹牙', 'food7.jpg', 4.9, 0, 'approved'),
@@ -142,6 +145,17 @@ def insert_data():
             ratings
         )
         print("✅ 评分插入成功")
+
+        # 5. 用真实评分重算 avg_rating（避免手写分数与 ratings 表不一致，
+        #    否则用户一评分，首页排序和评分分布会突然“掉下来”）
+        cursor.execute("""
+            UPDATE foods f
+            LEFT JOIN (
+                SELECT food_id, AVG(score) AS avg_score FROM ratings GROUP BY food_id
+            ) t ON f.id = t.food_id
+            SET f.avg_rating = ROUND(COALESCE(t.avg_score, 0), 1)
+        """)
+        print("✅ 平均评分已按 ratings 重算")
 
         # 关键：提交事务！
         conn.commit()

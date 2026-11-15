@@ -1,5 +1,16 @@
+# 建表脚本：与线上 food_db（MySQL 8.0）结构保持一致
+# 用法：python create_tables.py
+# 说明：会自动创建数据库（若不存在），再建 10 张表；可重复执行，不会清空数据。
 import pymysql
+
 from config import DB_CONFIG
+
+# 建库语句需要不指定 database 连接
+_CFG_NO_DB = {k: v for k, v in DB_CONFIG.items() if k != 'database'}
+
+CREATE_DATABASE_SQL = """
+CREATE DATABASE IF NOT EXISTS `{db}` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci
+"""
 
 CREATE_TABLES_SQL = """
 -- 1. 用户表
@@ -13,10 +24,10 @@ CREATE TABLE IF NOT EXISTS users (
     merchant_name VARCHAR(100) COMMENT '店铺名称',
     merchant_address VARCHAR(255) COMMENT '店铺地址',
     merchant_status ENUM('pending', 'approved', 'rejected') DEFAULT 'pending' COMMENT '商家审核状态',
-    allergy TEXT COMMENT '过敏食材',
-    taboo TEXT COMMENT '忌口食材',
     is_active BOOLEAN DEFAULT TRUE COMMENT '账号是否启用',
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '注册时间'
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '注册时间',
+    taboo TEXT COMMENT '忌口食材',
+    allergy TEXT COMMENT '过敏食材'
 ) COMMENT='用户表';
 
 -- 2. 分类表
@@ -41,6 +52,9 @@ CREATE TABLE IF NOT EXISTS foods (
     status ENUM('pending', 'approved', 'rejected', 'offline') DEFAULT 'pending' COMMENT '审核状态',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    KEY idx_foods_merchant (merchant_id),
+    KEY idx_foods_category (category_id),
+    KEY idx_foods_status_rating (status, avg_rating),
     FOREIGN KEY (merchant_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL
 ) COMMENT='美食表';
@@ -50,11 +64,14 @@ CREATE TABLE IF NOT EXISTS ratings (
     id INT PRIMARY KEY AUTO_INCREMENT COMMENT '评分ID',
     user_id INT NOT NULL COMMENT '用户ID',
     food_id INT NOT NULL COMMENT '美食ID',
-    score INT NOT NULL CHECK (score >= 1 AND score <= 5) COMMENT '评分（1-5星）',
+    score INT NOT NULL COMMENT '评分（1-5星）',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '评分时间',
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     UNIQUE KEY unique_rating (user_id, food_id),
+    KEY idx_ratings_food (food_id),
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    FOREIGN KEY (food_id) REFERENCES foods(id) ON DELETE CASCADE
+    FOREIGN KEY (food_id) REFERENCES foods(id) ON DELETE CASCADE,
+    CONSTRAINT ratings_score_chk CHECK (score >= 1 AND score <= 5)
 ) COMMENT='评分表';
 
 -- 5. 点赞表
@@ -64,6 +81,7 @@ CREATE TABLE IF NOT EXISTS likes (
     food_id INT NOT NULL COMMENT '美食ID',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '点赞时间',
     UNIQUE KEY unique_like (user_id, food_id),
+    KEY idx_likes_food (food_id),
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (food_id) REFERENCES foods(id) ON DELETE CASCADE
 ) COMMENT='点赞表';
@@ -75,6 +93,7 @@ CREATE TABLE IF NOT EXISTS favorites (
     food_id INT NOT NULL COMMENT '美食ID',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '收藏时间',
     UNIQUE KEY unique_favorite (user_id, food_id),
+    KEY idx_favorites_food (food_id),
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (food_id) REFERENCES foods(id) ON DELETE CASCADE
 ) COMMENT='收藏表';
@@ -86,6 +105,8 @@ CREATE TABLE IF NOT EXISTS comments (
     food_id INT NOT NULL COMMENT '美食ID',
     content TEXT NOT NULL COMMENT '评论内容',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '评论时间',
+    KEY idx_comments_user (user_id),
+    KEY idx_comments_food (food_id),
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (food_id) REFERENCES foods(id) ON DELETE CASCADE
 ) COMMENT='评论表';
@@ -97,11 +118,12 @@ CREATE TABLE IF NOT EXISTS histories (
     food_id INT NOT NULL COMMENT '美食ID',
     last_view_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '最后浏览时间',
     UNIQUE KEY unique_history (user_id, food_id),
+    KEY idx_histories_food (food_id),
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (food_id) REFERENCES foods(id) ON DELETE CASCADE
 ) COMMENT='浏览记录表';
 
--- 9. 拉黑表
+-- 9. 拉黑表（支持美食 / 商家双维度）
 CREATE TABLE IF NOT EXISTS blacklists (
     id INT PRIMARY KEY AUTO_INCREMENT COMMENT '拉黑ID',
     user_id INT NOT NULL COMMENT '用户ID',
@@ -109,13 +131,16 @@ CREATE TABLE IF NOT EXISTS blacklists (
     merchant_id INT COMMENT '被拉黑商家ID',
     reason VARCHAR(255) COMMENT '拉黑原因',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '拉黑时间',
+    KEY idx_blacklists_user (user_id),
+    KEY idx_blacklists_food (food_id),
+    KEY idx_blacklists_merchant (merchant_id),
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (food_id) REFERENCES foods(id) ON DELETE CASCADE,
     FOREIGN KEY (merchant_id) REFERENCES users(id) ON DELETE CASCADE,
-    CHECK (food_id IS NOT NULL OR merchant_id IS NOT NULL)
+    CONSTRAINT blacklists_target_chk CHECK (food_id IS NOT NULL OR merchant_id IS NOT NULL)
 ) COMMENT='拉黑表';
 
--- 10. 举报表
+-- 10. 举报表（handle_note 为管理员处理说明，后期新增字段）
 CREATE TABLE IF NOT EXISTS reports (
     id INT PRIMARY KEY AUTO_INCREMENT COMMENT '举报ID',
     reporter_id INT NOT NULL COMMENT '举报人ID',
@@ -125,14 +150,33 @@ CREATE TABLE IF NOT EXISTS reports (
     status ENUM('pending', 'resolved', 'rejected') DEFAULT 'pending' COMMENT '处理状态',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '举报时间',
     resolved_at DATETIME COMMENT '处理时间',
+    handle_note VARCHAR(255) COMMENT '管理员处理说明',
+    KEY idx_reports_reporter (reporter_id),
+    KEY idx_reports_food (food_id),
+    KEY idx_reports_comment (comment_id),
     FOREIGN KEY (reporter_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (food_id) REFERENCES foods(id) ON DELETE CASCADE,
     FOREIGN KEY (comment_id) REFERENCES comments(id) ON DELETE CASCADE,
-    CHECK (food_id IS NOT NULL OR comment_id IS NOT NULL)
+    CONSTRAINT reports_target_chk CHECK (food_id IS NOT NULL OR comment_id IS NOT NULL)
 ) COMMENT='举报表';
 """
 
+
+def create_database():
+    """创建数据库（若不存在）"""
+    conn = pymysql.connect(**_CFG_NO_DB)
+    cursor = conn.cursor()
+    try:
+        cursor.execute(CREATE_DATABASE_SQL.format(db=DB_CONFIG['database']))
+        print(f"✅ 数据库 {DB_CONFIG['database']} 已就绪")
+    finally:
+        cursor.close()
+        conn.close()
+
+
 def create_tables():
+    create_database()
+
     conn = pymysql.connect(**DB_CONFIG)
     cursor = conn.cursor()
     try:
@@ -140,14 +184,18 @@ def create_tables():
             if sql.strip():
                 cursor.execute(sql.strip())
         conn.commit()
-        print("✅ 所有表创建成功！")
+
+        cursor.execute("SHOW TABLES")
+        tables = [row[0] for row in cursor.fetchall()]
+        print(f"✅ 建表完成，共 {len(tables)} 张表：{', '.join(sorted(tables))}")
     except Exception as e:
         print(f"❌ 建表失败: {e}")
         conn.rollback()
+        raise
     finally:
         cursor.close()
         conn.close()
 
+
 if __name__ == "__main__":
     create_tables()
-
