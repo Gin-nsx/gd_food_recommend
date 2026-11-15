@@ -19,6 +19,11 @@
             flex-wrap: wrap;
             gap: 10px;
         }
+        .navbar .nav-left {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
         .navbar .logo {
             color: white;
             font-size: 24px;
@@ -27,6 +32,29 @@
             letter-spacing: 2px;
         }
         .navbar .logo:hover { color: #fde8e8; }
+
+        /* 返回按钮：导航条内、logo 左侧，仅内页显示 */
+        .navbar .nav-back {
+            width: 34px;
+            height: 34px;
+            flex: 0 0 auto;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.16);
+            border: 1px solid rgba(255,255,255,0.32);
+            color: #fff;
+            font-size: 17px;
+            line-height: 1;
+            text-decoration: none;
+            transition: all 0.25s ease;
+        }
+        .navbar .nav-back:hover {
+            background: rgba(255,255,255,0.32);
+            border-color: #fff;
+            transform: translateX(-3px);
+        }
         .navbar .nav-links {
             display: flex;
             align-items: center;
@@ -67,34 +95,6 @@
             padding: 30px 20px;
         }
 
-        /* ===== 返回按钮（内容区左上角，除首页外全站统一） ===== */
-        .page-back {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 18px 20px 0;
-        }
-        .back-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 14px;
-            color: #7f8c8d;
-            background: #fff;
-            border: 1px solid #ece7e2;
-            padding: 7px 16px 7px 12px;
-            border-radius: 20px;
-            text-decoration: none;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-            transition: all 0.25s ease;
-        }
-        .back-btn:hover {
-            color: #c0392b;
-            border-color: #f0c4bd;
-            background: #fdf7f5;
-            transform: translateX(-3px);
-        }
-        .back-btn .arrow { font-size: 15px; line-height: 1; }
-
         /* ===== Flash 消息 ===== */
         .flash-container {
             max-width: 1200px;
@@ -132,7 +132,12 @@
 
     <!-- ====== 导航栏 ====== -->
     <nav class="navbar">
-        <a href="{{ url_for('index') }}" class="logo">🍜 美食推荐</a>
+        <div class="nav-left">
+            {% if request.endpoint and request.endpoint != 'index' %}
+            <a href="{{ url_for('index') }}" class="nav-back" id="globalBack" title="返回上一页" aria-label="返回">←</a>
+            {% endif %}
+            <a href="{{ url_for('index') }}" class="logo">🍜 美食推荐</a>
+        </div>
         <div class="nav-links">
             <a href="{{ url_for('index') }}">首页</a>
             {% if session.get('user_id') %}
@@ -175,15 +180,6 @@
             {% endfor %}
         {% endwith %}
     </div>
-
-    <!-- ====== 返回按钮：除首页外，每个页面左上角都有 ====== -->
-    {% if request.endpoint and request.endpoint != 'index' %}
-    <div class="page-back">
-        <a href="{{ url_for('index') }}" class="back-btn" id="globalBack">
-            <span class="arrow">←</span> 返回
-        </a>
-    </div>
-    {% endif %}
 
     <!-- ====== 页面内容（子模板填充） ====== -->
     <div class="container">
