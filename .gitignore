@@ -35,3 +35,7 @@ static/uploads/
 # 数据库导出文件
 *.sql
 !schema.sql
+
+# 本地推送脚本与离线备份（仅本机使用）
+push-to-github.bat
+*.bundle
