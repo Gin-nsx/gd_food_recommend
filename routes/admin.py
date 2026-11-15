@@ -155,22 +155,59 @@ def reject_food(food_id):
 # ========== 用户管理 ==========
 @admin_bp.route('/admin/users')
 def manage_users():
-    """管理所有用户"""
+    """管理所有用户（支持关键词搜索、角色筛选、分页）"""
     if 'user_id' not in session or session.get('role') != 'admin':
         flash('❌ 无权操作')
         return redirect(url_for('auth.login_page'))
 
+    page = request.args.get('page', default=1, type=int)
+    if page < 1:
+        page = 1
+    per_page = 20
+
+    keyword = request.args.get('q', '').strip()
+    role = request.args.get('role', '').strip()
+
+    where = []
+    params = []
+    if keyword:
+        where.append("username LIKE %s")
+        params.append(f'%{keyword}%')
+    if role in ('user', 'merchant', 'admin'):
+        where.append("role = %s")
+        params.append(role)
+    where_sql = (' WHERE ' + ' AND '.join(where)) if where else ''
+
     conn = get_db_connection()
     cursor = conn.cursor(pymysql.cursors.DictCursor)
-    cursor.execute("""
-        SELECT id, username, role, is_active, merchant_status, created_at FROM users
-        ORDER BY created_at DESC
-    """)
+
+    cursor.execute(f"SELECT COUNT(*) AS total FROM users{where_sql}", params)
+    total = cursor.fetchone()['total']
+    total_pages = max(1, (total + per_page - 1) // per_page)
+    if page > total_pages:
+        page = total_pages
+
+    cursor.execute(
+        f"""SELECT id, username, role, is_active, merchant_status, created_at
+            FROM users{where_sql}
+            ORDER BY created_at DESC
+            LIMIT %s OFFSET %s""",
+        params + [per_page, (page - 1) * per_page]
+    )
     users = cursor.fetchall()
     cursor.close()
     conn.close()
 
-    return render_template('admin_users.html', users=users)
+    return render_template(
+        'admin_users.html',
+        users=users,
+        page=page,
+        total_pages=total_pages,
+        total=total,
+        keyword=keyword,
+        role=role,
+        per_page=per_page,
+    )
 
 
 # ========== 禁用/启用用户 ==========

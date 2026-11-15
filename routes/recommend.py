@@ -1,10 +1,17 @@
 # routes/recommend.py
 # 推荐系统路由：协同过滤 + 安全过滤 + 冷启动兜底
-from flask import Blueprint, render_template, session, redirect, url_for
+from flask import Blueprint, render_template, session, redirect, url_for, request
 from utils.db import get_db_connection
 from utils.cf import recommend_by_cf
 
 recommend_bp = Blueprint('recommend', __name__)
+
+METHOD_LABELS = {
+    'random': '随机推荐',
+    'popular': '热门推荐',
+    'user_cf': 'User-CF',
+    'item_cf': 'Item-CF',
+}
 
 
 def get_hot_foods(limit=10, exclude_ids=None):
@@ -224,6 +231,8 @@ def recommend_page():
 def evaluate_page():
     """
     推荐效果评估页面（管理员可访问）
+    展示 4 种算法（随机 / 热门 / User-CF / Item-CF）在 Top-N 推荐下的对比，
+    以及 User-CF 评分预测的 MAE / RMSE。
     """
     user_id = session.get('user_id')
     if not user_id:
@@ -233,13 +242,51 @@ def evaluate_page():
     if session.get('role') != 'admin':
         return "无权访问，仅管理员可查看推荐效果评估", 403
 
-    from utils.cf import evaluate_mae_rmse
+    from utils.cf import evaluate_all, evaluate_mae_rmse
 
-    # 评估不同 K 值下的效果
-    results = []
-    for k in [3, 5, 7, 10]:
-        result = evaluate_mae_rmse(test_ratio=0.2, k_neighbors=k)
-        result['k'] = k
-        results.append(result)
+    top_n = request.args.get('top_n', default=10, type=int)
+    if top_n not in (5, 10, 20):
+        top_n = 10
 
-    return render_template('recommend_eval.html', results=results)
+    k_list = [5, 10, 20, 40]
+    report = evaluate_all(top_n=top_n, k_list=k_list)
+
+    # 评分预测（回归）指标，用于和 Top-N 指标互相印证
+    mae_rows = []
+    for k in k_list:
+        row = evaluate_mae_rmse(test_ratio=0.2, k_neighbors=k)
+        row['k'] = k
+        mae_rows.append(row)
+
+    rows = report.get('rows', [])
+    best = max(rows, key=lambda r: r['precision']) if rows else None
+
+    # 给模板用的图表数据：按算法聚合
+    chart = {'k_list': k_list, 'user_cf': {}, 'item_cf': {}}
+    for m in ('user_cf', 'item_cf'):
+        for key in ('precision', 'ndcg'):
+            chart[m][key] = [
+                next((r[key] for r in rows if r['method'] == m and r['k'] == k), 0)
+                for k in k_list
+            ]
+    chart['bar'] = {
+        'names': [],
+        'precision': [],
+        'ndcg': [],
+    }
+    for r in rows:
+        if r['method'] in ('user_cf', 'item_cf') and r['k'] != k_list[0]:
+            continue
+        chart['bar']['names'].append(METHOD_LABELS.get(r['method'], r['method']))
+        chart['bar']['precision'].append(r['precision'])
+        chart['bar']['ndcg'].append(r['ndcg'])
+
+    return render_template(
+        'recommend_eval.html',
+        report=report,
+        rows=rows,
+        best=best,
+        mae_rows=mae_rows,
+        chart=chart,
+        top_n=top_n,
+    )

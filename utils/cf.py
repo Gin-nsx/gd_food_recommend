@@ -1,198 +1,437 @@
 # utils/cf.py
-# 基于用户的协同过滤算法（User-based CF）
+# 协同过滤推荐算法（User-CF / Item-CF）+ 基线模型 + 离线评估
+#
+# 相比初版的三点改进（也是论文实验要讲清楚的三个点）：
+#   1. 相似度改为「共现项去均值后的皮尔逊相关」，而不是直接对原始评分做余弦。
+#      原因：有人习惯全打 5 分、有人习惯全打 3 分，原始余弦会把「打分宽」误判为「口味像」。
+#   2. 引入偏置项 b_ui = μ + b_u + b_i，先解释「用户宽严」和「菜品本身好坏」，
+#      协同过滤只负责解释剩余的口味差异，预测值不再挤在同一档。
+#   3. 相似度按共现数量做收缩（n / (n + λ)），避免「只共同评过 1 道菜就判定高度相似」。
 import math
 import random
+
+import numpy as np
+
 from utils.db import get_db_connection
 
+# 评分 >= 4 视为「喜欢」，用于 Top-N 评估的相关性判定（学术界常用阈值）
+MIN_RELEVANT = 4
+# 相似度收缩系数：共同评分数越少，相似度被压得越低
+SHRINK_LAMBDA = 6.0
+# 偏置项 L2 正则强度
+BIAS_REG = 8.0
+BIAS_ITERS = 15
 
-def build_rating_matrix():
-    """
-    从 ratings 表读取数据，构建用户-美食评分矩阵
-    返回: {user_id: {food_id: rating}}
-    """
+METHOD_NAMES = {
+    'random': '随机推荐',
+    'popular': '热门推荐',
+    'user_cf': 'User-CF（用户协同）',
+    'item_cf': 'Item-CF（物品协同）',
+}
+
+
+# --------------------------------------------------------------------------
+# 数据读取
+# --------------------------------------------------------------------------
+
+def load_ratings():
+    """从数据库读取全部评分，返回 [(user_id, food_id, score), ...]"""
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute("SELECT user_id, food_id, score FROM ratings")
-    rows = cursor.fetchall()
+    rows = [(int(u), int(f), float(s)) for u, f, s in cursor.fetchall()]
     cursor.close()
     conn.close()
+    return rows
 
+
+def build_rating_matrix():
+    """兼容旧接口：返回 {user_id: {food_id: score}}"""
     matrix = {}
-    for user_id, food_id, score in rows:
-        matrix.setdefault(user_id, {})[food_id] = float(score)
+    for user_id, food_id, score in load_ratings():
+        matrix.setdefault(user_id, {})[food_id] = score
     return matrix
 
 
-def cosine_similarity(user_a, user_b):
+# --------------------------------------------------------------------------
+# 数据集：用稠密矩阵存一份，200 用户 × 74 菜品完全放得下
+# --------------------------------------------------------------------------
+
+class RatingDataset:
     """
-    计算两个用户之间的余弦相似度
+    评分矩阵容器。
+        R: n_users × n_items 的评分矩阵，未评分为 0
+        M: 同形状的布尔矩阵，True 表示有评分
+        B: 偏置模型预测 μ + b_u + b_i
     """
-    common_items = set(user_a.keys()) & set(user_b.keys())
-    if not common_items:
-        return 0.0
 
-    dot_product = sum(user_a[item] * user_b[item] for item in common_items)
-    norm_a = math.sqrt(sum(user_a[item] ** 2 for item in user_a))
-    norm_b = math.sqrt(sum(user_b[item] ** 2 for item in user_b))
+    def __init__(self, user_ids, item_ids, R, M):
+        self.user_ids = list(user_ids)
+        self.item_ids = list(item_ids)
+        self.user_index = {u: i for i, u in enumerate(self.user_ids)}
+        self.item_index = {f: i for i, f in enumerate(self.item_ids)}
+        self.R = R.astype(float)
+        self.M = M.astype(bool)
+        self.mu = float(self.R[self.M].mean()) if self.M.any() else 3.0
+        self.bu = np.zeros(len(self.user_ids))
+        self.bi = np.zeros(len(self.item_ids))
+        self._user_sim = None
+        self._item_sim = None
+        self._fit_bias()
 
-    if norm_a == 0 or norm_b == 0:
-        return 0.0
+    # ---- 构造 ----
+    @classmethod
+    def from_triples(cls, triples):
+        user_ids = sorted({u for u, _, _ in triples})
+        item_ids = sorted({f for _, f, _ in triples})
+        ui = {u: i for i, u in enumerate(user_ids)}
+        fi = {f: i for i, f in enumerate(item_ids)}
+        R = np.zeros((len(user_ids), len(item_ids)))
+        M = np.zeros((len(user_ids), len(item_ids)), dtype=bool)
+        for u, f, s in triples:
+            R[ui[u], fi[f]] = s
+            M[ui[u], fi[f]] = True
+        return cls(user_ids, item_ids, R, M)
 
-    return dot_product / (norm_a * norm_b)
+    def subset(self, mask):
+        """按掩码取训练子集（保持用户/菜品维度不变）"""
+        return RatingDataset(self.user_ids, self.item_ids,
+                             np.where(mask, self.R, 0.0), mask)
+
+    # ---- 偏置项 b_u、b_i：交替最小二乘，交替更新到收敛 ----
+    def _fit_bias(self):
+        n_u = self.M.sum(axis=1)
+        n_i = self.M.sum(axis=0)
+        for _ in range(BIAS_ITERS):
+            err = (self.R - self.mu - self.bu[:, None] - self.bi[None, :]) * self.M
+            self.bu = err.sum(axis=1) / (BIAS_REG + n_u)
+            err = (self.R - self.mu - self.bu[:, None] - self.bi[None, :]) * self.M
+            self.bi = err.sum(axis=0) / (BIAS_REG + n_i)
+
+    @property
+    def B(self):
+        """偏置模型的预测矩阵 μ + b_u + b_i"""
+        return self.mu + self.bu[:, None] + self.bi[None, :]
+
+    # ---- 相似度矩阵 ----
+    def _centered(self):
+        """(R - 用户均值) * M：只在共同评分项上参与相关计算"""
+        n_u = self.M.sum(axis=1, keepdims=True).astype(float)
+        user_mean = np.divide(self.R.sum(axis=1, keepdims=True), n_u,
+                              out=np.zeros_like(n_u), where=n_u > 0)
+        return (self.R - user_mean) * self.M
+
+    def user_similarity(self):
+        """用户-用户皮尔逊相关，按共现数收缩"""
+        if self._user_sim is not None:
+            return self._user_sim
+
+        C = self._centered()
+        dot = C @ C.T
+        norm = np.sqrt((C ** 2).sum(axis=1))
+        denom = np.outer(norm, norm)
+        common = self.M.astype(float) @ self.M.astype(float).T
+
+        sim = np.divide(dot, denom, out=np.zeros_like(dot), where=denom > 0)
+        sim *= common / (common + SHRINK_LAMBDA)      # 共现收缩
+        np.fill_diagonal(sim, 0.0)
+        self._user_sim = sim
+        return sim
+
+    def item_similarity(self):
+        """物品-物品皮尔逊相关（列方向），按共现数收缩"""
+        if self._item_sim is not None:
+            return self._item_sim
+
+        # 物品向量的中心化：减掉该物品的平均分
+        n_i = self.M.sum(axis=0, keepdims=True).astype(float)
+        item_mean = np.divide(self.R.sum(axis=0, keepdims=True), n_i,
+                              out=np.zeros_like(n_i), where=n_i > 0)
+        C = (self.R - item_mean) * self.M
+
+        dot = C.T @ C
+        norm = np.sqrt((C ** 2).sum(axis=0))
+        denom = np.outer(norm, norm)
+        common = self.M.astype(float).T @ self.M.astype(float)
+
+        sim = np.divide(dot, denom, out=np.zeros_like(dot), where=denom > 0)
+        sim *= common / (common + SHRINK_LAMBDA)
+        np.fill_diagonal(sim, 0.0)
+        self._item_sim = sim
+        return sim
+
+    @staticmethod
+    def _keep_top_k(sim, k):
+        """只保留每行相似度最高的 k 个，其余置 0"""
+        if k is None or k >= sim.shape[1]:
+            return sim
+        thresh = np.partition(sim, -k, axis=1)[:, -k][:, None]
+        return np.where(sim >= thresh, sim, 0.0)
+
+    # ---- 各算法的打分矩阵（返回 n_users × n_items）----
+    def score_popular(self):
+        """热门推荐：贝叶斯平均，避免只有 1 条 5 分就冲上第一"""
+        n = self.M.sum(axis=0)
+        positive = (self.R * (self.R >= MIN_RELEVANT)).sum(axis=0)
+        prior = 5.0
+        score = (positive + prior * 0.5) / (n + prior)
+        return np.tile(score, (len(self.user_ids), 1))
+
+    def score_random(self, rng_seed=42):
+        rng = np.random.default_rng(rng_seed)
+        return rng.random((len(self.user_ids), len(self.item_ids)))
+
+    def score_user_cf(self, k_neighbors=20):
+        """
+        预测 b_ui + 加权偏差：邻居对该菜的「超出自身偏置的部分」按相似度加权
+        """
+        sim = self._keep_top_k(self.user_similarity(), k_neighbors)
+        D = (self.R - self.B) * self.M            # 残差：评分减去偏置预测
+        num = sim @ D
+        den = np.abs(sim) @ self.M.astype(float)
+        return self.B + np.divide(num, den, out=np.zeros_like(num), where=den > 0)
+
+    def score_item_cf(self, k_neighbors=20):
+        """
+        预测 b_ui + 该用户已评分菜品的偏差，按物品相似度加权
+        """
+        sim = self._keep_top_k(self.item_similarity(), k_neighbors)
+        D = (self.R - self.B) * self.M
+        num = D @ sim
+        den = self.M.astype(float) @ np.abs(sim)
+        return self.B + np.divide(num, den, out=np.zeros_like(num), where=den > 0)
+
+    def score_matrix(self, method, k_neighbors=20):
+        if method == 'random':
+            return self.score_random()
+        if method == 'popular':
+            return self.score_popular()
+        if method == 'user_cf':
+            return self.score_user_cf(k_neighbors)
+        if method == 'item_cf':
+            return self.score_item_cf(k_neighbors)
+        raise ValueError(f'未知算法: {method}')
 
 
-def find_neighbors(target_user_id, matrix, k=5):
+# --------------------------------------------------------------------------
+# 训练/测试集划分：按用户分层留出法
+# --------------------------------------------------------------------------
+
+def split_per_user(R, M, test_ratio=0.2, seed=42, min_ratings=5):
     """
-    找到目标用户的 K 个最近邻
-    返回: [(neighbor_user_id, similarity), ...] 按相似度降序
+    每个用户留出 test_ratio 比例的评分作为测试集。
+    好处：每个用户都有测试样本，不会出现「某个用户全在测试集里」的情况。
     """
-    if target_user_id not in matrix:
-        return []
+    rng = np.random.default_rng(seed)
+    train_mask = M.copy()
+    test_pairs = []
 
-    target_ratings = matrix[target_user_id]
-    similarities = []
-
-    for other_user_id, other_ratings in matrix.items():
-        if other_user_id == target_user_id:
+    for u in range(R.shape[0]):
+        idx = np.flatnonzero(M[u])
+        if len(idx) < min_ratings:
             continue
-        sim = cosine_similarity(target_ratings, other_ratings)
-        if sim > 0:
-            similarities.append((other_user_id, sim))
+        n_test = max(1, int(round(len(idx) * test_ratio)))
+        chosen = rng.choice(idx, size=n_test, replace=False)
+        train_mask[u, chosen] = False
+        for i in chosen:
+            test_pairs.append((u, int(i), float(R[u, i])))
 
-    similarities.sort(key=lambda x: x[1], reverse=True)
-    return similarities[:k]
+    return train_mask, test_pairs
 
-
-def predict_ratings(target_user_id, neighbors, matrix, rated_food_ids=None):
-    """
-    基于近邻用户的评分，预测目标用户对未评分美食的评分
-    """
-    if not neighbors:
-        return {}
-
-    target_ratings = matrix.get(target_user_id, {})
-    rated_food_ids = set(target_ratings.keys()) if rated_food_ids is None else rated_food_ids
-
-    food_scores = {}
-    for neighbor_id, similarity in neighbors:
-        neighbor_ratings = matrix.get(neighbor_id, {})
-        for food_id, score in neighbor_ratings.items():
-            if food_id in rated_food_ids:
-                continue
-            food_scores.setdefault(food_id, []).append((similarity, score))
-
-    predictions = {}
-    for food_id, score_list in food_scores.items():
-        total_sim = sum(sim for sim, _ in score_list)
-        if total_sim == 0:
-            continue
-        weighted_sum = sum(sim * score for sim, score in score_list)
-        predictions[food_id] = weighted_sum / total_sim
-
-    return predictions
-
-
-def recommend_by_cf(target_user_id, top_n=10, k_neighbors=5):
-    """
-    协同过滤推荐主入口
-    返回: [(food_id, predicted_score), ...] 按预测评分降序
-    """
-    matrix = build_rating_matrix()
-
-    if target_user_id not in matrix or len(matrix[target_user_id]) < 2:
-        return []
-
-    neighbors = find_neighbors(target_user_id, matrix, k=k_neighbors)
-    if not neighbors:
-        return []
-
-    predictions = predict_ratings(target_user_id, neighbors, matrix)
-    sorted_predictions = sorted(predictions.items(), key=lambda x: x[1], reverse=True)
-    return sorted_predictions[:top_n]
-
-# ===== 以下为推荐效果评估模块 =====
 
 def split_train_test(matrix, test_ratio=0.2, seed=42):
-    """
-    留出法：将评分矩阵切分为训练集和测试集
-    返回: (train_matrix, test_set)
-    test_set: [(user_id, food_id, real_score), ...]
-    """
+    """兼容旧接口：全局随机留出法（返回 dict 形式）"""
     random.seed(seed)
-
-    all_ratings = []
-    for user_id, food_ratings in matrix.items():
-        for food_id, score in food_ratings.items():
-            all_ratings.append((user_id, food_id, score))
-
+    all_ratings = [(u, f, s) for u, fs in matrix.items() for f, s in fs.items()]
     random.shuffle(all_ratings)
 
     test_size = int(len(all_ratings) * test_ratio)
     test_set = all_ratings[:test_size]
-    train_set = all_ratings[test_size:]
-
     train_matrix = {}
-    for user_id, food_id, score in train_set:
+    for user_id, food_id, score in all_ratings[test_size:]:
         train_matrix.setdefault(user_id, {})[food_id] = score
-
     return train_matrix, test_set
 
 
-def evaluate_mae_rmse(test_ratio=0.2, k_neighbors=5, seed=42):
+# --------------------------------------------------------------------------
+# 在线推荐
+# --------------------------------------------------------------------------
+
+def recommend_by_cf(target_user_id, top_n=10, k_neighbors=5, method='user_cf'):
     """
-    评估协同过滤算法的 MAE 和 RMSE
-    返回: {'mae': ..., 'rmse': ..., 'count': ..., 'test_ratio': ..., 'k': ...}
+    推荐主入口，返回 [(food_id, predicted_score), ...] 按预测分降序。
+    target_user_id 不在矩阵中或评分太少时返回空列表，由调用方走热门兜底。
     """
-    full_matrix = build_rating_matrix()
+    triples = load_ratings()
+    if not triples:
+        return []
 
-    if len(full_matrix) < 2:
-        return {'mae': None, 'rmse': None, 'count': 0,
-                'test_ratio': test_ratio, 'k': k_neighbors,
-                'msg': '用户数量不足，无法评估'}
+    ds = RatingDataset.from_triples(triples)
+    if target_user_id not in ds.user_index:
+        return []
 
-    train_matrix, test_set = split_train_test(full_matrix, test_ratio, seed)
+    u = ds.user_index[target_user_id]
+    if ds.M[u].sum() < 2:
+        return []
 
-    if not test_set:
-        return {'mae': None, 'rmse': None, 'count': 0,
-                'test_ratio': test_ratio, 'k': k_neighbors,
-                'msg': '测试集为空'}
+    scores = ds.score_matrix(method, k_neighbors)[u]
+    scores = np.where(ds.M[u], -np.inf, scores)          # 已评过的不再推荐
 
-    abs_error_sum = 0.0
-    sq_error_sum = 0.0
-    count = 0
+    order = np.argsort(-scores)[:top_n]
+    return [(ds.item_ids[i], round(float(np.clip(scores[i], 1.0, 5.0)), 2))
+            for i in order if np.isfinite(scores[i])]
 
-    # 对每个测试样本进行预测
-    for user_id, food_id, real_score in test_set:
-        if user_id not in train_matrix:
+
+# --------------------------------------------------------------------------
+# 离线评估
+# --------------------------------------------------------------------------
+
+def _ndcg_at_n(recommended, relevant, n):
+    """二值相关性的 NDCG@N"""
+    dcg = 0.0
+    for rank, item in enumerate(recommended[:n], start=1):
+        if item in relevant:
+            dcg += 1.0 / math.log2(rank + 1)
+    idcg = sum(1.0 / math.log2(r + 1) for r in range(1, min(len(relevant), n) + 1))
+    return dcg / idcg if idcg > 0 else 0.0
+
+
+def evaluate_topn(train_ds, test_pairs, method, k_neighbors=20,
+                  top_n=10, all_item_count=None):
+    """
+    Top-N 推荐效果评估。
+    指标：Precision@N、Recall@N、NDCG@N、覆盖率
+    对训练集中有评分、测试集中有「喜欢」样本的用户逐一出评。
+    """
+    scores_all = train_ds.score_matrix(method, k_neighbors)
+    fallback = train_ds.score_popular()
+
+    precisions, recalls, ndcgs = [], [], []
+    recommended_items = set()
+
+    # 把测试集按用户聚合
+    by_user = {}
+    for u, i, score in test_pairs:
+        by_user.setdefault(u, []).append((i, score))
+
+    for u, pairs in by_user.items():
+        relevant = {i for i, s in pairs if s >= MIN_RELEVANT}
+        if not relevant:
             continue
 
-        neighbors = find_neighbors(user_id, train_matrix, k=k_neighbors)
-        if not neighbors:
+        row = scores_all[u]
+        # 训练集里已评分的菜品不参与推荐
+        row = np.where(train_ds.M[u], -np.inf, row)
+
+        if np.all(~np.isfinite(row)):
+            row = fallback[u]
+
+        top_idx = np.argsort(-row)[:top_n]
+        top_idx = [i for i in top_idx if np.isfinite(row[i])]
+
+        hits = sum(1 for i in top_idx if i in relevant)
+        precisions.append(hits / top_n)
+        recalls.append(hits / len(relevant))
+        ndcgs.append(_ndcg_at_n(top_idx, relevant, top_n))
+        recommended_items.update(top_idx)
+
+    total_items = all_item_count or train_ds.R.shape[1]
+    results = {
+        'method': method,
+        'method_name': METHOD_NAMES.get(method, method),
+        'k': k_neighbors,
+        'top_n': top_n,
+        'precision': round(float(np.mean(precisions)), 4) if precisions else 0.0,
+        'recall': round(float(np.mean(recalls)), 4) if recalls else 0.0,
+        'ndcg': round(float(np.mean(ndcgs)), 4) if ndcgs else 0.0,
+        'coverage': round(len(recommended_items) / total_items, 4) if total_items else 0.0,
+        'user_count': len(precisions),
+    }
+    return results
+
+
+def safe_div(a, b):
+    return a / b if b else 0.0
+
+
+def evaluate_all(test_ratio=0.2, top_n=10, seed=42,
+                 k_list=(5, 10, 20, 40),
+                 methods=('random', 'popular', 'user_cf', 'item_cf')):
+    """
+    一次性跑完全部算法 × 全部 K 值，只读一次数据库、相似度矩阵只算一次。
+    评估页调用这个函数，避免逐个 K 值重复加载数据导致页面卡死。
+    """
+    triples = load_ratings()
+    if not triples:
+        return {'rows': [], 'msg': '暂无评分数据'}
+
+    full = RatingDataset.from_triples(triples)
+    train_mask, test_pairs = split_per_user(full.R, full.M, test_ratio, seed)
+    train_ds = full.subset(train_mask)
+
+    if not test_pairs:
+        return {'rows': [], 'msg': '评分数据太少，无法划分测试集'}
+
+    rows = []
+    for method in methods:
+        if method in ('popular', 'random'):
+            rows.append(evaluate_topn(train_ds, test_pairs, method, k_neighbors=None,
+                                      top_n=top_n, all_item_count=len(full.item_ids)))
             continue
-
-        predictions = predict_ratings(user_id, neighbors, train_matrix)
-
-        if food_id not in predictions:
-            continue
-
-        pred_score = predictions[food_id]
-        abs_error_sum += abs(pred_score - real_score)
-        sq_error_sum += (pred_score - real_score) ** 2
-        count += 1
-
-    if count == 0:
-        return {'mae': None, 'rmse': None, 'count': 0,
-                'test_ratio': test_ratio, 'k': k_neighbors,
-                'msg': '无法计算出有效预测（评分数据太少）'}
-
-    mae = abs_error_sum / count
-    rmse = math.sqrt(sq_error_sum / count)
+        for k in k_list:
+            rows.append(evaluate_topn(train_ds, test_pairs, method, k_neighbors=k,
+                                      top_n=top_n, all_item_count=len(full.item_ids)))
 
     return {
-        'mae': round(mae, 4),
-        'rmse': round(rmse, 4),
-        'count': count,
+        'rows': rows,
+        'msg': None,
+        'user_total': len(full.user_ids),
+        'item_total': len(full.item_ids),
+        'rating_total': len(triples),
+        'test_total': len(test_pairs),
+        'train_total': len(triples) - len(test_pairs),
+        'density': round(len(triples) / (len(full.user_ids) * len(full.item_ids)) * 100, 1),
+        'k_list': list(k_list),
+    }
+
+
+def evaluate_mae_rmse(test_ratio=0.2, k_neighbors=5, seed=42, method='user_cf'):
+    """
+    评分预测准确度：MAE / RMSE（兼容旧接口，供论文的「评分回归」实验使用）
+    """
+    triples = load_ratings()
+    if len(triples) < 10:
+        return {'mae': None, 'rmse': None, 'count': 0,
+                'test_ratio': test_ratio, 'k': k_neighbors,
+                'msg': '评分数据太少，无法评估'}
+
+    full = RatingDataset.from_triples(triples)
+    train_mask, test_pairs = split_per_user(full.R, full.M, test_ratio, seed)
+    train_ds = full.subset(train_mask)
+
+    if not test_pairs:
+        return {'mae': None, 'rmse': None, 'count': 0,
+                'test_ratio': test_ratio, 'k': k_neighbors, 'msg': '测试集为空'}
+
+    scores = train_ds.score_matrix(method, k_neighbors)
+
+    errors = []
+    for u, i, real in test_pairs:
+        pred = scores[u, i]
+        if not np.isfinite(pred):
+            continue
+        errors.append(float(np.clip(pred, 1.0, 5.0)) - real)
+
+    if not errors:
+        return {'mae': None, 'rmse': None, 'count': 0,
+                'test_ratio': test_ratio, 'k': k_neighbors, 'msg': '无有效预测'}
+
+    err = np.array(errors)
+    return {
+        'mae': round(float(np.abs(err).mean()), 4),
+        'rmse': round(float(np.sqrt((err ** 2).mean())), 4),
+        'count': len(errors),
         'test_ratio': test_ratio,
         'k': k_neighbors,
-        'total_ratings': len(test_set),
+        'method': method,
     }
