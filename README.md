@@ -12,10 +12,9 @@
 |------|------|
 | 后端框架 | Python 3.11 + Flask 3.1 |
 | 数据库 | MySQL 8.0 + PyMySQL |
-| 推荐算法 | User-based 协同过滤（余弦相似度 + KNN） |
-| 密码加密 | Werkzeug（`generate_password_hash`） |
+| 推荐算法 | User-based 协同过滤（余弦相似度 + KNN，Python 标准库实现） |
+| 密码加密 | Werkzeug（`generate_password_hash`，scrypt） |
 | 可视化 | ECharts 5.4（本地引入） |
-| 机器学习 | scikit-learn / numpy / pandas |
 
 ## 核心功能
 
@@ -46,9 +45,9 @@
 ```
 gd_food_recommend/
 ├── app.py                  # Flask 主入口
-├── config.py               # 数据库配置（支持环境变量）
+├── config.py               # 数据库 + 安全配置（支持环境变量）
 ├── requirements.txt        # 依赖清单
-├── create_tables.py        # 建表脚本（10 张表）
+├── create_tables.py        # 建库建表脚本（10 张表，自动创建数据库）
 ├── insert_data.py          # 测试数据脚本
 ├── models/
 │   └── user.py             # 用户数据操作
@@ -80,7 +79,7 @@ gd_food_recommend/
 | `comments` | 评论 |
 | `histories` | 浏览记录 |
 | `blacklists` | 黑名单（支持美食 / 商家双维度） |
-| `reports` | 举报（美食 / 评论） |
+| `reports` | 举报（美食 / 评论，含管理员处理说明 `handle_note`） |
 
 ## 运行方式
 
@@ -93,10 +92,10 @@ pip install -r requirements.txt
 
 ### 2. 初始化数据库
 
-在 MySQL 中创建数据库 `food_db`，然后执行：
+不需要手动建库，`create_tables.py` 会自动创建 `food_db` 与 10 张表：
 
 ```bash
-python create_tables.py   # 建表
+python create_tables.py   # 建库建表（可重复执行，不会清空数据）
 python insert_data.py     # 插入测试数据
 ```
 
@@ -111,7 +110,16 @@ python insert_data.py     # 插入测试数据
 | 密码 | `DB_PASSWORD` | `123456` |
 | 数据库名 | `DB_NAME` | `food_db` |
 
-### 4. 启动
+### 4. 安全相关配置（可选）
+
+| 配置项 | 环境变量 | 说明 |
+|--------|----------|------|
+| 会话密钥 | `SECRET_KEY` | 未设置时自动生成并保存到项目根目录 `.flask_secret`（已 gitignore），不要提交到仓库 |
+| 调试模式 | `FLASK_DEBUG` | 默认 `0`（关闭）。本地调试可设 `FLASK_DEBUG=1`，**部署时必须保持关闭** |
+| 监听地址 | `FLASK_HOST` | 默认 `127.0.0.1` |
+| 端口 | `FLASK_PORT` | 默认 `5000` |
+
+### 5. 启动
 
 ```bash
 python app.py
