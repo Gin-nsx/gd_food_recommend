@@ -1,6 +1,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash, jsonify
 import pymysql
 from utils.db import get_db_connection
+from utils.cf import similar_foods
 
 food_bp = Blueprint('food', __name__)
 
@@ -103,12 +104,31 @@ def food_detail(food_id):
     """, (food_id,))
     comments = cursor.fetchall()
 
+    # 相似口味推荐（Item-CF）：和这道菜被同一批人一起打高分的菜
+    similar_list = []
+    sim_pairs = similar_foods(food_id, top_n=4)
+    if sim_pairs:
+        sim_map = {s['food_id']: s['sim'] for s in sim_pairs}
+        placeholders = ','.join(['%s'] * len(sim_pairs))
+        cursor.execute(f"""
+            SELECT id, name, avg_rating, price
+            FROM foods
+            WHERE id IN ({placeholders}) AND status = 'approved'
+        """, list(sim_map.keys()))
+        rows = {row['id']: row for row in cursor.fetchall()}
+        for s in sim_pairs:
+            row = rows.get(s['food_id'])
+            if row:
+                row['sim'] = s['sim']
+                similar_list.append(row)
+
     cursor.close()
     conn.close()
 
     return render_template('food_detail.html',
                            food=food,
                            other_foods=other_foods,
+                           similar_foods=similar_list,
                            rating_stats=rating_stats,
                            user_rating=user_rating,
                            user_liked=user_liked,

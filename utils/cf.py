@@ -283,6 +283,127 @@ def recommend_by_cf(target_user_id, top_n=10, k_neighbors=5, method='user_cf'):
 
 
 # --------------------------------------------------------------------------
+# 推荐解释：告诉用户「为什么给你推这道菜」
+# --------------------------------------------------------------------------
+#
+# 思路：排名的分数没法直接给用户看，但 Item-CF 的分数本来就是
+#   b_ui + Σ(相似菜品偏差 × 相似度) / Σ|相似度|
+# 也就是说「哪几道你评过分的菜把它顶上来」是可以逐项追溯的。
+# 这里把每个候选菜最相似的 2 道已评分菜品拎出来，作为推荐理由；
+# 同时附上平台口碑（评分人数 / 平均分）作为补充理由。
+
+# 相似度低于这个值就不作为理由展示，避免「因为一道毫不相干的菜」这种废话
+MIN_REASON_SIM = 0.05
+
+
+def _item_stats(ds):
+    """每道菜的评分人数与平均分"""
+    n = ds.M.sum(axis=0).astype(float)
+    avg = np.divide(ds.R.sum(axis=0), n, out=np.zeros_like(n), where=n > 0)
+    return n, avg
+
+
+def explain_candidates(target_user_id, top_n=20, k_neighbors=5,
+                       method='item_cf', like_threshold=4.0, max_reasons=2):
+    """
+    带解释的推荐列表。
+
+    返回 (items, profile)：
+        items: [{
+            'food_id', 'score', 'rating_count', 'avg',
+            'reasons': [{'type': 'liked'|'neutral', 'ref_food_id',
+                         'ref_score', 'sim'}, ...]
+        }, ...]
+        profile: 用户口味画像 {'rated', 'liked', 'avg', 'top_refs'}，冷启动时为空 dict
+
+    菜名由调用方（路由）补上，算法层不依赖数据库里的菜名。
+    """
+    triples = load_ratings()
+    if not triples:
+        return [], {}
+
+    ds = RatingDataset.from_triples(triples)
+    if target_user_id not in ds.user_index:
+        return [], {}
+
+    u = ds.user_index[target_user_id]
+    n_rated = int(ds.M[u].sum())
+    if n_rated < 2:
+        return [], {'rated': n_rated}
+
+    scores = ds.score_matrix(method, k_neighbors)[u]
+    scores = np.where(ds.M[u], -np.inf, scores)      # 已评过的不再推荐
+    order = np.argsort(-scores)[:top_n]
+
+    sim = ds.item_similarity()
+    n_item, avg_item = _item_stats(ds)
+    rated_idx = np.flatnonzero(ds.M[u])
+    rated_scores = ds.R[u, rated_idx]
+
+    items = []
+    for i in order:
+        if not np.isfinite(scores[i]):
+            continue
+
+        # 该候选菜与本用户已评分菜品的相似度，只保留正相关；
+        # 排序时优先「喜欢过的菜」（4 分以上），同类里再按相似度排
+        pairs = [(float(sim[i, j]), int(rated_idx[j]), float(rated_scores[j]))
+                 for j in range(len(rated_idx)) if sim[i, j] > MIN_REASON_SIM]
+        pairs.sort(key=lambda x: (x[2] >= like_threshold, x[0]), reverse=True)
+
+        reasons = [{
+            'type': 'liked' if fs >= like_threshold else 'neutral',
+            'ref_food_id': fid,
+            'ref_score': round(fs, 1),
+            'sim': round(sim_val, 2),
+        } for sim_val, fid, fs in pairs[:max_reasons]]
+
+        items.append({
+            'food_id': ds.item_ids[i],
+            'score': round(float(np.clip(scores[i], 1.0, 5.0)), 2),
+            'rating_count': int(n_item[i]),
+            'avg': round(float(avg_item[i]), 2) if n_item[i] else 0.0,
+            'reasons': reasons,
+        })
+
+    profile = {
+        'rated': n_rated,
+        'liked': int((rated_scores >= like_threshold).sum()),
+        'avg': round(float(rated_scores.mean()), 2),
+        'method': method,
+        'k': k_neighbors,
+    }
+    return items, profile
+
+
+def similar_foods(food_id, top_n=4, min_sim=0.01):
+    """
+    相似菜品（Item-CF 视角）：和这道菜被同一批人一起打高分的菜。
+    详情页「相似口味推荐」用它，返回 [{'food_id', 'sim'}, ...]
+    """
+    triples = load_ratings()
+    if not triples:
+        return []
+
+    ds = RatingDataset.from_triples(triples)
+    if food_id not in ds.item_index:
+        return []
+
+    i = ds.item_index[food_id]
+    sim = ds.item_similarity()[i]
+    order = np.argsort(-sim)[:top_n + 1]
+
+    out = []
+    for j in order:
+        if j == i or sim[j] < min_sim:
+            continue
+        out.append({'food_id': ds.item_ids[j], 'sim': round(float(sim[j]), 2)})
+        if len(out) >= top_n:
+            break
+    return out
+
+
+# --------------------------------------------------------------------------
 # 离线评估
 # --------------------------------------------------------------------------
 

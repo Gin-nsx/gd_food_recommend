@@ -1,8 +1,8 @@
 # routes/recommend.py
-# 推荐系统路由：协同过滤 + 安全过滤 + 冷启动兜底
+# 推荐系统路由：协同过滤 + 安全过滤 + 冷启动兜底 + 推荐理由
 from flask import Blueprint, render_template, session, redirect, url_for, request
 from utils.db import get_db_connection
-from utils.cf import recommend_by_cf
+from utils.cf import explain_candidates
 
 recommend_bp = Blueprint('recommend', __name__)
 
@@ -194,6 +194,104 @@ def get_foods_by_ids(food_ids, taboo_tagged=None):
     return [food_map[fid] for fid in food_ids if fid in food_map]
 
 
+def get_food_names(food_ids):
+    """批量取菜名：推荐理由里要显示「你给『XX』打了几分」"""
+    if not food_ids:
+        return {}
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    placeholders = ','.join(['%s'] * len(food_ids))
+    cursor.execute(f"SELECT id, name FROM foods WHERE id IN ({placeholders})",
+                   list(food_ids))
+    names = {row[0]: row[1] for row in cursor.fetchall()}
+    cursor.close()
+    conn.close()
+    return names
+
+
+def get_taste_profile(user_id, limit=3):
+    """
+    口味画像：用户评了多少道菜、其中多少道算喜欢、高分集中在哪几个分类
+    """
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT COUNT(*) AS total,
+               SUM(CASE WHEN score >= 4 THEN 1 ELSE 0 END) AS liked,
+               ROUND(AVG(score), 2) AS avg_score
+        FROM ratings WHERE user_id = %s
+    """, (user_id,))
+    row = cursor.fetchone()
+    total = int(row[0] or 0)
+    liked = int(row[1] or 0)
+    avg_score = float(row[2]) if row[2] is not None else 0.0
+
+    cursor.execute("""
+        SELECT c.name, COUNT(*) AS cnt
+        FROM ratings r
+        JOIN foods f ON r.food_id = f.id
+        JOIN categories c ON f.category_id = c.id
+        WHERE r.user_id = %s AND r.score >= 4
+        GROUP BY c.name
+        ORDER BY cnt DESC
+        LIMIT %s
+    """, (user_id, limit))
+    top_categories = [{'name': r[0], 'count': int(r[1])} for r in cursor.fetchall()]
+
+    # 最爱（唯一一道/几道 5 分菜，用于文案）
+    cursor.execute("""
+        SELECT f.name FROM ratings r JOIN foods f ON r.food_id = f.id
+        WHERE r.user_id = %s AND r.score = 5
+        ORDER BY r.updated_at DESC, r.id DESC LIMIT 1
+    """, (user_id,))
+    top_row = cursor.fetchone()
+
+    cursor.close()
+    conn.close()
+
+    return {
+        'total': total,
+        'liked': liked,
+        'avg_score': avg_score,
+        'top_categories': top_categories,
+        'latest_favorite': top_row[0] if top_row else None,
+    }
+
+
+def attach_reasons(foods, items, names):
+    """
+    把 explain_candidates() 的结果贴到菜品字典上，理由里的菜名补全后做成
+    模板直接可渲染的中文句子；找不到菜名的理由（菜品已下架/删除）直接丢掉。
+    """
+    by_id = {it['food_id']: it for it in items}
+
+    for food in foods:
+        info = by_id.get(food['id'], {})
+        food['pred_score'] = info.get('score')
+        food['rating_count'] = info.get('rating_count', 0)
+
+        reasons = []
+        for r in info.get('reasons', []):
+            ref_name = names.get(r['ref_food_id'])
+            if not ref_name:
+                continue
+            if r['type'] == 'liked':
+                text = f"你给「{ref_name}」打了 {r['ref_score']:.0f} 分"
+            else:
+                text = f"和你评过的「{ref_name}」口味接近"
+            reasons.append({'text': text, 'sim': r['sim'], 'type': r['type']})
+
+        food['reasons'] = reasons[:2]
+        # 平台口碑：评分人数够多才拿出来说，避免「3 个人评 5 分」这种噪声
+        if info.get('rating_count', 0) >= 5 and info.get('avg'):
+            food['support'] = f"{info['rating_count']} 人平均 {info['avg']:.1f} 分"
+        else:
+            food['support'] = None
+
+    return foods
+
+
 @recommend_bp.route('/recommend')
 def recommend_page():
     """
@@ -204,27 +302,37 @@ def recommend_page():
         return redirect(url_for('auth.login'))
 
     safety_info = get_user_safety_info(user_id)
+    taste = get_taste_profile(user_id)
 
-    cf_results = recommend_by_cf(user_id, top_n=20, k_neighbors=5)
+    # 带推荐理由的候选列表（内部仍是 Item-CF 打分，只是把「谁把它顶上来」一并返回）
+    items, cf_profile = explain_candidates(user_id, top_n=20, k_neighbors=5)
 
-    is_cold_start = False
-    if cf_results:
-        food_ids = [food_id for food_id, _ in cf_results]
+    is_cold_start = not items
+    if items:
+        food_ids = [it['food_id'] for it in items]
         safe_ids, taboo_tagged = apply_safety_filter(food_ids, safety_info)
         foods = get_foods_by_ids(safe_ids, taboo_tagged)
+
+        ref_ids = {r['ref_food_id'] for it in items for r in it['reasons']}
+        names = get_food_names(set(food_ids) | ref_ids)
+        foods = attach_reasons(foods, items, names)
     else:
-        is_cold_start = True
         foods = get_hot_foods(limit=12)
         hot_ids = [f['id'] for f in foods]
         safe_ids, taboo_tagged = apply_safety_filter(hot_ids, safety_info)
         foods = [f for f in foods if f['id'] in safe_ids]
         for f in foods:
             f['is_taboo'] = f['id'] in taboo_tagged
+            f['reasons'] = []
+            f['pred_score'] = None
+            f['support'] = (f"{f['rating_count']} 人评过" if f.get('rating_count') else None)
 
     return render_template(
         'recommend.html',
         foods=foods,
-        is_cold_start=is_cold_start
+        is_cold_start=is_cold_start,
+        taste=taste,
+        cf_profile=cf_profile,
     )
 
 @recommend_bp.route('/recommend/evaluate')

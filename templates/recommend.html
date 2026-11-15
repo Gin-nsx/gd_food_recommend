@@ -116,6 +116,75 @@
         padding: 60px 0;
         grid-column: 1 / -1;
     }
+    /* ===== 口味画像条 ===== */
+    .taste-bar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px 24px;
+        align-items: center;
+        background: #fff;
+        border: 1px solid #f0e6e0;
+        border-radius: 14px;
+        padding: 14px 20px;
+        margin-bottom: 22px;
+        font-size: 14px;
+        color: #7f8c8d;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+    }
+    .taste-bar b { color: #c0392b; font-size: 15px; }
+    .taste-bar .taste-tag {
+        background: #fdf3f0;
+        color: #c0392b;
+        border-radius: 20px;
+        padding: 3px 12px;
+        font-size: 13px;
+    }
+    /* ===== 卡片上的预测分徽标 ===== */
+    .food-card .pred-badge {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: rgba(192,57,43,0.92);
+        color: #fff;
+        font-size: 12px;
+        font-weight: 700;
+        padding: 3px 10px;
+        border-radius: 20px;
+        letter-spacing: 0.5px;
+        box-shadow: 0 2px 8px rgba(192,57,43,0.3);
+    }
+    /* ===== 推荐理由 ===== */
+    .food-card .why {
+        margin-top: 10px;
+        padding-top: 10px;
+        border-top: 1px dashed #f0ece8;
+    }
+    .food-card .why-title {
+        font-size: 12px;
+        color: #b0a49b;
+        margin-bottom: 6px;
+    }
+    .food-card .why-chip {
+        display: block;
+        font-size: 12.5px;
+        line-height: 1.5;
+        color: #8a6d3b;
+        background: #fdf8ee;
+        border-left: 3px solid #f0c674;
+        border-radius: 4px;
+        padding: 4px 8px;
+        margin-bottom: 5px;
+    }
+    .food-card .why-chip .sim {
+        color: #b9a894;
+        font-size: 11px;
+        margin-left: 4px;
+    }
+    .food-card .why-chip.support {
+        color: #2c7a5a;
+        background: #eefaf3;
+        border-left-color: #6ec29a;
+    }
 </style>
 
 <h2 class="page-title">✨ 猜你喜欢</h2>
@@ -123,9 +192,20 @@
     {% if is_cold_start %}
         新用户热门推荐 —— 给美食评分后，将解锁专属个性化推荐
     {% else %}
-        基于与你口味相似的用户为你推荐
+        基于 Item-CF：先找出和你口味最接近的菜，再按相似度加权打分
     {% endif %}
 </p>
+
+{% if not is_cold_start and taste %}
+<div class="taste-bar">
+    <span>🎯 你已给 <b>{{ taste.total }}</b> 道菜评分</span>
+    <span>❤️ 其中 <b>{{ taste.liked }}</b> 道打了 4 分以上</span>
+    {% if taste.avg_score %}<span>📊 平均打分 <b>{{ taste.avg_score }}</b></span>{% endif %}
+    {% for c in taste.top_categories %}
+    <span class="taste-tag">{{ c.name }} ×{{ c.count }}</span>
+    {% endfor %}
+</div>
+{% endif %}
 
 <div class="food-grid">
     {% if foods %}
@@ -137,6 +217,9 @@
                 <img src="{{ url_for('static', filename=food.image_url) }}" alt="{{ food.name }}" loading="lazy" onerror="this.remove()">
                 {% else %}
                 <span>{{ food.name }}</span>
+                {% endif %}
+                {% if food.pred_score %}
+                <span class="pred-badge">预测 {{ food.pred_score }} 分</span>
                 {% endif %}
             </div>
             <div class="food-name">{{ food.name }}</div>
@@ -153,6 +236,17 @@
             <div class="food-merchant">
                 🏠 店铺：<span>{{ food.merchant_name or '未知商家' }}</span>
             </div>
+            {% if food.reasons or food.support %}
+            <div class="why">
+                <div class="why-title">💡 为什么推荐它</div>
+                {% for r in food.reasons %}
+                <span class="why-chip">{{ r.text }}<span class="sim">相似度 {{ '%.2f'|format(r.sim) }}</span></span>
+                {% endfor %}
+                {% if food.support %}
+                <span class="why-chip support">🔥 {{ food.support }}</span>
+                {% endif %}
+            </div>
+            {% endif %}
             {% if food.is_taboo %}
             <div style="margin-top:8px;">
                 <span class="warn-taboo">🙅 含忌口</span>

@@ -67,6 +67,34 @@
             padding: 30px 20px;
         }
 
+        /* ===== 返回按钮（内容区左上角，除首页外全站统一） ===== */
+        .page-back {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 18px 20px 0;
+        }
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 14px;
+            color: #7f8c8d;
+            background: #fff;
+            border: 1px solid #ece7e2;
+            padding: 7px 16px 7px 12px;
+            border-radius: 20px;
+            text-decoration: none;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            transition: all 0.25s ease;
+        }
+        .back-btn:hover {
+            color: #c0392b;
+            border-color: #f0c4bd;
+            background: #fdf7f5;
+            transform: translateX(-3px);
+        }
+        .back-btn .arrow { font-size: 15px; line-height: 1; }
+
         /* ===== Flash 消息 ===== */
         .flash-container {
             max-width: 1200px;
@@ -148,10 +176,36 @@
         {% endwith %}
     </div>
 
+    <!-- ====== 返回按钮：除首页外，每个页面左上角都有 ====== -->
+    {% if request.endpoint and request.endpoint != 'index' %}
+    <div class="page-back">
+        <a href="{{ url_for('index') }}" class="back-btn" id="globalBack">
+            <span class="arrow">←</span> 返回
+        </a>
+    </div>
+    {% endif %}
+
     <!-- ====== 页面内容（子模板填充） ====== -->
     <div class="container">
         {% block content %}{% endblock %}
     </div>
+
+    <script>
+        // 同站跳转过来的，优先用浏览器历史返回（保留筛选条件、滚动位置）；
+        // 直接打开链接/外链进来的，退回首页，避免点了没反应。
+        (function () {
+            var btn = document.getElementById('globalBack');
+            if (!btn) return;
+            var fromSameSite = document.referrer &&
+                document.referrer.indexOf(location.origin + '/') === 0;
+            btn.addEventListener('click', function (e) {
+                if (fromSameSite && history.length > 1) {
+                    e.preventDefault();
+                    history.back();
+                }
+            });
+        })();
+    </script>
 
 </body>
 </html>

@@ -17,6 +17,7 @@ from routes.merchant import merchant_bp
 from routes.recommend import recommend_bp
 from routes.user import user_bp
 from utils.db import get_db_connection
+from utils.search import expand_terms, expand_note
 
 app = Flask(__name__)
 # 密钥不写死在源码里，见 config.load_secret_key()
@@ -53,10 +54,18 @@ def index():
     """
     params = []
 
-    if keyword:
-        sql += " AND (f.name LIKE %s OR f.ingredients LIKE %s OR f.description LIKE %s)"
-        like_keyword = f"%{keyword}%"
-        params.extend([like_keyword, like_keyword, like_keyword])
+    # 关键词：先做同义词扩展（白斩鸡 → 白切鸡、皮皮虾 → 濑尿虾…），
+    # 再把每个词在「菜名 / 食材 / 描述」三个字段上做 LIKE，彼此 OR
+    terms = expand_terms(keyword)
+    if terms:
+        or_parts = []
+        for term in terms:
+            or_parts.append(
+                "(f.name LIKE %s OR f.ingredients LIKE %s OR f.description LIKE %s)"
+            )
+            like = f"%{term}%"
+            params.extend([like, like, like])
+        sql += " AND (" + " OR ".join(or_parts) + ")"
 
     if category_id and category_id.isdigit():
         sql += " AND f.category_id = %s"
@@ -91,6 +100,7 @@ def index():
                            foods=foods,
                            categories=categories,
                            keyword=keyword,
+                           synonyms=expand_note(keyword),
                            selected_category=category_id,
                            user_allergy=user_allergy,
                            user_taboo=user_taboo)

@@ -17,6 +17,27 @@
         gap: 12px;
         align-items: center;
     }
+    /* 同义词提示条 */
+    .synonym-note {
+        background: #fffdf6;
+        border: 1px solid #f3e7c8;
+        border-radius: 10px;
+        padding: 8px 16px;
+        margin: -6px 0 16px;
+        font-size: 13px;
+        color: #9a8a63;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 6px;
+    }
+    .synonym-note .syn-word {
+        background: #fdf3dc;
+        color: #a5762a;
+        border-radius: 12px;
+        padding: 1px 10px;
+        font-size: 12px;
+    }
     .search-section .search-input {
         flex: 1;
         min-width: 200px;
@@ -239,6 +260,24 @@
         padding: 60px 0;
         grid-column: 1 / -1;
     }
+    .no-data .suggest-words {
+        display: inline-flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        justify-content: center;
+        margin-top: 10px;
+    }
+    .no-data .suggest-words a {
+        display: inline-block;
+        background: #fdf3f0;
+        color: #c0392b;
+        border-radius: 16px;
+        padding: 3px 14px;
+        font-size: 13px;
+        text-decoration: none;
+        transition: 0.2s;
+    }
+    .no-data .suggest-words a:hover { background: #f8dfd9; }
 </style>
 
 <!-- ====== 搜索区域 ====== -->
@@ -266,6 +305,13 @@
 
     <span class="result-count">共 {{ foods|length }} 道美食</span>
 </div>
+
+{% if synonyms %}
+<div class="synonym-note">
+    🔎 「{{ keyword }}」已按同义词一起检索：
+    {% for s in synonyms %}<span class="syn-word">{{ s }}</span>{% endfor %}
+</div>
+{% endif %}
 
 <!-- ====== 过敏/忌口控制栏 ====== -->
 <div class="pref-controls">
@@ -337,7 +383,14 @@
     {% else %}
         <div class="no-data">
             😅 没有找到匹配的美食<br>
-            <span style="font-size:14px; color:#bbb;">试试其他关键词或分类</span>
+            <span style="font-size:14px; color:#bbb;">换个说法试试，比如：</span>
+            <span class="suggest-words">
+                <a href="{{ url_for('index', q='白切鸡') }}">白切鸡</a>
+                <a href="{{ url_for('index', q='肠粉') }}">肠粉</a>
+                <a href="{{ url_for('index', q='烧鹅') }}">烧鹅</a>
+                <a href="{{ url_for('index', q='双皮奶') }}">双皮奶</a>
+                <a href="{{ url_for('index', q='生蚝') }}">生蚝</a>
+            </span>
         </div>
     {% endif %}
 </div>

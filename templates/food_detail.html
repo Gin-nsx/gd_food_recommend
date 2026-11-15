@@ -167,6 +167,49 @@
     .other-item .oprice { color: #e74c3c; font-size: 14px; }
     .other-item .orating { color: #f39c12; font-size: 13px; }
 
+    /* 相似口味推荐：Item-CF 的「和谁一起被点」结果 */
+    .similar-foods {
+        margin-top: 20px;
+        background: white;
+        border-radius: 16px;
+        padding: 20px 30px;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    }
+    .similar-foods h3 { color: #2c3e50; margin-bottom: 6px; }
+    .similar-foods .sub {
+        color: #a99f97;
+        font-size: 13px;
+        margin-bottom: 16px;
+    }
+    .similar-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        gap: 16px;
+    }
+    .similar-item {
+        background: #fdfaf7;
+        border: 1px solid #f2eae3;
+        border-radius: 12px;
+        padding: 14px;
+        text-align: center;
+        cursor: pointer;
+        transition: 0.3s;
+    }
+    .similar-item:hover {
+        background: #fdf3f0;
+        border-color: #f0c4bd;
+        transform: translateY(-3px);
+    }
+    .similar-item .sname { font-weight: 600; color: #2c3e50; font-size: 15px; margin-bottom: 4px; }
+    .similar-item .srating { color: #f39c12; font-size: 13px; }
+    .similar-item .sprice { color: #e74c3c; font-size: 14px; }
+    .similar-item .ssim {
+        margin-top: 6px;
+        font-size: 12px;
+        color: #b0a49b;
+    }
+    .similar-item .ssim b { color: #c0392b; }
+
     .comment-section {
         margin-top: 20px;
     }
@@ -413,6 +456,24 @@
         {% endfor %}
     </div>
 </div>
+
+<!-- 相似口味推荐 -->
+{% if similar_foods %}
+<div class="similar-foods">
+    <h3>🔍 相似口味推荐</h3>
+    <p class="sub">按 Item-CF 相似度计算：和这道菜「被同一批人一起打高分」的其他菜</p>
+    <div class="similar-grid">
+        {% for sf in similar_foods %}
+        <div class="similar-item" onclick="location.href='{{ url_for('food.food_detail', food_id=sf.id) }}'">
+            <div class="sname">{{ sf.name }}</div>
+            <div class="srating">⭐ {{ sf.avg_rating or '暂无' }}</div>
+            <div class="sprice">¥{{ sf.price }}</div>
+            <div class="ssim">口味相似度 <b>{{ '%.2f'|format(sf.sim) }}</b></div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
 
 <!-- 举报美食弹窗 -->
 <div class="modal-overlay" id="reportFoodModal">
