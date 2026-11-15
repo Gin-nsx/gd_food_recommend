@@ -119,11 +119,8 @@ def login():
     if next_url:
         return redirect(next_url)
 
-    # 按角色进入对应的工作台，省得每次都要自己点
-    if user['role'] == 'admin':
-        return redirect(url_for('admin.admin_dashboard'))
-    if user['role'] == 'merchant':
-        return redirect(url_for('merchant.merchant_dashboard'))
+    # 不论什么角色（含管理员、商家），登录后先进首页，
+    # 想进后台/商家中心从导航栏点过去即可，避免"一登录就掉进后台"。
     return redirect(url_for('index'))
 
 

@@ -1,0 +1,278 @@
+{% extends "base.html" %}
+
+{% block title %}我的消息 - 广东美食推荐{% endblock %}
+
+{% block content %}
+
+<style>
+    .msg-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-bottom: 18px;
+    }
+    .msg-head h2 {
+        font-size: 26px;
+        color: #2c3e50;
+    }
+    .msg-head .sub {
+        color: #95a5a6;
+        font-size: 13px;
+        margin-top: 4px;
+    }
+    .msg-tabs {
+        display: flex;
+        gap: 8px;
+        background: #f0ece8;
+        padding: 4px;
+        border-radius: 10px;
+    }
+    .msg-tabs a {
+        padding: 7px 18px;
+        border-radius: 8px;
+        text-decoration: none;
+        color: #7f8c8d;
+        font-size: 14px;
+        transition: 0.2s;
+    }
+    .msg-tabs a.active {
+        background: #fff;
+        color: #c0392b;
+        font-weight: 600;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    }
+    .msg-tabs .dot {
+        display: inline-block;
+        min-width: 18px;
+        padding: 0 5px;
+        margin-left: 4px;
+        background: #c0392b;
+        color: #fff;
+        border-radius: 9px;
+        font-size: 11px;
+        line-height: 18px;
+        text-align: center;
+    }
+
+    .msg-card {
+        background: #fff;
+        border: 1px solid #f0e6e0;
+        border-radius: 14px;
+        padding: 16px 20px;
+        margin-bottom: 12px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+    }
+    .msg-card.unread {
+        border-left: 4px solid #c0392b;
+        background: #fffaf9;
+    }
+    .msg-top {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    .msg-avatar {
+        width: 38px;
+        height: 38px;
+        flex: 0 0 auto;
+        border-radius: 50%;
+        background: #fdeceb;
+        color: #c0392b;
+        font-weight: 700;
+        font-size: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .msg-who {
+        flex: 1;
+        min-width: 0;
+    }
+    .msg-who .name {
+        font-weight: 700;
+        color: #2c3e50;
+        font-size: 15px;
+    }
+    .role-tag {
+        font-size: 11px;
+        padding: 1px 8px;
+        border-radius: 10px;
+        margin-left: 6px;
+        background: #eef3f8;
+        color: #5b7c99;
+        vertical-align: 1px;
+    }
+    .role-tag.admin { background: #fdeceb; color: #c0392b; }
+    .role-tag.merchant { background: #fdf6e3; color: #b7950b; }
+    .msg-time {
+        color: #b0a49b;
+        font-size: 12px;
+        margin-top: 2px;
+    }
+    .rel-tag {
+        font-size: 11px;
+        color: #b0a49b;
+        background: #f8f4f0;
+        border-radius: 10px;
+        padding: 1px 8px;
+        margin-left: 6px;
+    }
+    .msg-body {
+        margin: 12px 0 0 50px;
+        color: #4a4a4a;
+        font-size: 14.5px;
+        line-height: 1.7;
+        white-space: pre-wrap;
+        word-break: break-word;
+    }
+    .msg-actions {
+        margin: 10px 0 0 50px;
+    }
+    .reply-toggle {
+        background: none;
+        border: 1px solid #e8ddd4;
+        color: #8a7c70;
+        border-radius: 8px;
+        padding: 5px 16px;
+        font-size: 13px;
+        cursor: pointer;
+        font-family: inherit;
+        transition: 0.2s;
+    }
+    .reply-toggle:hover {
+        border-color: #c0392b;
+        color: #c0392b;
+    }
+    .reply-form {
+        margin: 12px 0 0 50px;
+        display: none;
+    }
+    .reply-form.show { display: block; }
+    .reply-form textarea {
+        width: 100%;
+        min-height: 74px;
+        padding: 10px 14px;
+        border: 1px solid #e8ddd4;
+        border-radius: 10px;
+        font-family: inherit;
+        font-size: 14px;
+        resize: vertical;
+        outline: none;
+        box-sizing: border-box;
+    }
+    .reply-form textarea:focus { border-color: #c0392b; }
+    .reply-form .row {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        margin-top: 8px;
+    }
+    .reply-form button {
+        padding: 7px 20px;
+        border: none;
+        border-radius: 8px;
+        font-size: 14px;
+        cursor: pointer;
+        font-family: inherit;
+    }
+    .btn-send { background: #c0392b; color: #fff; }
+    .btn-send:hover { background: #a93226; }
+    .btn-cancel { background: #f0ece8; color: #7f8c8d; }
+
+    .empty-box {
+        background: #fff;
+        border-radius: 14px;
+        padding: 60px 20px;
+        text-align: center;
+        color: #b0a49b;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+    }
+    @media (max-width: 640px) {
+        .msg-body, .msg-actions, .reply-form { margin-left: 0; }
+    }
+</style>
+
+<div class="msg-head">
+    <div>
+        <h2>✉️ 我的消息</h2>
+        <p class="sub">管理员会通过这里与你就举报事项沟通</p>
+    </div>
+    <div class="msg-tabs">
+        <a href="{{ url_for('message.inbox', tab='in') }}" class="{{ 'active' if tab == 'in' }}">收到的{% if unread %}<span class="dot">{{ unread }}</span>{% endif %}</a>
+        <a href="{{ url_for('message.inbox', tab='out') }}" class="{{ 'active' if tab == 'out' }}">已发出</a>
+    </div>
+</div>
+
+{% if messages %}
+    {% for m in messages %}
+    <div class="msg-card{% if tab == 'in' and not m.is_read %} unread{% endif %}">
+        <div class="msg-top">
+            <div class="msg-avatar">{{ m.peer_name[0] }}</div>
+            <div class="msg-who">
+                <div>
+                    <span class="name">{{ m.peer_name }}</span>
+                    <span class="role-tag {{ m.peer_role }}">
+                        {% if m.peer_role == 'admin' %}管理员
+                        {% elif m.peer_role == 'merchant' %}商家
+                        {% else %}用户{% endif %}
+                    </span>
+                    {% if m.related_report_id %}
+                    <span class="rel-tag">举报 #{{ m.related_report_id }}</span>
+                    {% endif %}
+                </div>
+                <div class="msg-time">{{ m.created_at }}</div>
+            </div>
+        </div>
+        <p class="msg-body">{{ m.content }}</p>
+
+        {% if tab == 'in' %}
+        <div class="msg-actions">
+            <button type="button" class="reply-toggle"
+                    data-peer="{{ m.sender_id }}" data-name="{{ m.peer_name }}">回复</button>
+        </div>
+        <form class="reply-form" method="post" action="{{ url_for('message.send') }}">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="receiver_id" value="{{ m.sender_id }}">
+            <input type="hidden" name="next" value="{{ url_for('message.inbox', tab='in') }}">
+            <textarea name="content" maxlength="500" required
+                      placeholder="回复 {{ m.peer_name }}…"></textarea>
+            <div class="row">
+                <button type="button" class="btn-cancel">取消</button>
+                <button type="submit" class="btn-send">发送</button>
+            </div>
+        </form>
+        {% endif %}
+    </div>
+    {% endfor %}
+{% else %}
+    <div class="empty-box">
+        {% if tab == 'in' %}
+        📭 暂无新消息<br>
+        <span style="font-size:13px;">有举报需要核实时，管理员会在这里联系你</span>
+        {% else %}
+        📤 你还没有发出过消息
+        {% endif %}
+    </div>
+{% endif %}
+
+<script>
+    document.querySelectorAll('.reply-toggle').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var form = btn.closest('.msg-card').querySelector('.reply-form');
+            if (!form) return;
+            form.classList.toggle('show');
+            if (form.classList.contains('show')) {
+                form.querySelector('textarea').focus();
+            }
+        });
+    });
+    document.querySelectorAll('.reply-form .btn-cancel').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            btn.closest('.reply-form').classList.remove('show');
+        });
+    });
+</script>
+
+{% endblock %}

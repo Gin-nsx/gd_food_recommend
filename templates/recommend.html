@@ -165,7 +165,10 @@
         margin-bottom: 6px;
     }
     .food-card .why-chip {
-        display: block;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 6px;
         font-size: 12.5px;
         line-height: 1.5;
         color: #8a6d3b;
@@ -175,10 +178,19 @@
         padding: 4px 8px;
         margin-bottom: 5px;
     }
+    .food-card .why-chip .txt {
+        flex: 1;
+        min-width: 0;
+    }
     .food-card .why-chip .sim {
-        color: #b9a894;
+        flex: 0 0 auto;
         font-size: 11px;
-        margin-left: 4px;
+        color: #b08a4a;
+        background: #fff;
+        border: 1px solid #f2e2c4;
+        border-radius: 8px;
+        padding: 0 6px;
+        white-space: nowrap;
     }
     .food-card .why-chip.support {
         color: #2c7a5a;
@@ -192,7 +204,7 @@
     {% if is_cold_start %}
         新用户热门推荐 —— 给美食评分后，将解锁专属个性化推荐
     {% else %}
-        基于 Item-CF：先找出和你口味最接近的菜，再按相似度加权打分
+        根据你评过分的菜推断口味，挑出你最可能喜欢的其他菜（算法：Item-CF）
     {% endif %}
 </p>
 
@@ -240,7 +252,7 @@
             <div class="why">
                 <div class="why-title">💡 为什么推荐它</div>
                 {% for r in food.reasons %}
-                <span class="why-chip">{{ r.text }}<span class="sim">相似度 {{ '%.2f'|format(r.sim) }}</span></span>
+                <span class="why-chip"><span class="txt">{{ r.text }}</span><span class="sim">{{ r.short }}</span></span>
                 {% endfor %}
                 {% if food.support %}
                 <span class="why-chip support">🔥 {{ food.support }}</span>

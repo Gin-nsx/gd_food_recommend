@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash, jsonify
 import pymysql
 from utils.db import get_db_connection
-from utils.cf import similar_foods
+from utils.cf import similar_foods, similarity_label
 
 food_bp = Blueprint('food', __name__)
 
@@ -18,7 +18,11 @@ def _is_approved_food(cursor, food_id):
 # ========== 美食详情页 ==========
 @food_bp.route('/food/<int:food_id>')
 def food_detail(food_id):
-    """美食详情页"""
+    """美食详情页
+
+    普通用户只能看已上架的菜；管理员的举报核实、商家自己的"预览"需要看到
+    待审核/已下架/被驳回的菜，否则从举报管理点进来只会被弹回首页。
+    """
     conn = get_db_connection()
     cursor = conn.cursor(pymysql.cursors.DictCursor)
 
@@ -30,11 +34,19 @@ def food_detail(food_id):
         FROM foods f
         LEFT JOIN users u ON f.merchant_id = u.id
         LEFT JOIN categories c ON f.category_id = c.id
-        WHERE f.id = %s AND f.status = 'approved'
+        WHERE f.id = %s
     """, (food_id,))
     food = cursor.fetchone()
 
     if not food:
+        cursor.close()
+        conn.close()
+        flash('❌ 该美食不存在')
+        return redirect(url_for('index'))
+
+    is_admin = session.get('role') == 'admin'
+    is_owner = session.get('user_id') == food['merchant_id']
+    if food['status'] != 'approved' and not (is_admin or is_owner):
         cursor.close()
         conn.close()
         flash('❌ 该美食不存在或未通过审核')
@@ -129,6 +141,9 @@ def food_detail(food_id):
             row = rows.get(s['food_id'])
             if row:
                 row['sim'] = s['sim']
+                level = similarity_label(s['sim'])
+                row['sim_label'] = level['label']
+                row['sim_stars'] = level['stars']
                 similar_list.append(row)
 
     cursor.close()

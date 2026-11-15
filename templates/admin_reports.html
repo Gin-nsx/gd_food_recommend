@@ -18,9 +18,13 @@
         padding-bottom: 8px;
         border-bottom: 2px solid #f0ece8;
     }
+    .table-wrap {
+        overflow-x: auto;
+    }
     .report-table {
         width: 100%;
         border-collapse: collapse;
+        min-width: 760px;
     }
     .report-table th {
         text-align: left;
@@ -28,6 +32,7 @@
         background: #f8f4f0;
         font-weight: 600;
         font-size: 13px;
+        white-space: nowrap;
     }
     .report-table td {
         padding: 10px 12px;
@@ -35,6 +40,9 @@
         font-size: 14px;
         vertical-align: middle;
     }
+    .report-table td.nowrap { white-space: nowrap; }
+    .report-table td.nowrap.time { color: #7f8c8d; font-size: 12.5px; }
+    .report-table td.col-ops { width: 168px; }
     .status-pending { color: #f39c12; font-weight: 600; }
     .status-resolved { color: #27ae60; font-weight: 600; }
     .status-rejected { color: #95a5a6; font-weight: 600; }
@@ -82,6 +90,83 @@
         color: #7f8c8d;
         display: block;
         margin-top: 2px;
+    }
+    /* 美食当前状态（被下架/待审核时提醒管理员） */
+    .state-chip {
+        display: inline-block;
+        margin-left: 6px;
+        padding: 0 8px;
+        border-radius: 9px;
+        font-size: 11px;
+        line-height: 17px;
+        background: #f0ece8;
+        color: #8a7c70;
+        vertical-align: 1px;
+    }
+    .state-chip.offline { background: #fde8e8; color: #c0392b; }
+    .state-chip.rejected { background: #f4f1ee; color: #95a5a6; }
+    .state-chip.pending { background: #fef9e7; color: #b7950b; }
+    /* 联系方式：管理员找商家/用户核实情况 */
+    .obj-sub {
+        display: block;
+        font-size: 12px;
+        color: #95a5a6;
+        margin-top: 3px;
+    }
+    .ops { white-space: nowrap; }
+    .ops .op-row { margin-bottom: 6px; }
+    .ops .op-row:last-child { margin-bottom: 0; }
+    .chip-btn {
+        display: inline-block;
+        padding: 3px 10px;
+        margin: 2px 4px 2px 0;
+        border: 1px solid #dbe6f0;
+        background: #f4f8fc;
+        color: #4a7ba7;
+        border-radius: 8px;
+        font-size: 12px;
+        font-family: inherit;
+        cursor: pointer;
+        transition: 0.2s;
+    }
+    .chip-btn:hover {
+        background: #4a7ba7;
+        border-color: #4a7ba7;
+        color: #fff;
+    }
+    /* 联系当事人弹窗 */
+    .contact-who {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background: #f8f4f0;
+        border-radius: 9px;
+        padding: 9px 14px;
+        margin-bottom: 12px;
+        font-size: 14px;
+    }
+    .contact-who .k { color: #8a7c70; }
+    .contact-who .v { color: #2c3e50; font-weight: 700; }
+    .quick-tpl {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 10px;
+    }
+    .quick-tpl button {
+        background: #fff;
+        border: 1px dashed #e2d7cc;
+        color: #8a7c70;
+        border-radius: 8px;
+        padding: 5px 11px;
+        font-size: 12.5px;
+        font-family: inherit;
+        cursor: pointer;
+        transition: 0.2s;
+    }
+    .quick-tpl button:hover {
+        border-color: #c0392b;
+        color: #c0392b;
     }
 
     /* 自定义弹窗 */
@@ -166,12 +251,12 @@
 <div class="report-section">
     <h3>🍽️ 美食举报</h3>
     {% if food_reports %}
+        <div class="table-wrap">
         <table class="report-table">
             <thead>
                 <tr>
                     <th>举报人</th>
                     <th>被举报美食</th>
-                    <th>所属商家</th>
                     <th>举报原因</th>
                     <th>时间</th>
                     <th>状态</th>
@@ -185,23 +270,28 @@
                     <td>{{ r.reporter_name }}</td>
                     <td>
                         {% if r.food_id %}
-                            <a class="link-food" href="{{ url_for('food.food_detail', food_id=r.food_id) }}" target="_blank">
-                                {{ r.food_name }}
+                            <a class="link-food" href="{{ url_for('food.food_detail', food_id=r.food_id) }}"
+                               target="_blank" rel="noopener" title="在新标签页查看该美食">
+                                {{ r.food_name }} ↗
                             </a>
+                            {% if r.food_status and r.food_status != 'approved' %}
+                            <span class="state-chip {{ r.food_status }}">
+                                {% if r.food_status == 'offline' %}已下架
+                                {% elif r.food_status == 'pending' %}待审核
+                                {% else %}未通过{% endif %}
+                            </span>
+                            {% endif %}
                         {% else %}
                             {{ r.food_name or '（已删除）' }}
                         {% endif %}
-                    </td>
-                    <td>
-                        {% if r.merchant_name %}
-                            {{ r.merchant_name }}
-                        {% else %}
-                            <span style="color:#bbb;">—</span>
-                        {% endif %}
+                        <span class="obj-sub">
+                            🏠 {{ r.merchant_name or '商家信息缺失' }}
+                            {% if r.merchant_id %}· 商家 ID {{ r.merchant_id }}{% endif %}
+                        </span>
                     </td>
                     <td>{{ r.reason }}</td>
-                    <td>{{ r.created_at }}</td>
-                    <td>
+                    <td class="nowrap time">{{ r.created_at }}</td>
+                    <td class="nowrap">
                         {% if r.status == 'pending' %}<span class="status-pending">⏳ 待处理</span>
                         {% elif r.status == 'resolved' %}<span class="status-resolved">✅ 已处理</span>
                         {% else %}<span class="status-rejected">已驳回</span>{% endif %}
@@ -211,22 +301,39 @@
                             <span class="note-text">{{ r.handle_note }}</span>
                         {% else %}—{% endif %}
                     </td>
-                    <td>
+                    <td class="ops col-ops">
                         {% if r.status == 'pending' %}
-                        <button class="btn btn-success handle-btn" data-id="{{ r.id }}"
-                                data-action="resolved" data-kind="food"
-                                data-name="{{ r.food_name or '美食' }}"
-                                data-food-id="{{ r.food_id or '' }}">已处理</button>
-                        <button class="btn btn-secondary handle-btn" data-id="{{ r.id }}"
-                                data-action="rejected" data-kind="food"
-                                data-name="{{ r.food_name or '美食' }}"
-                                data-food-id="{{ r.food_id or '' }}">驳回</button>
-                        {% else %}—{% endif %}
+                        <div class="op-row">
+                            <button class="btn btn-success handle-btn" data-id="{{ r.id }}"
+                                    data-action="resolved" data-kind="food"
+                                    data-name="{{ r.food_name or '美食' }}"
+                                    data-food-id="{{ r.food_id or '' }}">已处理</button>
+                            <button class="btn btn-secondary handle-btn" data-id="{{ r.id }}"
+                                    data-action="rejected" data-kind="food"
+                                    data-name="{{ r.food_name or '美食' }}"
+                                    data-food-id="{{ r.food_id or '' }}">驳回</button>
+                        </div>
+                        {% endif %}
+                        <div class="op-row">
+                            {% if r.merchant_id %}
+                            <button type="button" class="chip-btn contact-btn"
+                                    data-receiver-id="{{ r.merchant_id }}"
+                                    data-receiver-name="{{ r.merchant_name or '商家' }}"
+                                    data-role="商家"
+                                    data-report-id="{{ r.id }}">💬 联系商家</button>
+                            {% endif %}
+                            <button type="button" class="chip-btn contact-btn"
+                                    data-receiver-id="{{ r.reporter_id }}"
+                                    data-receiver-name="{{ r.reporter_name }}"
+                                    data-role="举报人"
+                                    data-report-id="{{ r.id }}">💬 联系举报人</button>
+                        </div>
                     </td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
+        </div>
     {% else %}
         <p style="color:#999; padding:16px 0;">✅ 暂无美食举报</p>
     {% endif %}
@@ -235,12 +342,12 @@
 <div class="report-section">
     <h3>💬 评论举报</h3>
     {% if comment_reports %}
+        <div class="table-wrap">
         <table class="report-table">
             <thead>
                 <tr>
                     <th>举报人</th>
                     <th>被举报评论</th>
-                    <th>评论所属美食</th>
                     <th>举报原因</th>
                     <th>时间</th>
                     <th>状态</th>
@@ -258,19 +365,20 @@
                         {% else %}
                             <span style="color:#bbb;">（已删除）</span>
                         {% endif %}
-                    </td>
-                    <td>
+                        {% if r.comment_user_name %}
+                        <span class="obj-sub">✍️ 评论者：{{ r.comment_user_name }}</span>
+                        {% endif %}
                         {% if r.comment_food_id %}
-                            <a class="link-food" href="{{ url_for('food.food_detail', food_id=r.comment_food_id) }}" target="_blank">
-                                {{ r.comment_food_name }}
-                            </a>
-                        {% else %}
-                            <span style="color:#bbb;">—</span>
+                        <a class="comment-source" style="color:#3498db; text-decoration:none;"
+                           href="{{ url_for('food.food_detail', food_id=r.comment_food_id) }}#comment-{{ r.comment_id }}"
+                           target="_blank" rel="noopener" title="在新标签页定位到这条评论">
+                            🔗 查看原文（{{ r.comment_food_name or '所属美食' }}）↗
+                        </a>
                         {% endif %}
                     </td>
                     <td>{{ r.reason }}</td>
-                    <td>{{ r.created_at }}</td>
-                    <td>
+                    <td class="nowrap time">{{ r.created_at }}</td>
+                    <td class="nowrap">
                         {% if r.status == 'pending' %}<span class="status-pending">⏳ 待处理</span>
                         {% elif r.status == 'resolved' %}<span class="status-resolved">✅ 已处理</span>
                         {% else %}<span class="status-rejected">已驳回</span>{% endif %}
@@ -280,23 +388,80 @@
                             <span class="note-text">{{ r.handle_note }}</span>
                         {% else %}—{% endif %}
                     </td>
-                    <td>
+                    <td class="ops col-ops">
                         {% if r.status == 'pending' %}
-                        <button class="btn btn-success handle-btn" data-id="{{ r.id }}"
-                                data-action="resolved" data-kind="comment"
-                                data-name="评论">已处理</button>
-                        <button class="btn btn-secondary handle-btn" data-id="{{ r.id }}"
-                                data-action="rejected" data-kind="comment"
-                                data-name="评论">驳回</button>
-                        {% else %}—{% endif %}
+                        <div class="op-row">
+                            <button class="btn btn-success handle-btn" data-id="{{ r.id }}"
+                                    data-action="resolved" data-kind="comment"
+                                    data-name="评论">已处理</button>
+                            <button class="btn btn-secondary handle-btn" data-id="{{ r.id }}"
+                                    data-action="rejected" data-kind="comment"
+                                    data-name="评论">驳回</button>
+                        </div>
+                        {% endif %}
+                        <div class="op-row">
+                            {% if r.comment_user_id %}
+                            <button type="button" class="chip-btn contact-btn"
+                                    data-receiver-id="{{ r.comment_user_id }}"
+                                    data-receiver-name="{{ r.comment_user_name }}"
+                                    data-role="评论者"
+                                    data-report-id="{{ r.id }}">💬 评论者</button>
+                            {% endif %}
+                            {% if r.merchant_id %}
+                            <button type="button" class="chip-btn contact-btn"
+                                    data-receiver-id="{{ r.merchant_id }}"
+                                    data-receiver-name="{{ r.merchant_name or '商家' }}"
+                                    data-role="商家"
+                                    data-report-id="{{ r.id }}">💬 商家</button>
+                            {% endif %}
+                            <button type="button" class="chip-btn contact-btn"
+                                    data-receiver-id="{{ r.reporter_id }}"
+                                    data-receiver-name="{{ r.reporter_name }}"
+                                    data-role="举报人"
+                                    data-report-id="{{ r.id }}">💬 举报人</button>
+                        </div>
                     </td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
+        </div>
     {% else %}
         <p style="color:#999; padding:16px 0;">✅ 暂无评论举报</p>
     {% endif %}
+</div>
+
+<!-- 联系当事人弹窗（站内消息） -->
+<div class="modal-overlay" id="contactModal">
+    <div class="modal-box">
+        <h3>💬 联系<span id="contactTitle">商家</span></h3>
+        <p class="modal-tip">消息会发到对方的「我的消息」，对方可以在那里回复你，处理过程有据可查。</p>
+        <form method="POST" action="{{ url_for('message.send') }}">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="receiver_id" id="contactReceiver">
+            <input type="hidden" name="related_report_id" id="contactReport">
+            <input type="hidden" name="next" value="{{ url_for('admin.admin_reports') }}">
+
+            <div class="contact-who">
+                <span class="k">收件人</span>
+                <span class="v" id="contactName">—</span>
+            </div>
+
+            <div class="quick-tpl">
+                <button type="button" data-tpl="您好，有用户举报你店铺的这道美食存在信息不实/违规的情况，请尽快核实并提供说明，我们会在 24 小时内跟进处理。">核实提醒</button>
+                <button type="button" data-tpl="您好，你发表的一条评论被其他用户举报，请说明相关情况，我们正在核实。">评论核实</button>
+                <button type="button" data-tpl="您好，你提交的举报我们已经收到，正在核实处理，结果会在这里回复你。">受理通知</button>
+            </div>
+
+            <textarea name="content" id="contactContent" maxlength="500" required
+                      placeholder="写明需要对方配合的事项，最多 500 字…"></textarea>
+
+            <div class="modal-actions">
+                <button type="button" class="btn-cancel" onclick="closeContactModal()">取消</button>
+                <button type="submit" class="btn-confirm">发送消息</button>
+            </div>
+        </form>
+    </div>
 </div>
 
 <!-- 处理举报弹窗 -->
@@ -324,8 +489,7 @@
 </div>
 
 <script>
-    // 处理举报：可顺手把被举报的美食下架 / 把被举报的评论删掉，不用再单独操作一遍
-    var TARGET_OPTIONS = {
+    // 处理举报：可顺手把被举报的美食下架 / 把被举报的评论删掉，不用再单独操作一遍    var TARGET_OPTIONS = {
         food: [
             ['none', '仅记录处理结果'],
             ['offline_food', '同步下架被举报的美食']
@@ -385,6 +549,35 @@
 
     document.getElementById('handleModal').addEventListener('click', function (e) {
         if (e.target === this) closeHandleModal();
+    });
+
+    // ===== 联系当事人：打开站内消息弹窗 =====
+    function openContactModal(btn) {
+        var role = btn.getAttribute('data-role') || '';
+        document.getElementById('contactTitle').textContent = role;
+        document.getElementById('contactName').textContent =
+            btn.getAttribute('data-receiver-name') + (role ? '（' + role + '）' : '');
+        document.getElementById('contactReceiver').value = btn.getAttribute('data-receiver-id');
+        document.getElementById('contactReport').value = btn.getAttribute('data-report-id');
+        document.getElementById('contactContent').value = '';
+        document.getElementById('contactModal').classList.add('show');
+    }
+    function closeContactModal() {
+        document.getElementById('contactModal').classList.remove('show');
+    }
+
+    document.querySelectorAll('.contact-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () { openContactModal(btn); });
+    });
+
+    document.querySelectorAll('.quick-tpl button').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            document.getElementById('contactContent').value = btn.getAttribute('data-tpl');
+        });
+    });
+
+    document.getElementById('contactModal').addEventListener('click', function (e) {
+        if (e.target === this) closeContactModal();
     });
 </script>
 

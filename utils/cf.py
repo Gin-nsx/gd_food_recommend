@@ -295,6 +295,29 @@ def recommend_by_cf(target_user_id, top_n=10, k_neighbors=5, method='user_cf'):
 # 相似度低于这个值就不作为理由展示，避免「因为一道毫不相干的菜」这种废话
 MIN_REASON_SIM = 0.05
 
+# 展示层翻译：相似度是算法内部指标（收缩后的皮尔逊相关系数，0.3 已经算相当接近），
+# 直接把 0.42 摆给用户，用户只会觉得「怎么才零点几」，所以统一换成口头描述 + 星级。
+SIM_LEVELS = [
+    (0.30, '口味非常接近', 5, '非常接近'),
+    (0.20, '口味很接近', 4, '很接近'),
+    (0.12, '口味比较接近', 3, '比较接近'),
+    (0.06, '口味有点接近', 2, '有点接近'),
+]
+_SIM_DEFAULT = ('口味略有相似', 1, '略有相似')
+
+
+def similarity_label(sim):
+    """把 0~1 的相似度翻译成用户看得懂的说法
+
+    返回 {'label': 完整说法（详情页用）, 'short': 短标签（卡片角标用）, 'stars': 1~5}
+    """
+    if sim is None:
+        return {'label': _SIM_DEFAULT[0], 'short': _SIM_DEFAULT[2], 'stars': _SIM_DEFAULT[1]}
+    for threshold, label, stars, short in SIM_LEVELS:
+        if sim >= threshold:
+            return {'label': label, 'short': short, 'stars': stars}
+    return {'label': _SIM_DEFAULT[0], 'short': _SIM_DEFAULT[2], 'stars': _SIM_DEFAULT[1]}
+
 
 def _item_stats(ds):
     """每道菜的评分人数与平均分"""

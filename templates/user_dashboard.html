@@ -5,319 +5,508 @@
 {% block content %}
 
 <style>
-    .profile-container {
-        display: grid;
-        grid-template-columns: 220px 1fr;
-        gap: 30px;
-        max-width: 1200px;
-        margin: 0 auto;
+    /* ===== 个人信息横幅 ===== */
+    .profile-hero {
+        background: linear-gradient(120deg, #c0392b 0%, #a5342a 55%, #8e2b22 100%);
+        border-radius: 18px;
+        padding: 26px 32px;
+        display: flex;
+        align-items: center;
+        gap: 22px;
+        flex-wrap: wrap;
+        color: #fff;
+        box-shadow: 0 8px 24px rgba(192,57,43,0.22);
     }
-    .profile-sidebar {
-        background: white;
-        border-radius: 16px;
-        padding: 24px 16px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-        height: fit-content;
+    .profile-hero .avatar-lg {
+        width: 72px;
+        height: 72px;
+        flex: 0 0 auto;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.18);
+        border: 2px solid rgba(255,255,255,0.45);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 34px;
     }
-    .profile-sidebar .avatar {
-        text-align: center;
-        font-size: 48px;
-        margin-bottom: 8px;
-    }
-    .profile-sidebar .username {
-        text-align: center;
-        font-size: 18px;
+    .profile-hero .who { flex: 1; min-width: 180px; }
+    .profile-hero .who .name {
+        font-size: 24px;
         font-weight: 700;
-        color: #2c3e50;
+        letter-spacing: 0.5px;
     }
-    .profile-sidebar .role {
-        text-align: center;
+    .profile-hero .who .meta {
+        margin-top: 8px;
         font-size: 13px;
-        color: #7f8c8d;
-        margin-bottom: 16px;
+        color: rgba(255,255,255,0.82);
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px 16px;
+        align-items: center;
     }
-    .profile-sidebar .menu {
-        list-style: none;
-        padding: 0;
-        margin: 0;
-        border-top: 1px solid #eee;
-        padding-top: 12px;
+    .badge-role {
+        display: inline-block;
+        padding: 2px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+        background: rgba(255,255,255,0.22);
+        border: 1px solid rgba(255,255,255,0.35);
+        margin-left: 10px;
+        vertical-align: 3px;
     }
-    .profile-sidebar .menu li {
-        margin-bottom: 2px;
+    .badge-ok { color: #b8f0cf; }
+    .badge-off { color: #ffd0c9; }
+    .profile-hero .hero-actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
     }
-    .profile-sidebar .menu a {
+    .profile-hero .hero-actions a {
+        background: rgba(255,255,255,0.16);
+        border: 1px solid rgba(255,255,255,0.34);
+        color: #fff;
+        text-decoration: none;
+        padding: 8px 18px;
+        border-radius: 9px;
+        font-size: 14px;
+        transition: 0.25s;
+        white-space: nowrap;
+    }
+    .profile-hero .hero-actions a:hover {
+        background: #fff;
+        color: #c0392b;
+        border-color: #fff;
+    }
+
+    /* ===== 通用卡片 ===== */
+    .card {
+        background: #fff;
+        border-radius: 16px;
+        padding: 22px 28px;
+        margin-top: 18px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    .card-head {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 10px 14px;
-        border-radius: 8px;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+    .card-head h3 {
         color: #2c3e50;
-        text-decoration: none;
-        transition: 0.3s;
-        font-size: 14px;
-    }
-    .profile-sidebar .menu a:hover {
-        background: #f8f4f0;
-    }
-    .profile-sidebar .menu a.active {
-        background: #fde8e8;
-        color: #c0392b;
-    }
-    .profile-sidebar .menu a .badge {
-        background: #c0392b;
-        color: white;
-        padding: 1px 10px;
-        border-radius: 20px;
-        font-size: 12px;
-    }
-    .profile-sidebar .menu a .badge-gray {
-        background: #bdc3c7;
-        color: white;
-        padding: 1px 10px;
-        border-radius: 20px;
-        font-size: 12px;
-    }
-
-    .profile-content {
-        background: white;
-        border-radius: 16px;
-        padding: 28px 32px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-        min-height: 400px;
-    }
-    .profile-content h3 {
-        color: #2c3e50;
-        font-size: 20px;
-        margin-bottom: 16px;
-        padding-bottom: 12px;
-        border-bottom: 2px solid #f0ece8;
-    }
-
-    .info-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 12px 40px;
-    }
-    .info-grid .item {
+        font-size: 18px;
         display: flex;
-        justify-content: space-between;
-        padding: 8px 0;
-        border-bottom: 1px solid #f8f4f0;
+        align-items: center;
+        gap: 8px;
     }
-    .info-grid .item .label {
-        color: #7f8c8d;
-        font-size: 14px;
-    }
-    .info-grid .item .value {
-        color: #2c3e50;
-        font-weight: 500;
-        font-size: 14px;
+    .card-sub {
+        color: #a2968c;
+        font-size: 13px;
+        margin-top: 6px;
+        line-height: 1.6;
     }
 
-    .quick-stats {
+    /* ===== 我的动态：入口卡 ===== */
+    .entry-grid {
         display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 16px;
-        margin-top: 24px;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 14px;
+        margin-top: 16px;
     }
-    .quick-stats .stat {
-        background: #f8f4f0;
-        border-radius: 12px;
-        padding: 16px;
-        text-align: center;
+    .entry {
+        display: block;
+        text-decoration: none;
+        background: #fdfaf7;
+        border: 1px solid #f2eae3;
+        border-radius: 13px;
+        padding: 16px 18px;
+        transition: 0.25s;
     }
-    .quick-stats .stat .num {
+    .entry:hover {
+        background: #fdf3f0;
+        border-color: #eec3bb;
+        transform: translateY(-3px);
+        box-shadow: 0 8px 18px rgba(192,57,43,0.10);
+    }
+    .entry .ico { font-size: 22px; }
+    .entry .num {
         font-size: 26px;
         font-weight: 700;
         color: #c0392b;
+        line-height: 1.15;
+        margin-top: 4px;
     }
-    .quick-stats .stat .label {
+    .entry .lbl {
         font-size: 13px;
-        color: #7f8c8d;
-    }
-
-    .pref-section {
-        margin-top: 24px;
-        padding-top: 20px;
-        border-top: 2px solid #f0ece8;
-    }
-    .pref-section h4 {
-        color: #2c3e50;
-        font-size: 16px;
-        margin-bottom: 12px;
-    }
-    .pref-section .pref-row {
+        color: #8a7c70;
+        margin-top: 2px;
         display: flex;
-        gap: 30px;
-        flex-wrap: wrap;
         align-items: center;
+        justify-content: space-between;
     }
-    .pref-section .pref-row label {
+    .entry .lbl .arrow { color: #c9bdb2; font-size: 12px; }
+    .mini-stats {
+        margin-top: 14px;
+        padding-top: 14px;
+        border-top: 1px dashed #f0ece8;
+        color: #8a7c70;
+        font-size: 13.5px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px 22px;
+    }
+    .mini-stats b { color: #c0392b; font-size: 15px; }
+
+    /* ===== 饮食偏好 ===== */
+    .pref-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 18px;
+        margin-top: 16px;
+    }
+    .field label {
+        display: block;
+        font-size: 13.5px;
         font-weight: 600;
         color: #2c3e50;
-        font-size: 14px;
-        min-width: 70px;
+        margin-bottom: 7px;
     }
-    .pref-section .pref-row input {
-        flex: 1;
-        min-width: 200px;
-        padding: 8px 14px;
-        border: 1px solid #ddd;
-        border-radius: 8px;
+    .field input[type="text"] {
+        width: 100%;
+        padding: 10px 14px;
+        border: 1px solid #e8e0d8;
+        border-radius: 9px;
         font-size: 14px;
+        font-family: inherit;
+        outline: none;
+        transition: 0.2s;
+        box-sizing: border-box;
     }
-    .pref-section .pref-row .hint {
-        font-size: 12px;
-        color: #999;
-    }
-    .pref-section .btn-save {
-        padding: 8px 28px;
-        background: #c0392b;
-        color: white;
-        border: none;
-        border-radius: 8px;
-        font-size: 14px;
+    .field input[type="text"]:focus { border-color: #c0392b; }
+    .switch-row {
+        margin-top: 18px;
+        background: #fdfaf7;
+        border: 1px solid #f2eae3;
+        border-radius: 11px;
+        padding: 13px 16px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
         cursor: pointer;
-        transition: 0.3s;
     }
-    .pref-section .btn-save:hover {
-        background: #a93226;
+    .switch-row input[type="checkbox"] {
+        width: 17px;
+        height: 17px;
+        accent-color: #c0392b;
+        flex: 0 0 auto;
+        cursor: pointer;
     }
+    .switch-row .switch-text {
+        font-size: 14px;
+        color: #4a4a4a;
+    }
+    .switch-row .switch-text small {
+        display: block;
+        color: #a2968c;
+        font-size: 12.5px;
+        margin-top: 2px;
+    }
+    .pref-actions {
+        margin-top: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 14px;
+    }
+    .pref-message { font-size: 13.5px; }
 
-    @media (max-width: 768px) {
-        .profile-container {
-            grid-template-columns: 1fr;
-        }
-        .info-grid {
-            grid-template-columns: 1fr;
-        }
-        .quick-stats {
-            grid-template-columns: 1fr 1fr;
-        }
-        .pref-section .pref-row {
-            flex-direction: column;
-            align-items: stretch;
-        }
+    .btn-primary {
+        padding: 9px 26px;
+        background: #c0392b;
+        color: #fff;
+        border: none;
+        border-radius: 9px;
+        font-size: 14px;
+        font-family: inherit;
+        cursor: pointer;
+        transition: 0.25s;
+    }
+    .btn-primary:hover { background: #a93226; }
+    .btn-ghost {
+        padding: 7px 18px;
+        background: #fff;
+        color: #c0392b;
+        border: 1px solid #eac6bf;
+        border-radius: 9px;
+        font-size: 13.5px;
+        font-family: inherit;
+        cursor: pointer;
+        transition: 0.25s;
+    }
+    .btn-ghost:hover { background: #fdeceb; border-color: #c0392b; }
+
+    /* ===== 修改密码（折叠） ===== */
+    .pwd-form {
+        margin-top: 18px;
+        padding-top: 18px;
+        border-top: 1px dashed #f0ece8;
+        display: none;
+    }
+    .pwd-form.show { display: block; }
+    .pwd-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
+    }
+    .pwd-grid input {
+        width: 100%;
+        padding: 10px 14px;
+        border: 1px solid #e8e0d8;
+        border-radius: 9px;
+        font-size: 14px;
+        font-family: inherit;
+        outline: none;
+        box-sizing: border-box;
+        transition: 0.2s;
+    }
+    .pwd-grid input:focus { border-color: #c0392b; }
+    .pwd-form .pref-actions { margin-top: 16px; }
+
+    /* ===== 商家信息 ===== */
+    .shop-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 14px 30px;
+        margin-top: 14px;
+    }
+    .shop-grid .item {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 9px 0;
+        border-bottom: 1px solid #f8f4f0;
+        font-size: 14px;
+    }
+    .shop-grid .item .k { color: #8a7c70; }
+    .shop-grid .item .v { color: #2c3e50; font-weight: 500; text-align: right; }
+
+    @media (max-width: 860px) {
+        .pref-grid, .pwd-grid { grid-template-columns: 1fr; }
+        .profile-hero { padding: 22px; }
     }
 </style>
 
-<div class="profile-container">
-    <!-- 侧边栏 -->
-    <div class="profile-sidebar">
-        <div class="avatar">👤</div>
-        <div class="username">{{ user.username }}</div>
-        <div class="role">
-            {% if user.role == 'admin' %}管理员
-            {% elif user.role == 'merchant' %}商家
-            {% else %}普通用户{% endif %}
-        </div>
-        <ul class="menu">
-            <li><a href="{{ url_for('user.user_dashboard') }}" class="active">📋 我的信息</a></li>
-            <li><a href="{{ url_for('user.user_favorites') }}">❤️ 我的收藏 <span class="badge-gray">{{ favorite_count }}</span></a></li>
-            <li><a href="{{ url_for('food.history') }}">🕐 浏览记录 <span class="badge-gray">{{ history_count }}</span></a></li>
-            <li><a href="{{ url_for('user.user_blacklist') }}">🚫 黑名单 <span class="badge-gray">{{ blacklist_count }}</span></a></li>
-            <li><a href="{{ url_for('food.my_reports') }}">📮 我的举报</a></li>
-        </ul>
-    </div>
-
-    <!-- 主内容 -->
-    <div class="profile-content">
-        <h3>📋 个人信息</h3>
-        <div class="info-grid">
-            <div class="item"><span class="label">用户名</span><span class="value">{{ user.username }}</span></div>
-            <div class="item"><span class="label">角色</span><span class="value">
+<!-- ===== 个人信息横幅 ===== -->
+<div class="profile-hero">
+    <div class="avatar-lg">👤</div>
+    <div class="who">
+        <div class="name">
+            {{ user.username }}
+            <span class="badge-role">
                 {% if user.role == 'admin' %}管理员
                 {% elif user.role == 'merchant' %}商家
                 {% else %}普通用户{% endif %}
-            </span></div>
-            <div class="item"><span class="label">账号状态</span><span class="value">
-                {% if user.is_active %}✅ 启用{% else %}❌ 已禁用{% endif %}
-            </span></div>
-            <div class="item"><span class="label">注册时间</span><span class="value">{{ user.created_at }}</span></div>
+            </span>
+        </div>
+        <div class="meta">
+            <span>🗓 注册于 {{ user.created_at }}</span>
+            <span class="{% if user.is_active %}badge-ok{% else %}badge-off{% endif %}">
+                {% if user.is_active %}● 账号正常{% else %}● 已被禁用{% endif %}
+            </span>
             {% if user.role == 'merchant' %}
-            <div class="item"><span class="label">店铺地址</span><span class="value">{{ user.merchant_address or '未填写' }}</span></div>
-            <div class="item"><span class="label">商家状态</span><span class="value">
-                {% if user.merchant_status == 'approved' %}✅ 已通过
+            <span>
+                {% if user.merchant_status == 'approved' %}✓ 已通过审核
                 {% elif user.merchant_status == 'pending' %}⏳ 待审核
-                {% else %}❌ 已拒绝{% endif %}
-            </span></div>
+                {% else %}✕ 审核未通过{% endif %}
+            </span>
             {% endif %}
         </div>
-
-        <!-- 过敏/忌口设置 -->
-        <div class="pref-section">
-            <h4>⚠️ 饮食偏好设置</h4>
-            <form id="prefForm">
-                <div class="pref-row">
-                    <label>🚫 过敏</label>
-                    <input type="text" id="allergyInput" placeholder="如：花生、海鲜、芒果..." value="{{ user.allergy or '' }}">
-                    <span class="hint">过敏食物将完全过滤，不会推荐</span>
-                </div>
-                <div class="pref-row" style="margin-top: 12px;">
-                    <label>🙅 忌口</label>
-                    <input type="text" id="tabooInput" placeholder="如：香菜、肥肉、内脏..." value="{{ user.taboo or '' }}">
-                    <span class="hint">含忌口的美食会在首页标出提醒</span>
-                </div>
-                <div style="margin-top: 16px; text-align: right;">
-                    <button type="button" class="btn-save" id="savePrefBtn">保存设置</button>
-                </div>
-            </form>
-            <div id="prefMessage" style="margin-top: 8px; font-size: 14px;"></div>
-        </div>
-
-        <div class="quick-stats">
-            <div class="stat"><div class="num">{{ favorite_count }}</div><div class="label">❤️ 收藏</div></div>
-            <div class="stat"><div class="num">{{ history_count }}</div><div class="label">🕐 浏览记录</div></div>
-            <div class="stat"><div class="num">{{ rating_count }}</div><div class="label">⭐ 我的评分</div></div>
-            <div class="stat"><div class="num">{{ comment_count }}</div><div class="label">💬 我的评论</div></div>
-        </div>
-
-        <!-- 修改密码 -->
-        <div class="pref-section">
-            <h4>🔑 修改密码</h4>
-            <form method="post" action="{{ url_for('user.change_password') }}">
-                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-                <div class="pref-row">
-                    <label>原密码</label>
-                    <input type="password" name="old_password" placeholder="请输入当前密码" required autocomplete="current-password">
-                </div>
-                <div class="pref-row" style="margin-top: 12px;">
-                    <label>新密码</label>
-                    <input type="password" name="new_password" placeholder="至少 6 位" required minlength="6" autocomplete="new-password">
-                </div>
-                <div class="pref-row" style="margin-top: 12px;">
-                    <label>确认新密码</label>
-                    <input type="password" name="confirm_password" placeholder="再输入一次新密码" required minlength="6" autocomplete="new-password">
-                </div>
-                <div style="margin-top: 16px; text-align: right;">
-                    <button type="submit" class="btn-save">修改密码</button>
-                </div>
-            </form>
-        </div>
+    </div>
+    <div class="hero-actions">
+        <a href="{{ url_for('message.inbox') }}">
+            ✉️ 我的消息{% if unread_messages %}（{{ unread_messages }}）{% endif %}
+        </a>
+        {% if user.role == 'merchant' %}
+        <a href="{{ url_for('merchant.merchant_dashboard') }}">📊 商家中心</a>
+        {% endif %}
+        {% if user.role == 'admin' %}
+        <a href="{{ url_for('admin.admin_dashboard') }}">⚙️ 管理后台</a>
+        {% endif %}
     </div>
 </div>
 
-<script>
-    document.getElementById('savePrefBtn').addEventListener('click', function() {
-        const allergy = document.getElementById('allergyInput').value.trim();
-        const taboo = document.getElementById('tabooInput').value.trim();
-        const msg = document.getElementById('prefMessage');
+<!-- ===== 我的动态 ===== -->
+<div class="card">
+    <div class="card-head">
+        <h3>📊 我的动态</h3>
+    </div>
+    <div class="entry-grid">
+        <a class="entry" href="{{ url_for('user.user_favorites') }}">
+            <div class="ico">❤️</div>
+            <div class="num">{{ favorite_count }}</div>
+            <div class="lbl">我的收藏<span class="arrow">→</span></div>
+        </a>
+        <a class="entry" href="{{ url_for('food.history') }}">
+            <div class="ico">🕐</div>
+            <div class="num">{{ history_count }}</div>
+            <div class="lbl">浏览记录<span class="arrow">→</span></div>
+        </a>
+        <a class="entry" href="{{ url_for('user.user_blacklist') }}">
+            <div class="ico">🚫</div>
+            <div class="num">{{ blacklist_count }}</div>
+            <div class="lbl">黑名单<span class="arrow">→</span></div>
+        </a>
+        <a class="entry" href="{{ url_for('food.my_reports') }}">
+            <div class="ico">📮</div>
+            <div class="num">{{ report_count }}</div>
+            <div class="lbl">我的举报<span class="arrow">→</span></div>
+        </a>
+        <a class="entry" href="{{ url_for('message.inbox') }}">
+            <div class="ico">✉️</div>
+            <div class="num">{{ unread_messages }}</div>
+            <div class="lbl">未读消息<span class="arrow">→</span></div>
+        </a>
+    </div>
+    <div class="mini-stats">
+        <span>⭐ 已给 <b>{{ rating_count }}</b> 道菜评分</span>
+        <span>💬 发表过 <b>{{ comment_count }}</b> 条评论</span>
+    </div>
+</div>
 
-        fetch('/user/update_preferences', {
+<!-- ===== 饮食偏好 ===== -->
+<div class="card">
+    <div class="card-head">
+        <div>
+            <h3>🍽️ 饮食偏好</h3>
+            <p class="card-sub">含过敏/忌口的美食会在首页标出提醒，可选择隐藏，隐藏后不会推荐。</p>
+        </div>
+    </div>
+
+    <form id="prefForm">
+        <div class="pref-grid">
+            <div class="field">
+                <label for="allergyInput">🚫 过敏食材</label>
+                <input type="text" id="allergyInput" placeholder="如：花生、海鲜、芒果…"
+                       value="{{ user.allergy or '' }}">
+            </div>
+            <div class="field">
+                <label for="tabooInput">🙅 忌口食材</label>
+                <input type="text" id="tabooInput" placeholder="如：香菜、肥肉、内脏…"
+                       value="{{ user.taboo or '' }}">
+            </div>
+        </div>
+
+        <label class="switch-row" for="hideRiskInput">
+            <input type="checkbox" id="hideRiskInput" {% if user.hide_risk %}checked{% endif %}>
+            <span class="switch-text">
+                在首页和推荐里隐藏含过敏/忌口的美食
+                <small>不勾选时只标提醒，仍可在首页看到；勾选后这类美食不再出现在首页与"猜你喜欢"</small>
+            </span>
+        </label>
+
+        <div class="pref-actions">
+            <span class="pref-message" id="prefMessage"></span>
+            <button type="button" class="btn-primary" id="savePrefBtn">保存设置</button>
+        </div>
+    </form>
+</div>
+
+<!-- ===== 账号安全 ===== -->
+<div class="card">
+    <div class="card-head">
+        <div>
+            <h3>🔑 账号安全</h3>
+            <p class="card-sub">定期更换密码可以让账号更安全</p>
+        </div>
+        <button type="button" class="btn-ghost" id="pwdToggle">修改密码</button>
+    </div>
+
+    <form class="pwd-form" id="pwdForm" method="post" action="{{ url_for('user.change_password') }}">
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+        <div class="pwd-grid">
+            <div class="field">
+                <label for="oldPassword">原密码</label>
+                <input type="password" id="oldPassword" name="old_password"
+                       placeholder="请输入当前密码" required autocomplete="current-password">
+            </div>
+            <div class="field">
+                <label for="newPassword">新密码</label>
+                <input type="password" id="newPassword" name="new_password"
+                       placeholder="至少 6 位" required minlength="6" autocomplete="new-password">
+            </div>
+            <div class="field">
+                <label for="confirmPassword">确认新密码</label>
+                <input type="password" id="confirmPassword" name="confirm_password"
+                       placeholder="再输入一次新密码" required minlength="6" autocomplete="new-password">
+            </div>
+        </div>
+        <div class="pref-actions">
+            <button type="button" class="btn-ghost" id="pwdCancel">取消</button>
+            <button type="submit" class="btn-primary">确认修改</button>
+        </div>
+    </form>
+</div>
+
+{% if user.role == 'merchant' %}
+<!-- ===== 店铺信息 ===== -->
+<div class="card">
+    <div class="card-head">
+        <h3>🏠 店铺信息</h3>
+    </div>
+    <div class="shop-grid">
+        <div class="item"><span class="k">店铺名称</span><span class="v">{{ user.merchant_name or user.username }}</span></div>
+        <div class="item"><span class="k">店铺地址</span><span class="v">{{ user.merchant_address or '未填写' }}</span></div>
+        <div class="item"><span class="k">审核状态</span><span class="v">
+            {% if user.merchant_status == 'approved' %}✅ 已通过
+            {% elif user.merchant_status == 'pending' %}⏳ 待审核
+            {% else %}❌ 已拒绝{% endif %}
+        </span></div>
+    </div>
+</div>
+{% endif %}
+
+<script>
+    // ===== 保存饮食偏好 =====
+    document.getElementById('savePrefBtn').addEventListener('click', function () {
+        var allergy = document.getElementById('allergyInput').value.trim();
+        var taboo = document.getElementById('tabooInput').value.trim();
+        var hideRisk = document.getElementById('hideRiskInput').checked ? 1 : 0;
+        var msg = document.getElementById('prefMessage');
+
+        fetch('{{ url_for("user.update_preferences") }}', {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: 'allergy=' + encodeURIComponent(allergy) + '&taboo=' + encodeURIComponent(taboo)
+            body: 'allergy=' + encodeURIComponent(allergy)
+                + '&taboo=' + encodeURIComponent(taboo)
+                + '&hide_risk=' + hideRisk
         })
-        .then(res => res.json())
-        .then(data => {
+        .then(function (res) { return res.json(); })
+        .then(function (data) {
             if (data.success) {
-                msg.innerHTML = '<span style="color:#27ae60;">✅ 保存成功</span>';
-                setTimeout(() => { location.reload(); }, 800);
+                msg.innerHTML = '<span style="color:#27ae60;">✅ 已保存</span>';
+                setTimeout(function () { location.reload(); }, 700);
             } else {
                 msg.innerHTML = '<span style="color:#e74c3c;">❌ ' + data.message + '</span>';
             }
+        })
+        .catch(function () {
+            msg.innerHTML = '<span style="color:#e74c3c;">❌ 网络异常，请稍后重试</span>';
         });
+    });
+
+    // ===== 修改密码折叠 =====
+    var pwdForm = document.getElementById('pwdForm');
+    document.getElementById('pwdToggle').addEventListener('click', function () {
+        pwdForm.classList.toggle('show');
+        if (pwdForm.classList.contains('show')) {
+            document.getElementById('oldPassword').focus();
+        }
+    });
+    document.getElementById('pwdCancel').addEventListener('click', function () {
+        pwdForm.classList.remove('show');
+        pwdForm.reset();
     });
 </script>
 

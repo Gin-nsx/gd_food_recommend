@@ -2,7 +2,7 @@
 # 推荐系统路由：协同过滤 + 安全过滤 + 冷启动兜底 + 推荐理由
 from flask import Blueprint, render_template, session, redirect, url_for, request
 from utils.db import get_db_connection
-from utils.cf import explain_candidates
+from utils.cf import explain_candidates, similarity_label
 
 recommend_bp = Blueprint('recommend', __name__)
 
@@ -70,10 +70,12 @@ def get_user_safety_info(user_id):
     conn = get_db_connection()
     cursor = conn.cursor()
 
-    cursor.execute("SELECT allergy, taboo FROM users WHERE id = %s", (user_id,))
+    cursor.execute("SELECT allergy, taboo, hide_risk FROM users WHERE id = %s", (user_id,))
     row = cursor.fetchone()
     allergy = row[0] if row and row[0] else ''
     taboo = row[1] if row and row[1] else ''
+    # 用户在个人中心勾了「含过敏/忌口的美食隐藏后不推荐」，忌口也从"只标注"升级为"过滤"
+    hide_risk = bool(row[2]) if row else False
 
     cursor.execute(
         "SELECT food_id, merchant_id FROM blacklists WHERE user_id = %s",
@@ -95,7 +97,8 @@ def get_user_safety_info(user_id):
         'allergy': [x.strip() for x in allergy.split(',') if x.strip()],
         'taboo': [x.strip() for x in taboo.split(',') if x.strip()],
         'black_food_ids': black_food_ids,
-        'black_merchant_ids': black_merchant_ids
+        'black_merchant_ids': black_merchant_ids,
+        'hide_risk': hide_risk,
     }
 
 
@@ -103,7 +106,7 @@ def apply_safety_filter(food_ids, safety_info):
     """
     对推荐结果做安全过滤：
     1. 过敏食材 → 强制过滤（完全隐藏）
-    2. 忌口食材 → 保留但标注
+    2. 忌口食材 → 默认保留但标注；用户在个人中心开启「隐藏」后一并过滤
     3. 黑名单美食/商家 → 过滤
     """
     if not food_ids:
@@ -127,12 +130,15 @@ def apply_safety_filter(food_ids, safety_info):
     taboo_list = safety_info['taboo']
     black_food_ids = safety_info['black_food_ids']
     black_merchant_ids = safety_info['black_merchant_ids']
+    hide_risk = safety_info.get('hide_risk', False)
 
     safe_ids = []
     taboo_tagged = set()
 
     for food_id, name, ingredients, merchant_id in rows:
         ingredients = ingredients or ''
+        name = name or ''
+        haystack = ingredients + ' ' + name
 
         # 黑名单过滤（美食 + 商家）
         if food_id in black_food_ids:
@@ -141,11 +147,13 @@ def apply_safety_filter(food_ids, safety_info):
             continue
 
         # 过敏强制过滤
-        if any(a and a in ingredients for a in allergy_list):
+        if any(a and a in haystack for a in allergy_list):
             continue
 
-        # 忌口标注（保留，但打标签）
-        if any(t and t in ingredients for t in taboo_list):
+        # 忌口：默认打标签保留，开启隐藏后直接过滤
+        if any(t and t in haystack for t in taboo_list):
+            if hide_risk:
+                continue
             taboo_tagged.add(food_id)
 
         safe_ids.append(food_id)
@@ -279,8 +287,16 @@ def attach_reasons(foods, items, names):
             if r['type'] == 'liked':
                 text = f"你给「{ref_name}」打了 {r['ref_score']:.0f} 分"
             else:
-                text = f"和你评过的「{ref_name}」口味接近"
-            reasons.append({'text': text, 'sim': r['sim'], 'type': r['type']})
+                text = f"跟「{ref_name}」很像"
+            level = similarity_label(r['sim'])
+            reasons.append({
+                'text': text,
+                'sim': r['sim'],
+                'level': level['label'],
+                'short': level['short'],
+                'stars': level['stars'],
+                'type': r['type'],
+            })
 
         food['reasons'] = reasons[:2]
         # 平台口碑：评分人数够多才拿出来说，避免「3 个人评 5 分」这种噪声

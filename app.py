@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, session, flash, redirect, url_for, jsonify
+from flask import Flask, render_template, request, session, flash, redirect, url_for, jsonify, g
 import pymysql
 
 from config import (
@@ -14,6 +14,7 @@ from routes.admin import admin_bp
 from routes.auth import auth_bp
 from routes.food import food_bp
 from routes.merchant import merchant_bp
+from routes.message import message_bp, unread_count
 from routes.recommend import recommend_bp
 from routes.user import user_bp
 from utils.db import get_db_connection
@@ -36,6 +37,7 @@ app.register_blueprint(admin_bp)
 app.register_blueprint(food_bp)
 app.register_blueprint(user_bp)
 app.register_blueprint(recommend_bp)
+app.register_blueprint(message_bp)
 
 
 # ========== 全局：CSRF 防护 ==========
@@ -67,8 +69,21 @@ def csrf_protect():
 
 @app.context_processor
 def inject_csrf_token():
-    """让所有模板都能直接调用 csrf_token()"""
-    return {'csrf_token': get_csrf_token}
+    """让所有模板都能直接调用 csrf_token()，并拿到导航栏的未读消息数"""
+    return {
+        'csrf_token': get_csrf_token,
+        'unread_messages': _unread_messages(),
+    }
+
+
+def _unread_messages():
+    """每次请求只查一次库，供导航栏红点使用"""
+    user_id = session.get('user_id')
+    if not user_id:
+        return 0
+    if not hasattr(g, 'unread_messages'):
+        g.unread_messages = unread_count(user_id)
+    return g.unread_messages
 
 
 @app.route('/')
@@ -118,15 +133,17 @@ def index():
     # 获取当前用户的过敏和忌口（如果已登录）
     user_allergy = ''
     user_taboo = ''
+    hide_risk = False
     if session.get('user_id'):
         cursor.execute(
-            "SELECT allergy, taboo FROM users WHERE id = %s",
+            "SELECT allergy, taboo, hide_risk FROM users WHERE id = %s",
             (session['user_id'],)
         )
         pref = cursor.fetchone()
         if pref:
             user_allergy = pref['allergy'] or ''
             user_taboo = pref['taboo'] or ''
+            hide_risk = bool(pref['hide_risk'])
 
     cursor.close()
     conn.close()
@@ -138,7 +155,8 @@ def index():
                            synonyms=expand_note(keyword),
                            selected_category=category_id,
                            user_allergy=user_allergy,
-                           user_taboo=user_taboo)
+                           user_taboo=user_taboo,
+                           hide_risk=hide_risk)
 
 
 if __name__ == '__main__':

@@ -1,6 +1,6 @@
 # 建表脚本：与线上 food_db（MySQL 8.0）结构保持一致
 # 用法：python create_tables.py
-# 说明：会自动创建数据库（若不存在），再建 10 张表；可重复执行，不会清空数据。
+# 说明：会自动创建数据库（若不存在），再建 11 张表；可重复执行，不会清空数据。
 import pymysql
 
 from config import DB_CONFIG
@@ -27,7 +27,8 @@ CREATE TABLE IF NOT EXISTS users (
     is_active BOOLEAN DEFAULT TRUE COMMENT '账号是否启用',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '注册时间',
     taboo TEXT COMMENT '忌口食材',
-    allergy TEXT COMMENT '过敏食材'
+    allergy TEXT COMMENT '过敏食材',
+    hide_risk TINYINT(1) NOT NULL DEFAULT 0 COMMENT '是否在首页/推荐隐藏含过敏或忌口的美食'
 ) COMMENT='用户表';
 
 -- 2. 分类表
@@ -159,6 +160,22 @@ CREATE TABLE IF NOT EXISTS reports (
     FOREIGN KEY (comment_id) REFERENCES comments(id) ON DELETE CASCADE,
     CONSTRAINT reports_target_chk CHECK (food_id IS NOT NULL OR comment_id IS NOT NULL)
 ) COMMENT='举报表';
+
+-- 11. 站内消息表（管理员 ↔ 商家/用户的沟通渠道）
+CREATE TABLE IF NOT EXISTS messages (
+    id INT PRIMARY KEY AUTO_INCREMENT COMMENT '消息ID',
+    sender_id INT NOT NULL COMMENT '发送者ID',
+    receiver_id INT NOT NULL COMMENT '接收者ID',
+    content VARCHAR(1000) NOT NULL COMMENT '消息正文',
+    related_report_id INT COMMENT '关联举报ID（管理员从举报页发起时记录）',
+    is_read TINYINT(1) NOT NULL DEFAULT 0 COMMENT '接收方是否已读',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '发送时间',
+    KEY idx_messages_receiver (receiver_id, is_read),
+    KEY idx_messages_sender (sender_id),
+    FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (receiver_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (related_report_id) REFERENCES reports(id) ON DELETE SET NULL
+) COMMENT='站内消息表';
 """
 
 

@@ -21,8 +21,8 @@ def user_dashboard():
 
     # 查询用户信息
     cursor.execute("""
-        SELECT id, username, role, is_active, merchant_status, merchant_address, 
-               allergy, taboo, created_at
+        SELECT id, username, role, is_active, merchant_status, merchant_address,
+               merchant_name, allergy, taboo, hide_risk, created_at
         FROM users WHERE id = %s
     """, (user_id,))
     user = cursor.fetchone()
@@ -43,6 +43,9 @@ def user_dashboard():
     cursor.execute("SELECT COUNT(*) as count FROM comments WHERE user_id = %s", (user_id,))
     comment_count = cursor.fetchone()['count']
 
+    cursor.execute("SELECT COUNT(*) as count FROM reports WHERE reporter_id = %s", (user_id,))
+    report_count = cursor.fetchone()['count']
+
     cursor.close()
     conn.close()
 
@@ -52,7 +55,8 @@ def user_dashboard():
                            history_count=history_count,
                            blacklist_count=blacklist_count,
                            rating_count=rating_count,
-                           comment_count=comment_count)
+                           comment_count=comment_count,
+                           report_count=report_count)
 
 
 # ========== 更新过敏/忌口 ==========
@@ -65,14 +69,15 @@ def update_preferences():
     user_id = session['user_id']
     allergy = request.form.get('allergy', '').strip()
     taboo = request.form.get('taboo', '').strip()
+    hide_risk = 1 if request.form.get('hide_risk') in ('1', 'on', 'true') else 0
 
     conn = get_db_connection()
     cursor = conn.cursor()
 
     try:
         cursor.execute("""
-            UPDATE users SET allergy = %s, taboo = %s WHERE id = %s
-        """, (allergy, taboo, user_id))
+            UPDATE users SET allergy = %s, taboo = %s, hide_risk = %s WHERE id = %s
+        """, (allergy, taboo, hide_risk, user_id))
         conn.commit()
         return jsonify({'success': True, 'message': '已保存'})
     except Exception:

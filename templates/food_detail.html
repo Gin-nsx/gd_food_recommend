@@ -155,14 +155,42 @@
         gap: 16px;
     }
     .other-item {
-        background: #f8f4f0;
-        border-radius: 10px;
-        padding: 14px;
+        background: #fff;
+        border: 1px solid #f2eae3;
+        border-radius: 12px;
+        padding: 10px;
         text-align: center;
         cursor: pointer;
         transition: 0.3s;
     }
-    .other-item:hover { background: #e8e0d8; transform: translateY(-3px); }
+    .other-item:hover {
+        background: #fdf3f0;
+        border-color: #f0c4bd;
+        transform: translateY(-3px);
+        box-shadow: 0 6px 16px rgba(0,0,0,0.08);
+    }
+    /* 本店其他美食：缩略图 */
+    .other-item .othumb {
+        width: 100%;
+        height: 100px;
+        border-radius: 8px;
+        overflow: hidden;
+        background: linear-gradient(135deg, #f6efe7 0%, #e7d9c9 100%);
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #b9a894;
+        font-size: 12px;
+    }
+    .other-item .othumb img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+        transition: transform 0.45s ease;
+    }
+    .other-item:hover .othumb img { transform: scale(1.08); }
     .other-item .oname { font-weight: 600; color: #2c3e50; font-size: 15px; }
     .other-item .oprice { color: #e74c3c; font-size: 14px; }
     .other-item .orating { color: #f39c12; font-size: 13px; }
@@ -208,10 +236,22 @@
         font-size: 12px;
         color: #b0a49b;
     }
-    .similar-item .ssim b { color: #c0392b; }
+    .similar-item .sstars {
+        color: #e8a33d;
+        letter-spacing: 1px;
+        margin-right: 4px;
+    }
 
     .comment-section {
         margin-top: 20px;
+    }
+    /* 从举报管理点进来时定位到具体评论，并把它高亮出来 */
+    #commentList > div:target {
+        background: #fff8e6;
+        border-radius: 8px;
+        box-shadow: inset 3px 0 0 #e8a33d;
+        padding-left: 10px !important;
+        scroll-margin-top: 20px;
     }
     .comment-section textarea {
         width: 100%;
@@ -329,7 +369,26 @@
     @media (max-width: 768px) {
         .detail-container { grid-template-columns: 1fr; }
     }
+    /* 管理员/商家查看未上架美食时的状态提示 */
+    .status-banner {
+        background: #fef9e7;
+        border: 1px solid #f7e1a0;
+        color: #b7950b;
+        border-radius: 12px;
+        padding: 12px 20px;
+        margin-bottom: 18px;
+        font-size: 14px;
+        font-weight: 600;
+    }
 </style>
+
+{% if food.status != 'approved' %}
+<div class="status-banner">
+    {% if food.status == 'pending' %}⏳ 该美食正在等待管理员审核，仅你和管理员可见
+    {% elif food.status == 'offline' %}🚫 该美食已被下架，仅商家本人与管理员可见
+    {% else %}❌ 该美食未通过审核，仅商家本人与管理员可见{% endif %}
+</div>
+{% endif %}
 
 <div class="detail-container">
     <!-- 左侧：美食信息 -->
@@ -415,7 +474,7 @@
     {% endif %}
     <div id="commentList" style="margin-top:16px;">
         {% for comment in comments %}
-        <div style="border-bottom:1px solid #eee; padding:10px 0;">
+        <div id="comment-{{ comment.id }}" style="border-bottom:1px solid #eee; padding:10px 0;">
             <strong>{{ comment.username }}</strong>
             <span style="color:#999; font-size:13px;">{{ comment.created_at }}</span>
             {% if session.get('user_id') %}
@@ -447,6 +506,13 @@
     <div class="other-grid">
         {% for of in other_foods %}
         <div class="other-item" onclick="location.href='{{ url_for('food.food_detail', food_id=of.id) }}'">
+            <div class="othumb">
+                {% if of.image_url %}
+                <img src="{{ url_for('static', filename=of.image_url) }}" alt="{{ of.name }}" loading="lazy" onerror="this.remove()">
+                {% else %}
+                <span>暂无图片</span>
+                {% endif %}
+            </div>
             <div class="oname">{{ of.name }}</div>
             <div class="orating">⭐ {{ of.avg_rating or '暂无' }}</div>
             <div class="oprice">¥{{ of.price }}</div>
@@ -461,14 +527,17 @@
 {% if similar_foods %}
 <div class="similar-foods">
     <h3>🔍 相似口味推荐</h3>
-    <p class="sub">按 Item-CF 相似度计算：和这道菜「被同一批人一起打高分」的其他菜</p>
+    <p class="sub">吃过这道菜的人，也常常给下面这些菜打高分</p>
     <div class="similar-grid">
         {% for sf in similar_foods %}
         <div class="similar-item" onclick="location.href='{{ url_for('food.food_detail', food_id=sf.id) }}'">
             <div class="sname">{{ sf.name }}</div>
             <div class="srating">⭐ {{ sf.avg_rating or '暂无' }}</div>
             <div class="sprice">¥{{ sf.price }}</div>
-            <div class="ssim">口味相似度 <b>{{ '%.2f'|format(sf.sim) }}</b></div>
+            <div class="ssim">
+                <span class="sstars">{% for i in range(1, 6) %}{% if i <= sf.sim_stars %}★{% else %}☆{% endif %}{% endfor %}</span>
+                {{ sf.sim_label }}
+            </div>
         </div>
         {% endfor %}
     </div>

@@ -82,6 +82,22 @@
         .navbar .nav-links .welcome strong {
             color: #ffe08a;
         }
+        /* 消息入口的未读红点 */
+        .navbar .nav-links .nav-msg { position: relative; }
+        .navbar .nav-links .nav-dot {
+            display: inline-block;
+            min-width: 17px;
+            padding: 0 5px;
+            margin-left: 3px;
+            background: #ffe08a;
+            color: #a93226;
+            border-radius: 9px;
+            font-size: 11px;
+            line-height: 17px;
+            text-align: center;
+            font-weight: 700;
+            vertical-align: 1px;
+        }
         .navbar .nav-links .btn-outline {
             border: 1px solid rgba(255,255,255,0.4);
         }
@@ -167,6 +183,9 @@
 
             {% if session.get('user_id') %}
                 {# 已登录 #}
+                <a href="{{ url_for('message.inbox') }}" class="nav-msg">
+                    ✉️ 消息{% if unread_messages %}<span class="nav-dot">{{ unread_messages }}</span>{% endif %}
+                </a>
                 <span class="welcome">👋 欢迎，<strong>{{ session.get('username') }}</strong></span>
 
                 {% if session.get('role') == 'merchant' %}
@@ -210,15 +229,22 @@
     </div>
 
     <script>
-        // 同站跳转过来的，优先用浏览器历史返回（保留筛选条件、滚动位置）；
-        // 直接打开链接/外链进来的，退回首页，避免点了没反应。
+        // 返回按钮：
+        //   1) 从站内其他页面过来的 → 用浏览器历史返回（保留筛选条件、滚动位置）
+        //   2) 从登录/注册页过来的 → 绝不 history.back()，否则一按就退回登录页，
+        //      看起来像"被踢出去了"。这种情况直接去首页。
+        //   3) 直接打开链接/外链进来的 → 也去首页，避免点了没反应。
         (function () {
             var btn = document.getElementById('globalBack');
             if (!btn) return;
-            var fromSameSite = document.referrer &&
-                document.referrer.indexOf(location.origin + '/') === 0;
+            var ref = document.referrer || '';
+            var home = btn.getAttribute('href');
+            var fromSameSite = ref && ref.indexOf(location.origin + '/') === 0;
+            var fromAuthPage = /^\/(login|register)(\?|#|$)/.test(
+                ref.slice(location.origin.length)
+            );
             btn.addEventListener('click', function (e) {
-                if (fromSameSite && history.length > 1) {
+                if (fromSameSite && !fromAuthPage && history.length > 1) {
                     e.preventDefault();
                     history.back();
                 }

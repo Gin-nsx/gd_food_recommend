@@ -138,6 +138,12 @@
         color: #b7950b;
         font-weight: 500;
     }
+    .hide-note {
+        font-size: 13px;
+        color: #a2968c;
+        margin: -6px 0 16px;
+        padding-left: 4px;
+    }
 
     /* ===== 美食卡片 ===== */
     .food-grid {
@@ -316,10 +322,7 @@
 <!-- ====== 过敏/忌口控制栏 ====== -->
 <div class="pref-controls">
     <label>
-        <input type="checkbox" id="hideAllergy" checked> 🚫 隐藏过敏
-    </label>
-    <label>
-        <input type="checkbox" id="showTabooWarn" checked> 🙅 显示忌口提醒
+        <input type="checkbox" id="hideRisk" {% if hide_risk %}checked{% endif %}> 🙅 隐藏含过敏/忌口的美食
     </label>
     <span class="pref-tags">
         {% if user_allergy %}
@@ -332,8 +335,12 @@
         {% if not user_allergy and not user_taboo %}
             <span style="color:#bbb;">未设置过敏/忌口</span>
         {% endif %}
+        {% if session.get('user_id') %}
+            <a href="{{ url_for('user.user_dashboard') }}" style="color:#c0392b; text-decoration:none;">修改偏好</a>
+        {% endif %}
     </span>
 </div>
+<div class="hide-note" id="hideNote"></div>
 
 <!-- ====== 美食列表 ====== -->
 <div class="food-grid" id="foodGrid">
@@ -396,55 +403,35 @@
 </div>
 
 <script>
-    // ===== 获取 DOM 元素 =====
-    const hideAllergyCheckbox = document.getElementById('hideAllergy');
-    const showTabooWarnCheckbox = document.getElementById('showTabooWarn');
+    // ===== 隐藏含过敏/忌口的美食 =====
+    // 勾选状态默认取用户在个人中心保存的设置；这里只是临时开关，改完不落库。
+    (function () {
+        var toggle = document.getElementById('hideRisk');
+        var note = document.getElementById('hideNote');
+        if (!toggle) return;
 
-    // ===== 功能1：隐藏过敏 =====
-    hideAllergyCheckbox.addEventListener('change', function() {
-        const cards = document.querySelectorAll('.food-card');
-        cards.forEach(card => {
-            // 检查这个卡片是否有过敏标签
-            const allergyTags = card.querySelectorAll('.warn-allergy');
-            if (allergyTags.length > 0) {
-                if (this.checked) {
-                    card.style.display = 'block';
-                } else {
-                    card.style.display = 'none';
-                }
-            }
-        });
-    });
+        function apply() {
+            var on = toggle.checked;
+            var hidden = 0;
+            document.querySelectorAll('.food-card').forEach(function (card) {
+                var risky = card.querySelector('.warn-allergy, .warn-taboo');
+                var shouldHide = on && !!risky;
+                card.style.display = shouldHide ? 'none' : 'block';
+                if (shouldHide) hidden++;
+            });
 
-    // ===== 功能2：显示/隐藏忌口提醒 =====
-    showTabooWarnCheckbox.addEventListener('change', function() {
-        const tabooTags = document.querySelectorAll('.warn-taboo');
-        tabooTags.forEach(tag => {
-            if (this.checked) {
-                tag.style.display = 'inline';
+            if (hidden > 0) {
+                note.textContent = '已按你的过敏/忌口隐藏 ' + hidden + ' 道美食，取消勾选可查看。';
+            } else if (on) {
+                note.textContent = '当前列表中没有与你过敏/忌口冲突的美食。';
             } else {
-                tag.style.display = 'none';
+                note.textContent = '';
             }
-        });
-    });
+        }
 
-    // ===== 初始化：检查默认状态 =====
-    document.addEventListener('DOMContentLoaded', function() {
-        // 如果"隐藏过敏"默认未选中，但初始状态是选中的，不用额外操作
-        // 如果用户之前设置过偏好，可以从 localStorage 恢复
-        // 这里保持默认状态即可
-        if (!hideAllergyCheckbox.checked) {
-            // 如果用户取消勾选隐藏过敏，显示所有卡片
-            document.querySelectorAll('.food-card').forEach(card => {
-                card.style.display = 'block';
-            });
-        }
-        if (!showTabooWarnCheckbox.checked) {
-            document.querySelectorAll('.warn-taboo').forEach(tag => {
-                tag.style.display = 'none';
-            });
-        }
-    });
+        toggle.addEventListener('change', apply);
+        apply();
+    })();
 </script>
 
 {% endblock %}

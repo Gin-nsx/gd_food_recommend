@@ -336,15 +336,20 @@ def admin_reports():
     conn = get_db_connection()
     cursor = conn.cursor(pymysql.cursors.DictCursor)
 
-    # 美食举报：带上 food_id、商家名、商家ID
+    # 美食举报：带上 food_id、美食状态、商家 ID/名称、举报人 ID
     cursor.execute("""
         SELECT r.id, r.reason, r.status, r.created_at, r.handle_note, r.resolved_at,
+               u.id AS reporter_id,
                u.username AS reporter_name,
                f.id AS food_id,
                f.name AS food_name,
+               f.status AS food_status,
                m.id AS merchant_id,
                COALESCE(m.merchant_name, m.username) AS merchant_name,
+               NULL AS comment_id,
                NULL AS comment_content,
+               NULL AS comment_user_id,
+               NULL AS comment_user_name,
                NULL AS comment_food_id,
                NULL AS comment_food_name
         FROM reports r
@@ -356,21 +361,28 @@ def admin_reports():
     """)
     food_reports = cursor.fetchall()
 
-    # 评论举报：带上评论内容 + 所属美食 ID/名称
+    # 评论举报：带上评论内容、评论作者、所属美食及其商家
     cursor.execute("""
         SELECT r.id, r.reason, r.status, r.created_at, r.handle_note, r.resolved_at,
+               u.id AS reporter_id,
                u.username AS reporter_name,
                NULL AS food_id,
                NULL AS food_name,
-               NULL AS merchant_id,
-               NULL AS merchant_name,
+               NULL AS food_status,
+               cm.id AS merchant_id,
+               COALESCE(cm.merchant_name, cm.username) AS merchant_name,
+               c.id AS comment_id,
                c.content AS comment_content,
+               cu.id AS comment_user_id,
+               cu.username AS comment_user_name,
                cf.id AS comment_food_id,
                cf.name AS comment_food_name
         FROM reports r
         JOIN users u ON r.reporter_id = u.id
         LEFT JOIN comments c ON r.comment_id = c.id
+        LEFT JOIN users cu ON c.user_id = cu.id
         LEFT JOIN foods cf ON c.food_id = cf.id
+        LEFT JOIN users cm ON cf.merchant_id = cm.id
         WHERE r.comment_id IS NOT NULL
         ORDER BY r.created_at DESC
     """)
