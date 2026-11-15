@@ -299,7 +299,7 @@ def recommend_page():
     """
     user_id = session.get('user_id')
     if not user_id:
-        return redirect(url_for('auth.login'))
+        return redirect(url_for('auth.login_page', next=request.path))
 
     safety_info = get_user_safety_info(user_id)
     taste = get_taste_profile(user_id)
@@ -344,7 +344,7 @@ def evaluate_page():
     """
     user_id = session.get('user_id')
     if not user_id:
-        return redirect(url_for('auth.login'))
+        return redirect(url_for('auth.login_page', next=request.path))
 
     # 只有管理员能看评估报告
     if session.get('role') != 'admin':

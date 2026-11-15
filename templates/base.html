@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- CSRF 令牌：页面内的 fetch 会自动带上，普通表单会自动补隐藏域 -->
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{% block title %}广东美食推荐{% endblock %}</title>
     <script src="{{ url_for('static', filename='js/echarts.min.js') }}"></script>
     <style>
@@ -87,6 +89,24 @@
             background: rgba(255,255,255,0.2);
             border-color: white;
         }
+        /* 退出登录改成表单提交（POST），样式仍按链接呈现 */
+        .navbar .nav-links form { display: inline-flex; margin: 0; }
+        .navbar .nav-links button.btn-outline {
+            background: none;
+            font-family: inherit;
+            font-size: 15px;
+            color: rgba(255,255,255,0.85);
+            padding: 6px 14px;
+            border-radius: 6px;
+            border: 1px solid rgba(255,255,255,0.4);
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .navbar .nav-links button.btn-outline:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: white;
+            color: white;
+        }
 
         /* ===== 页面主体 ===== */
         .container {
@@ -157,7 +177,10 @@
                     <a href="{{ url_for('admin.admin_dashboard') }}">⚙️ 管理后台</a>
                 {% endif %}
 
-                <a href="{{ url_for('auth.logout') }}" class="btn-outline">退出</a>
+                <form method="post" action="{{ url_for('auth.logout') }}">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn-outline">退出</button>
+                </form>
 
             {% else %}
                 {# 未登录 #}
@@ -200,6 +223,46 @@
                     history.back();
                 }
             });
+        })();
+    </script>
+
+    <script>
+        // ===== CSRF：给所有 POST 表单补隐藏域，并让内联 fetch 自动带令牌 =====
+        (function () {
+            var meta = document.querySelector('meta[name="csrf-token"]');
+            if (!meta) return;
+            var token = meta.getAttribute('content');
+
+            // 1) 普通表单：没写隐藏域的自动补一个（模板里手写的会跳过）
+            var forms = document.querySelectorAll('form');
+            for (var i = 0; i < forms.length; i++) {
+                var form = forms[i];
+                var method = (form.getAttribute('method') || 'get').toUpperCase();
+                if (method !== 'POST') continue;
+                if (form.querySelector('input[name="_csrf_token"]')) continue;
+                var input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = '_csrf_token';
+                input.value = token;
+                form.appendChild(input);
+            }
+
+            // 2) AJAX：同源的写操作统一加上请求头
+            var nativeFetch = window.fetch;
+            if (!nativeFetch) return;
+            window.fetch = function (input, init) {
+                var opts = init ? Object.assign({}, init) : {};
+                var method = (opts.method ||
+                    (input && typeof input === 'object' && input.method) || 'GET').toUpperCase();
+                if (method !== 'GET' && method !== 'HEAD') {
+                    var headers = new Headers(opts.headers ||
+                        (input && typeof input === 'object' ? input.headers : undefined) || {});
+                    headers.set('X-CSRFToken', token);
+                    headers.set('X-Requested-With', 'XMLHttpRequest');
+                    opts.headers = headers;
+                }
+                return nativeFetch.call(this, input, opts);
+            };
         })();
     </script>
 

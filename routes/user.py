@@ -1,5 +1,6 @@
 from flask import Blueprint, render_template, session, flash, redirect, url_for, request, jsonify
 import pymysql
+from werkzeug.security import check_password_hash, generate_password_hash
 from utils.db import get_db_connection
 
 user_bp = Blueprint('user', __name__)
@@ -11,7 +12,7 @@ def user_dashboard():
     """个人中心首页"""
     if 'user_id' not in session:
         flash('❌ 请先登录')
-        return redirect(url_for('auth.login_page'))
+        return redirect(url_for('auth.login_page', next=request.path))
 
     user_id = session['user_id']
 
@@ -36,6 +37,12 @@ def user_dashboard():
     cursor.execute("SELECT COUNT(*) as count FROM blacklists WHERE user_id = %s", (user_id,))
     blacklist_count = cursor.fetchone()['count']
 
+    cursor.execute("SELECT COUNT(*) as count FROM ratings WHERE user_id = %s", (user_id,))
+    rating_count = cursor.fetchone()['count']
+
+    cursor.execute("SELECT COUNT(*) as count FROM comments WHERE user_id = %s", (user_id,))
+    comment_count = cursor.fetchone()['count']
+
     cursor.close()
     conn.close()
 
@@ -43,7 +50,9 @@ def user_dashboard():
                            user=user,
                            favorite_count=favorite_count,
                            history_count=history_count,
-                           blacklist_count=blacklist_count)
+                           blacklist_count=blacklist_count,
+                           rating_count=rating_count,
+                           comment_count=comment_count)
 
 
 # ========== 更新过敏/忌口 ==========
@@ -66,12 +75,60 @@ def update_preferences():
         """, (allergy, taboo, user_id))
         conn.commit()
         return jsonify({'success': True, 'message': '已保存'})
-    except Exception as e:
+    except Exception:
         conn.rollback()
-        return jsonify({'success': False, 'message': str(e)}), 500
+        return jsonify({'success': False, 'message': '操作失败，请稍后重试'}), 500
     finally:
         cursor.close()
         conn.close()
+
+
+# ========== 修改密码 ==========
+@user_bp.route('/user/password', methods=['POST'])
+def change_password():
+    """修改登录密码：校验原密码 → 检查新密码强度 → 重新哈希"""
+    if 'user_id' not in session:
+        flash('❌ 请先登录')
+        return redirect(url_for('auth.login_page', next=request.path))
+
+    user_id = session['user_id']
+    old_password = request.form.get('old_password') or ''
+    new_password = request.form.get('new_password') or ''
+    confirm_password = request.form.get('confirm_password') or ''
+
+    if not (6 <= len(new_password) <= 64):
+        flash('❌ 新密码长度需在 6-64 位之间')
+        return redirect(url_for('user.user_dashboard'))
+    if new_password != confirm_password:
+        flash('❌ 两次输入的新密码不一致')
+        return redirect(url_for('user.user_dashboard'))
+    if new_password == old_password:
+        flash('❌ 新密码不能与原密码相同')
+        return redirect(url_for('user.user_dashboard'))
+
+    conn = get_db_connection()
+    cursor = conn.cursor(pymysql.cursors.DictCursor)
+    try:
+        cursor.execute("SELECT password FROM users WHERE id = %s", (user_id,))
+        row = cursor.fetchone()
+        if not row or not check_password_hash(row['password'], old_password):
+            flash('❌ 原密码不正确')
+            return redirect(url_for('user.user_dashboard'))
+
+        cursor.execute(
+            "UPDATE users SET password = %s WHERE id = %s",
+            (generate_password_hash(new_password), user_id)
+        )
+        conn.commit()
+        flash('✅ 密码已修改，下次登录请使用新密码')
+    except Exception:
+        conn.rollback()
+        flash('❌ 修改失败，请稍后重试')
+    finally:
+        cursor.close()
+        conn.close()
+
+    return redirect(url_for('user.user_dashboard'))
 
 
 # ========== 我的收藏 ==========
@@ -80,7 +137,7 @@ def user_favorites():
     """查看当前用户的收藏列表"""
     if 'user_id' not in session:
         flash('❌ 请先登录')
-        return redirect(url_for('auth.login_page'))
+        return redirect(url_for('auth.login_page', next=request.path))
 
     user_id = session['user_id']
 
@@ -123,9 +180,9 @@ def remove_favorite(food_id):
         )
         conn.commit()
         return jsonify({'success': True, 'message': '已取消收藏'})
-    except Exception as e:
+    except Exception:
         conn.rollback()
-        return jsonify({'success': False, 'message': str(e)}), 500
+        return jsonify({'success': False, 'message': '操作失败，请稍后重试'}), 500
     finally:
         cursor.close()
         conn.close()
@@ -137,7 +194,7 @@ def user_blacklist():
     """查看当前用户的黑名单"""
     if 'user_id' not in session:
         flash('❌ 请先登录')
-        return redirect(url_for('auth.login_page'))
+        return redirect(url_for('auth.login_page', next=request.path))
 
     user_id = session['user_id']
 
@@ -203,9 +260,9 @@ def blacklist_food(food_id):
         """, (user_id, food_id, reason))
         conn.commit()
         return jsonify({'success': True, 'message': '已拉黑该美食'})
-    except Exception as e:
+    except Exception:
         conn.rollback()
-        return jsonify({'success': False, 'message': str(e)}), 500
+        return jsonify({'success': False, 'message': '操作失败，请稍后重试'}), 500
     finally:
         cursor.close()
         conn.close()
@@ -230,9 +287,9 @@ def remove_blacklist(blacklist_id):
         )
         conn.commit()
         return jsonify({'success': True, 'message': '已取消拉黑'})
-    except Exception as e:
+    except Exception:
         conn.rollback()
-        return jsonify({'success': False, 'message': str(e)}), 500
+        return jsonify({'success': False, 'message': '操作失败，请稍后重试'}), 500
     finally:
         cursor.close()
         conn.close()

@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, session
+from flask import Flask, render_template, request, session, flash, redirect, url_for, jsonify
 import pymysql
 
 from config import (
@@ -18,6 +18,7 @@ from routes.recommend import recommend_bp
 from routes.user import user_bp
 from utils.db import get_db_connection
 from utils.search import expand_terms, expand_note
+from utils.security import get_csrf_token, validate_csrf
 
 app = Flask(__name__)
 # 密钥不写死在源码里，见 config.load_secret_key()
@@ -35,6 +36,39 @@ app.register_blueprint(admin_bp)
 app.register_blueprint(food_bp)
 app.register_blueprint(user_bp)
 app.register_blueprint(recommend_bp)
+
+
+# ========== 全局：CSRF 防护 ==========
+# 所有写操作（POST/PUT/PATCH/DELETE）必须带上会话内的 CSRF 令牌。
+# 令牌来源：请求头 X-CSRFToken（AJAX）或表单隐藏域 _csrf_token（普通表单）。
+# 模板里用 {{ csrf_token() }} 取；base.html 的脚本会自动给没写的表单补上。
+@app.before_request
+def csrf_protect():
+    if request.method not in ('POST', 'PUT', 'PATCH', 'DELETE'):
+        return None
+    if validate_csrf():
+        return None
+
+    # AJAX 请求返回 JSON，普通表单请求回到来源页并提示
+    is_ajax = (
+        request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+        or request.is_json
+        or request.path.startswith('/api/')
+    )
+    if is_ajax:
+        return jsonify({'success': False, 'message': '页面已过期，请刷新后重试'}), 400
+
+    flash('❌ 页面已过期，请重新提交')
+    referrer = request.referrer
+    if referrer and referrer.startswith(request.host_url):
+        return redirect(referrer)
+    return redirect(url_for('index'))
+
+
+@app.context_processor
+def inject_csrf_token():
+    """让所有模板都能直接调用 csrf_token()"""
+    return {'csrf_token': get_csrf_token}
 
 
 @app.route('/')
@@ -71,7 +105,8 @@ def index():
         sql += " AND f.category_id = %s"
         params.append(int(category_id))
 
-    sql += " ORDER BY f.avg_rating DESC"
+    # 评分相同时用点赞数、再按 id 兜底，保证每次刷新的顺序稳定
+    sql += " ORDER BY f.avg_rating DESC, f.like_count DESC, f.id ASC"
 
     cursor.execute(sql, params)
     foods = cursor.fetchall()

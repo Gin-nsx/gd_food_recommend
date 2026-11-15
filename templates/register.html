@@ -63,6 +63,7 @@
 <div class="register-box">
     <h2>📝 注册</h2>
     <form method="POST">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
         <label>用户名</label>
         <input type="text" name="username" placeholder="请输入用户名" required>
 

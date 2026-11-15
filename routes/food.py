@@ -5,6 +5,15 @@ from utils.cf import similar_foods
 
 food_bp = Blueprint('food', __name__)
 
+MAX_COMMENT_LEN = 500
+MAX_REASON_LEN = 255
+
+
+def _is_approved_food(cursor, food_id):
+    """互动类接口统一校验：菜品必须存在且已通过审核，防止给下架菜刷分"""
+    cursor.execute("SELECT id FROM foods WHERE id = %s AND status = 'approved'", (food_id,))
+    return cursor.fetchone() is not None
+
 
 # ========== 美食详情页 ==========
 @food_bp.route('/food/<int:food_id>')
@@ -155,6 +164,9 @@ def rate_food(food_id):
     cursor = conn.cursor()
 
     try:
+        if not _is_approved_food(cursor, food_id):
+            return jsonify({'success': False, 'message': '该美食已下架'}), 404
+
         cursor.execute("""
             INSERT INTO ratings (user_id, food_id, score)
             VALUES (%s, %s, %s)
@@ -170,12 +182,11 @@ def rate_food(food_id):
         """, (food_id, food_id))
 
         conn.commit()
-        flash('✅ 评分成功！')
         return jsonify({'success': True, 'message': '评分成功'})
 
-    except Exception as e:
+    except Exception:
         conn.rollback()
-        return jsonify({'success': False, 'message': str(e)}), 500
+        return jsonify({'success': False, 'message': '评分失败，请稍后重试'}), 500
     finally:
         cursor.close()
         conn.close()
@@ -194,6 +205,9 @@ def toggle_like(food_id):
     cursor = conn.cursor()
 
     try:
+        if not _is_approved_food(cursor, food_id):
+            return jsonify({'success': False, 'message': '该美食已下架'}), 404
+
         cursor.execute(
             "SELECT id FROM likes WHERE user_id = %s AND food_id = %s",
             (user_id, food_id)
@@ -205,8 +219,9 @@ def toggle_like(food_id):
                 "DELETE FROM likes WHERE user_id = %s AND food_id = %s",
                 (user_id, food_id)
             )
+            # GREATEST 兜底，历史数据不一致时也不会出现负数点赞
             cursor.execute(
-                "UPDATE foods SET like_count = like_count - 1 WHERE id = %s",
+                "UPDATE foods SET like_count = GREATEST(like_count - 1, 0) WHERE id = %s",
                 (food_id,)
             )
             liked = False
@@ -224,9 +239,9 @@ def toggle_like(food_id):
         conn.commit()
         return jsonify({'success': True, 'liked': liked})
 
-    except Exception as e:
+    except Exception:
         conn.rollback()
-        return jsonify({'success': False, 'message': str(e)}), 500
+        return jsonify({'success': False, 'message': '操作失败，请稍后重试'}), 500
     finally:
         cursor.close()
         conn.close()
@@ -245,6 +260,9 @@ def toggle_favorite(food_id):
     cursor = conn.cursor()
 
     try:
+        if not _is_approved_food(cursor, food_id):
+            return jsonify({'success': False, 'message': '该美食已下架'}), 404
+
         cursor.execute(
             "SELECT id FROM favorites WHERE user_id = %s AND food_id = %s",
             (user_id, food_id)
@@ -267,9 +285,9 @@ def toggle_favorite(food_id):
         conn.commit()
         return jsonify({'success': True, 'favorited': favorited})
 
-    except Exception as e:
+    except Exception:
         conn.rollback()
-        return jsonify({'success': False, 'message': str(e)}), 500
+        return jsonify({'success': False, 'message': '操作失败，请稍后重试'}), 500
     finally:
         cursor.close()
         conn.close()
@@ -305,9 +323,11 @@ def add_comment(food_id):
     if 'user_id' not in session:
         return jsonify({'success': False, 'message': '请先登录'}), 401
 
-    content = request.form.get('content', '').strip()
+    content = (request.form.get('content') or '').strip()
     if not content:
         return jsonify({'success': False, 'message': '评论内容不能为空'}), 400
+    if len(content) > MAX_COMMENT_LEN:
+        return jsonify({'success': False, 'message': f'评论最多 {MAX_COMMENT_LEN} 个字'}), 400
 
     user_id = session['user_id']
 
@@ -315,15 +335,18 @@ def add_comment(food_id):
     cursor = conn.cursor()
 
     try:
+        if not _is_approved_food(cursor, food_id):
+            return jsonify({'success': False, 'message': '该美食已下架'}), 404
+
         cursor.execute("""
             INSERT INTO comments (user_id, food_id, content)
             VALUES (%s, %s, %s)
         """, (user_id, food_id, content))
         conn.commit()
         return jsonify({'success': True, 'message': '评论成功'})
-    except Exception as e:
+    except Exception:
         conn.rollback()
-        return jsonify({'success': False, 'message': str(e)}), 500
+        return jsonify({'success': False, 'message': '评论失败，请稍后重试'}), 500
     finally:
         cursor.close()
         conn.close()
@@ -335,7 +358,7 @@ def history():
     """查看当前用户的浏览记录"""
     if 'user_id' not in session:
         flash('❌ 请先登录')
-        return redirect(url_for('auth.login_page'))
+        return redirect(url_for('auth.login_page', next=request.path))
 
     user_id = session['user_id']
 
@@ -376,9 +399,9 @@ def clear_history():
         cursor.execute("DELETE FROM histories WHERE user_id = %s", (user_id,))
         conn.commit()
         return jsonify({'success': True, 'message': '已清空所有浏览记录'})
-    except Exception as e:
+    except Exception:
         conn.rollback()
-        return jsonify({'success': False, 'message': str(e)}), 500
+        return jsonify({'success': False, 'message': '操作失败，请稍后重试'}), 500
     finally:
         cursor.close()
         conn.close()
@@ -407,9 +430,9 @@ def delete_history(history_id):
             return jsonify({'success': False, 'message': '记录不存在'}), 404
 
         return jsonify({'success': True, 'message': '删除成功'})
-    except Exception as e:
+    except Exception:
         conn.rollback()
-        return jsonify({'success': False, 'message': str(e)}), 500
+        return jsonify({'success': False, 'message': '操作失败，请稍后重试'}), 500
     finally:
         cursor.close()
         conn.close()
@@ -440,9 +463,9 @@ def batch_delete_history():
         conn.commit()
 
         return jsonify({'success': True, 'message': f'已删除 {cursor.rowcount} 条记录'})
-    except Exception as e:
+    except Exception:
         conn.rollback()
-        return jsonify({'success': False, 'message': str(e)}), 500
+        return jsonify({'success': False, 'message': '操作失败，请稍后重试'}), 500
     finally:
         cursor.close()
         conn.close()
@@ -455,9 +478,11 @@ def report_food(food_id):
     if 'user_id' not in session:
         return jsonify({'success': False, 'message': '请先登录'}), 401
 
-    reason = request.form.get('reason', '').strip()
+    reason = (request.form.get('reason') or '').strip()
     if not reason:
         return jsonify({'success': False, 'message': '举报原因不能为空'}), 400
+    if len(reason) > MAX_REASON_LEN:
+        return jsonify({'success': False, 'message': f'举报原因最多 {MAX_REASON_LEN} 个字'}), 400
 
     user_id = session['user_id']
 
@@ -478,9 +503,9 @@ def report_food(food_id):
         """, (user_id, food_id, reason))
         conn.commit()
         return jsonify({'success': True, 'message': '举报已提交'})
-    except Exception as e:
+    except Exception:
         conn.rollback()
-        return jsonify({'success': False, 'message': str(e)}), 500
+        return jsonify({'success': False, 'message': '操作失败，请稍后重试'}), 500
     finally:
         cursor.close()
         conn.close()
@@ -493,9 +518,11 @@ def report_comment(comment_id):
     if 'user_id' not in session:
         return jsonify({'success': False, 'message': '请先登录'}), 401
 
-    reason = request.form.get('reason', '').strip()
+    reason = (request.form.get('reason') or '').strip()
     if not reason:
         return jsonify({'success': False, 'message': '举报原因不能为空'}), 400
+    if len(reason) > MAX_REASON_LEN:
+        return jsonify({'success': False, 'message': f'举报原因最多 {MAX_REASON_LEN} 个字'}), 400
 
     user_id = session['user_id']
 
@@ -516,9 +543,9 @@ def report_comment(comment_id):
         """, (user_id, comment_id, reason))
         conn.commit()
         return jsonify({'success': True, 'message': '举报已提交'})
-    except Exception as e:
+    except Exception:
         conn.rollback()
-        return jsonify({'success': False, 'message': str(e)}), 500
+        return jsonify({'success': False, 'message': '操作失败，请稍后重试'}), 500
     finally:
         cursor.close()
         conn.close()
@@ -530,7 +557,7 @@ def my_reports():
     """查看当前用户提交的举报及处理进度"""
     if 'user_id' not in session:
         flash('❌ 请先登录')
-        return redirect(url_for('auth.login_page'))
+        return redirect(url_for('auth.login_page', next=request.path))
 
     user_id = session['user_id']
     conn = get_db_connection()

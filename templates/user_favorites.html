@@ -83,6 +83,16 @@
         color: #7f8c8d;
         font-size: 14px;
     }
+    .favorite-item .unavailable {
+        display: inline-block;
+        margin-left: 8px;
+        font-size: 12px;
+        color: #95a5a6;
+        background: #f0f0f0;
+        border-radius: 10px;
+        padding: 1px 8px;
+        vertical-align: middle;
+    }
 </style>
 
 <div class="page-header">
@@ -95,7 +105,12 @@
         {% for f in favorites %}
         <div class="favorite-item">
             <div class="left" onclick="location.href='{{ url_for('food.food_detail', food_id=f.id) }}'">
-                <div class="name">{{ f.name }}</div>
+                <div class="name">
+                    {{ f.name }}
+                    {% if f.status != 'approved' %}
+                    <span class="unavailable">已下架</span>
+                    {% endif %}
+                </div>
                 <div class="meta">
                     <span class="rating">⭐ {{ f.avg_rating or '暂无' }}</span>
                     &nbsp;·&nbsp;

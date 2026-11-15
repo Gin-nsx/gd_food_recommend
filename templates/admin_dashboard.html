@@ -27,6 +27,15 @@
         font-size: 14px;
         color: #7f8c8d;
     }
+    /* 可点击的统计卡（待处理举报） */
+    .stat-card.stat-link {
+        text-decoration: none;
+        transition: 0.25s;
+    }
+    .stat-card.stat-link:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+    }
     .section {
         background: white;
         border-radius: 12px;
@@ -127,6 +136,10 @@
     <div class="stat-card"><div class="num">{{ total_foods }}</div><div class="label">总美食</div></div>
     <div class="stat-card"><div class="num" style="color:#f39c12;">{{ pending_merchants }}</div><div class="label">待审核商家</div></div>
     <div class="stat-card"><div class="num" style="color:#f39c12;">{{ pending_foods }}</div><div class="label">待审核美食</div></div>
+    <a class="stat-card stat-link" href="{{ url_for('admin.admin_reports') }}">
+        <div class="num" style="color:#e74c3c;">{{ pending_reports }}</div>
+        <div class="label">待处理举报 →</div>
+    </a>
 </div>
 
 <!-- 图表区 -->
@@ -158,10 +171,12 @@
                 <td>{{ m.created_at }}</td>
                 <td>
                     <form class="action-form" method="post" action="{{ url_for('admin.approve_merchant', user_id=m.id) }}">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
                         <button type="submit" class="btn btn-success">通过</button>
                     </form>
                     <form class="action-form" method="post" action="{{ url_for('admin.reject_merchant', user_id=m.id) }}"
                           onsubmit="return confirm('确认拒绝该商家申请？')">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
                         <button type="submit" class="btn btn-danger">拒绝</button>
                     </form>
                 </td>
@@ -185,10 +200,12 @@
                 <td>¥{{ f.price }}</td>
                 <td>
                     <form class="action-form" method="post" action="{{ url_for('admin.approve_food', food_id=f.id) }}">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
                         <button type="submit" class="btn btn-success">通过</button>
                     </form>
                     <form class="action-form" method="post" action="{{ url_for('admin.reject_food', food_id=f.id) }}"
                           onsubmit="return confirm('确认拒绝该美食？')">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
                         <button type="submit" class="btn btn-danger">拒绝</button>
                     </form>
                 </td>

@@ -47,6 +47,36 @@
     .food-table .status-pending { color: #f39c12; font-weight: 600; }
     .food-table .status-approved { color: #27ae60; font-weight: 600; }
     .food-table .status-offline { color: #95a5a6; font-weight: 600; }
+    .food-table .status-rejected { color: #e74c3c; font-weight: 600; }
+    .food-table .thumb {
+        width: 64px;
+        height: 48px;
+        object-fit: cover;
+        border-radius: 6px;
+        display: block;
+        background: #f4efea;
+    }
+    .food-table .thumb-empty {
+        width: 64px;
+        height: 48px;
+        border-radius: 6px;
+        background: #f4efea;
+        color: #b9aca3;
+        font-size: 11px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    /* 审核状态的提示条 */
+    .status-banner {
+        border-radius: 12px;
+        padding: 14px 20px;
+        margin-bottom: 20px;
+        font-size: 15px;
+        line-height: 1.6;
+    }
+    .status-banner.pending { background: #fef5e7; color: #b9770e; border: 1px solid #f8d7a3; }
+    .status-banner.rejected { background: #fdecea; color: #c0392b; border: 1px solid #f5c6c6; }
     .btn {
         display: inline-block;
         padding: 6px 14px;
@@ -103,6 +133,16 @@
 <h1 style="color:#c0392b; font-size:28px;">📊 商家中心</h1>
 <p style="color:#7f8c8d; margin-bottom:20px;">欢迎回来，{{ session.get('username') }}</p>
 
+{% if merchant_status == 'pending' %}
+<div class="status-banner pending">
+    ⏳ 商家资料待管理员审核。审核通过后即可上传、编辑美食，当前只能查看数据。
+</div>
+{% elif merchant_status == 'rejected' %}
+<div class="status-banner rejected">
+    ❌ 商家申请未通过审核，如有疑问请联系平台管理员。
+</div>
+{% endif %}
+
 <div class="stats">
     <div class="stat-card">
         <div class="num">{{ total_foods }}</div>
@@ -127,7 +167,11 @@
 </div>
 
 <div class="text-right">
+    {% if merchant_status == 'approved' %}
     <a href="{{ url_for('merchant.add_food') }}" class="btn btn-success" style="padding:10px 24px; font-size:16px;">➕ 上传新美食</a>
+    {% else %}
+    <span style="color:#b9aca3; font-size:14px;">审核通过后才能上传美食</span>
+    {% endif %}
 </div>
 
 <h3 style="margin:20px 0 12px;">我的美食列表</h3>
@@ -135,6 +179,7 @@
 <table class="food-table">
     <thead>
         <tr>
+            <th>图片</th>
             <th>名称</th>
             <th>分类</th>
             <th>价格</th>
@@ -147,8 +192,17 @@
     <tbody>
         {% for food in foods %}
         <tr>
+            <td>
+                {% if food.image_url %}
+                <a href="{{ url_for('food.food_detail', food_id=food.id) }}">
+                    <img class="thumb" src="{{ url_for('static', filename=food.image_url) }}" alt="{{ food.name }}" loading="lazy">
+                </a>
+                {% else %}
+                <div class="thumb-empty">无图</div>
+                {% endif %}
+            </td>
             <td>{{ food.name }}</td>
-            <td>{{ food.category_id or '未分类' }}</td>
+            <td>{{ food.category_name or '未分类' }}</td>
             <td>¥{{ food.price }}</td>
             <td>⭐ {{ food.avg_rating or '暂无' }}</td>
             <td>{{ food.like_count or 0 }}</td>
@@ -159,16 +213,27 @@
                     <span class="status-approved">✅ 已通过</span>
                 {% elif food.status == 'offline' %}
                     <span class="status-offline">已下架</span>
+                {% elif food.status == 'rejected' %}
+                    <span class="status-rejected">未通过</span>
                 {% else %}
                     {{ food.status }}
                 {% endif %}
             </td>
             <td>
+                {% if merchant_status == 'approved' %}
                 <a href="{{ url_for('merchant.edit_food', food_id=food.id) }}" class="btn btn-primary">编辑</a>
-                {% if food.status != 'offline' %}
+                {% endif %}
+                {% if food.status != 'offline' and merchant_status == 'approved' %}
                     <form class="action-form" method="post" action="{{ url_for('merchant.offline_food', food_id=food.id) }}"
                           onsubmit="return confirm('确认下架该美食？')">
+                        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
                         <button type="submit" class="btn btn-danger">下架</button>
+                    </form>
+                {% elif food.status in ('offline', 'rejected') and merchant_status == 'approved' %}
+                    <form class="action-form" method="post" action="{{ url_for('merchant.relist_food', food_id=food.id) }}"
+                          onsubmit="return confirm('重新上架需要管理员再审一次，确认提交？')">
+                        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-success">重新上架</button>
                     </form>
                 {% endif %}
             </td>

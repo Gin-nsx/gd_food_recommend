@@ -128,6 +128,7 @@
                 {% if user.role != 'admin' %}
                     <form class="action-form" method="post" action="{{ url_for('admin.toggle_user', user_id=user.id) }}"
                           onsubmit="return confirm('确认{% if user.is_active %}禁用{% else %}启用{% endif %}该用户？')">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
                         <button type="submit" class="btn {% if user.is_active %}btn-danger{% else %}btn-success{% endif %}">
                             {% if user.is_active %}禁用{% else %}启用{% endif %}
                         </button>

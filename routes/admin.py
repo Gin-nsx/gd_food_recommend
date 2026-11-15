@@ -11,7 +11,7 @@ def admin_dashboard():
     """管理员数据看板"""
     if 'user_id' not in session or session.get('role') != 'admin':
         flash('❌ 请先登录管理员账号')
-        return redirect(url_for('auth.login_page'))
+        return redirect(url_for('auth.login_page', next=request.path))
 
     conn = get_db_connection()
     cursor = conn.cursor(pymysql.cursors.DictCursor)
@@ -27,6 +27,9 @@ def admin_dashboard():
 
     cursor.execute("SELECT COUNT(*) as total FROM foods WHERE status='pending'")
     pending_foods = cursor.fetchone()['total']
+
+    cursor.execute("SELECT COUNT(*) as total FROM reports WHERE status='pending'")
+    pending_reports = cursor.fetchone()['total']
 
     cursor.execute("""
         SELECT * FROM users WHERE role='merchant' AND merchant_status='pending'
@@ -48,6 +51,7 @@ def admin_dashboard():
                            total_foods=total_foods,
                            pending_merchants=pending_merchants,
                            pending_foods=pending_foods,
+                           pending_reports=pending_reports,
                            merchants=merchants,
                            foods=foods)
 
@@ -58,7 +62,7 @@ def approve_merchant(user_id):
     """通过商家审核"""
     if 'user_id' not in session or session.get('role') != 'admin':
         flash('❌ 无权操作')
-        return redirect(url_for('auth.login_page'))
+        return redirect(url_for('auth.login_page', next=request.path))
 
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -69,7 +73,7 @@ def approve_merchant(user_id):
         conn.commit()
         flash('✅ 商家审核通过')
     except Exception as e:
-        flash(f'❌ 操作失败：{e}')
+        flash('❌ 操作失败，请稍后重试')
         conn.rollback()
     finally:
         cursor.close()
@@ -84,7 +88,7 @@ def reject_merchant(user_id):
     """拒绝商家审核"""
     if 'user_id' not in session or session.get('role') != 'admin':
         flash('❌ 无权操作')
-        return redirect(url_for('auth.login_page'))
+        return redirect(url_for('auth.login_page', next=request.path))
 
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -95,7 +99,7 @@ def reject_merchant(user_id):
         conn.commit()
         flash('✅ 已拒绝该商家申请')
     except Exception as e:
-        flash(f'❌ 操作失败：{e}')
+        flash('❌ 操作失败，请稍后重试')
         conn.rollback()
     finally:
         cursor.close()
@@ -110,7 +114,7 @@ def approve_food(food_id):
     """通过美食审核"""
     if 'user_id' not in session or session.get('role') != 'admin':
         flash('❌ 无权操作')
-        return redirect(url_for('auth.login_page'))
+        return redirect(url_for('auth.login_page', next=request.path))
 
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -119,7 +123,7 @@ def approve_food(food_id):
         conn.commit()
         flash('✅ 美食审核通过')
     except Exception as e:
-        flash(f'❌ 操作失败：{e}')
+        flash('❌ 操作失败，请稍后重试')
         conn.rollback()
     finally:
         cursor.close()
@@ -134,7 +138,7 @@ def reject_food(food_id):
     """拒绝美食审核"""
     if 'user_id' not in session or session.get('role') != 'admin':
         flash('❌ 无权操作')
-        return redirect(url_for('auth.login_page'))
+        return redirect(url_for('auth.login_page', next=request.path))
 
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -143,7 +147,7 @@ def reject_food(food_id):
         conn.commit()
         flash('✅ 已拒绝该美食')
     except Exception as e:
-        flash(f'❌ 操作失败：{e}')
+        flash('❌ 操作失败，请稍后重试')
         conn.rollback()
     finally:
         cursor.close()
@@ -158,7 +162,7 @@ def manage_users():
     """管理所有用户（支持关键词搜索、角色筛选、分页）"""
     if 'user_id' not in session or session.get('role') != 'admin':
         flash('❌ 无权操作')
-        return redirect(url_for('auth.login_page'))
+        return redirect(url_for('auth.login_page', next=request.path))
 
     page = request.args.get('page', default=1, type=int)
     if page < 1:
@@ -216,7 +220,7 @@ def toggle_user(user_id):
     """禁用或启用用户"""
     if 'user_id' not in session or session.get('role') != 'admin':
         flash('❌ 无权操作')
-        return redirect(url_for('auth.login_page'))
+        return redirect(url_for('auth.login_page', next=request.path))
 
     conn = get_db_connection()
     cursor = conn.cursor(pymysql.cursors.DictCursor)
@@ -235,7 +239,7 @@ def toggle_user(user_id):
         conn.commit()
         flash(f'✅ 用户状态已{"启用" if new_status else "禁用"}')
     except Exception as e:
-        flash(f'❌ 操作失败：{e}')
+        flash('❌ 操作失败，请稍后重试')
         conn.rollback()
     finally:
         cursor.close()
@@ -327,7 +331,7 @@ def admin_reports():
     """管理员查看所有举报"""
     if session.get('role') != 'admin':
         flash('❌ 请先登录管理员账号')
-        return redirect(url_for('auth.login_page'))
+        return redirect(url_for('auth.login_page', next=request.path))
 
     conn = get_db_connection()
     cursor = conn.cursor(pymysql.cursors.DictCursor)
@@ -383,34 +387,61 @@ def admin_reports():
 # ========== 处理举报（POST） ==========
 @admin_bp.route('/admin/report/<int:report_id>/handle', methods=['POST'])
 def handle_report(report_id):
-    """处理举报：提交处理结果"""
+    """处理举报：提交处理结果，可顺带下架美食 / 删除评论"""
     if session.get('role') != 'admin':
         flash('❌ 请先登录管理员账号')
-        return redirect(url_for('auth.login_page'))
+        return redirect(url_for('auth.login_page', next=request.path))
 
     action = request.form.get('action')
-    note = request.form.get('handle_note', '').strip()
+    note = (request.form.get('handle_note') or '').strip()
+    target_action = request.form.get('target_action', 'none')
 
     if action not in ('resolved', 'rejected'):
         flash('❌ 无效操作')
         return redirect(url_for('admin.admin_reports'))
 
+    if len(note) > 255:
+        flash('❌ 处理说明最多 255 个字')
+        return redirect(url_for('admin.admin_reports'))
+
     conn = get_db_connection()
-    cursor = conn.cursor()
+    cursor = conn.cursor(pymysql.cursors.DictCursor)
 
     try:
+        cursor.execute(
+            "SELECT id, food_id, comment_id, status FROM reports WHERE id = %s",
+            (report_id,)
+        )
+        report = cursor.fetchone()
+        if not report:
+            flash('❌ 举报记录不存在')
+            return redirect(url_for('admin.admin_reports'))
+        if report['status'] != 'pending':
+            flash('❌ 该举报已处理过')
+            return redirect(url_for('admin.admin_reports'))
+
         cursor.execute("""
             UPDATE reports
             SET status = %s, handle_note = %s, resolved_at = NOW()
             WHERE id = %s
         """, (action, note, report_id))
-        conn.commit()
 
+        # 只有「已处理」才执行内容处置；驳回不动内容
+        handled_text = ''
+        if action == 'resolved':
+            if target_action == 'offline_food' and report['food_id']:
+                cursor.execute("UPDATE foods SET status='offline' WHERE id=%s", (report['food_id'],))
+                handled_text = '，该美食已下架'
+            elif target_action == 'delete_comment' and report['comment_id']:
+                cursor.execute("DELETE FROM comments WHERE id=%s", (report['comment_id'],))
+                handled_text = '，该评论已删除'
+
+        conn.commit()
         action_text = '已处理' if action == 'resolved' else '已驳回'
-        flash(f'✅ 举报{action_text}')
-    except Exception as e:
+        flash(f'✅ 举报{action_text}{handled_text}')
+    except Exception:
         conn.rollback()
-        flash(f'❌ 操作失败：{e}')
+        flash('❌ 操作失败，请稍后重试')
     finally:
         cursor.close()
         conn.close()

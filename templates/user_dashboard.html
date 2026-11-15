@@ -269,8 +269,31 @@
         <div class="quick-stats">
             <div class="stat"><div class="num">{{ favorite_count }}</div><div class="label">❤️ 收藏</div></div>
             <div class="stat"><div class="num">{{ history_count }}</div><div class="label">🕐 浏览记录</div></div>
-            <div class="stat"><div class="num">{{ blacklist_count }}</div><div class="label">🚫 黑名单</div></div>
-            <div class="stat"><div class="num">{{ user.allergy.split(',')|length if user.allergy else 0 }}</div><div class="label">🚫 过敏项</div></div>
+            <div class="stat"><div class="num">{{ rating_count }}</div><div class="label">⭐ 我的评分</div></div>
+            <div class="stat"><div class="num">{{ comment_count }}</div><div class="label">💬 我的评论</div></div>
+        </div>
+
+        <!-- 修改密码 -->
+        <div class="pref-section">
+            <h4>🔑 修改密码</h4>
+            <form method="post" action="{{ url_for('user.change_password') }}">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                <div class="pref-row">
+                    <label>原密码</label>
+                    <input type="password" name="old_password" placeholder="请输入当前密码" required autocomplete="current-password">
+                </div>
+                <div class="pref-row" style="margin-top: 12px;">
+                    <label>新密码</label>
+                    <input type="password" name="new_password" placeholder="至少 6 位" required minlength="6" autocomplete="new-password">
+                </div>
+                <div class="pref-row" style="margin-top: 12px;">
+                    <label>确认新密码</label>
+                    <input type="password" name="confirm_password" placeholder="再输入一次新密码" required minlength="6" autocomplete="new-password">
+                </div>
+                <div style="margin-top: 16px; text-align: right;">
+                    <button type="submit" class="btn-save">修改密码</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>

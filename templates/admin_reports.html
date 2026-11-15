@@ -213,10 +213,14 @@
                     </td>
                     <td>
                         {% if r.status == 'pending' %}
-                        <button class="btn btn-success"
-                                onclick="openHandleModal({{ r.id }}, 'resolved', '{{ (r.food_name or "美食")|replace("'", "\\'") }}')">已处理</button>
-                        <button class="btn btn-secondary"
-                                onclick="openHandleModal({{ r.id }}, 'rejected', '{{ (r.food_name or "美食")|replace("'", "\\'") }}')">驳回</button>
+                        <button class="btn btn-success handle-btn" data-id="{{ r.id }}"
+                                data-action="resolved" data-kind="food"
+                                data-name="{{ r.food_name or '美食' }}"
+                                data-food-id="{{ r.food_id or '' }}">已处理</button>
+                        <button class="btn btn-secondary handle-btn" data-id="{{ r.id }}"
+                                data-action="rejected" data-kind="food"
+                                data-name="{{ r.food_name or '美食' }}"
+                                data-food-id="{{ r.food_id or '' }}">驳回</button>
                         {% else %}—{% endif %}
                     </td>
                 </tr>
@@ -278,10 +282,12 @@
                     </td>
                     <td>
                         {% if r.status == 'pending' %}
-                        <button class="btn btn-success"
-                                onclick="openHandleModal({{ r.id }}, 'resolved', '评论')">已处理</button>
-                        <button class="btn btn-secondary"
-                                onclick="openHandleModal({{ r.id }}, 'rejected', '评论')">驳回</button>
+                        <button class="btn btn-success handle-btn" data-id="{{ r.id }}"
+                                data-action="resolved" data-kind="comment"
+                                data-name="评论">已处理</button>
+                        <button class="btn btn-secondary handle-btn" data-id="{{ r.id }}"
+                                data-action="rejected" data-kind="comment"
+                                data-name="评论">驳回</button>
                         {% else %}—{% endif %}
                     </td>
                 </tr>
@@ -299,7 +305,14 @@
         <h3 id="handleModalTitle">🚨 处理举报</h3>
         <p class="modal-tip" id="handleModalTip">请填写处理说明，提交后用户可在"我的举报"中查看。</p>
         <form id="handleForm" method="POST" action="">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
             <input type="hidden" name="action" id="handleAction" value="">
+            <div id="targetActionBox">
+                <label for="targetAction" style="display:block; font-size:14px; color:#555; margin-bottom:6px;">同步执行</label>
+                <select name="target_action" id="targetAction"
+                        style="width:100%; padding:9px 12px; border:1px solid #e2dbd4; border-radius:8px; font-family:inherit; font-size:14px;">
+                </select>
+            </div>
             <textarea name="handle_note" id="handleNote"
                       placeholder="例如：已核实并下架该美食 / 举报内容不属实，驳回"></textarea>
             <div class="modal-actions">
@@ -311,23 +324,66 @@
 </div>
 
 <script>
-    function openHandleModal(reportId, action, targetName) {
-        const title = action === 'resolved' ? '✅ 处理举报' : '❌ 驳回举报';
-        const tip = action === 'resolved'
-            ? '请填写处理说明（如：已核实并处理），用户可在"我的举报"中看到。'
+    // 处理举报：可顺手把被举报的美食下架 / 把被举报的评论删掉，不用再单独操作一遍
+    var TARGET_OPTIONS = {
+        food: [
+            ['none', '仅记录处理结果'],
+            ['offline_food', '同步下架被举报的美食']
+        ],
+        comment: [
+            ['none', '仅记录处理结果'],
+            ['delete_comment', '同步删除被举报的评论']
+        ]
+    };
+
+    function openHandleModal(reportId, action, kind, targetName) {
+        var isResolved = action === 'resolved';
+        document.getElementById('handleModalTitle').textContent =
+            (isResolved ? '✅ 处理举报（' : '❌ 驳回举报（') + targetName + '）';
+        document.getElementById('handleModalTip').textContent = isResolved
+            ? '请填写处理说明，用户可在"我的举报"中看到；也可以顺手处理掉被举报的内容。'
             : '请填写驳回说明，用户可在"我的举报"中看到。';
 
-        document.getElementById('handleModalTitle').textContent = title + '（' + targetName + '）';
-        document.getElementById('handleModalTip').textContent = tip;
         document.getElementById('handleAction').value = action;
         document.getElementById('handleNote').value = '';
         document.getElementById('handleForm').action = '/admin/report/' + reportId + '/handle';
+
+        // 驳回时不做任何内容处置，避免误删
+        var box = document.getElementById('targetActionBox');
+        var select = document.getElementById('targetAction');
+        select.innerHTML = '';
+        if (isResolved) {
+            var options = TARGET_OPTIONS[kind] || TARGET_OPTIONS.food;
+            for (var i = 0; i < options.length; i++) {
+                var opt = document.createElement('option');
+                opt.value = options[i][0];
+                opt.textContent = options[i][1];
+                select.appendChild(opt);
+            }
+            box.style.display = 'block';
+        } else {
+            box.style.display = 'none';
+            select.value = 'none';
+        }
+
         document.getElementById('handleModal').classList.add('show');
     }
     function closeHandleModal() {
         document.getElementById('handleModal').classList.remove('show');
     }
-    document.getElementById('handleModal').addEventListener('click', function(e) {
+
+    document.querySelectorAll('.handle-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            openHandleModal(
+                btn.getAttribute('data-id'),
+                btn.getAttribute('data-action'),
+                btn.getAttribute('data-kind'),
+                btn.getAttribute('data-name')
+            );
+        });
+    });
+
+    document.getElementById('handleModal').addEventListener('click', function (e) {
         if (e.target === this) closeHandleModal();
     });
 </script>
