@@ -16,15 +16,32 @@
     }
     .detail-left .food-image {
         width: 100%;
-        height: 280px;
-        background: #e8e0d8;
+        aspect-ratio: 4 / 3;
+        background: linear-gradient(135deg, #f6efe7 0%, #e7d9c9 100%);
         border-radius: 12px;
+        overflow: hidden;
+        position: relative;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 40px;
-        color: #999;
+        font-size: 20px;
+        color: #b9a894;
         margin-bottom: 20px;
+    }
+    .detail-left .food-image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+    }
+    /* 底部渐变压暗，兼顾叠字可读性与水印遮挡 */
+    .detail-left .food-image::after {
+        content: '';
+        position: absolute;
+        left: 0; right: 0; bottom: 0;
+        height: 24%;
+        background: linear-gradient(to top, rgba(25,18,12,0.35), rgba(25,18,12,0));
+        pointer-events: none;
     }
     .detail-left .food-name {
         font-size: 32px;
@@ -283,7 +300,13 @@
 <div class="detail-container">
     <!-- 左侧：美食信息 -->
     <div class="detail-left">
-        <div class="food-image">📷 {{ food.name }}</div>
+        <div class="food-image">
+            {% if food.image_url %}
+            <img src="{{ url_for('static', filename=food.image_url) }}" alt="{{ food.name }}" onerror="this.remove()">
+            {% else %}
+            <span>{{ food.name }}</span>
+            {% endif %}
+        </div>
         <div class="food-name">{{ food.name }}</div>
         <div class="food-meta">
             <span class="rating">⭐ {{ food.avg_rating or '暂无评分' }}</span>

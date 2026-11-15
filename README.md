@@ -66,9 +66,14 @@ gd_food_recommend/
 │   ├── db.py               # get_db_connection()
 │   └── cf.py               # 协同过滤算法 + Top-N / MAE 评估
 ├── templates/              # Jinja2 模板
-└── static/js/
-    └── echarts.min.js      # ECharts 本地引入
+└── static/
+    ├── js/
+    │   └── echarts.min.js  # ECharts 本地引入
+    └── images/foods/       # 74 张菜品配图（<food_id>.jpg，800×600）
 ```
+
+> 菜品配图为 AI 生成、统一风格制作，说明见 `static/images/foods/README.md`；
+> 替换为实拍图时保持同名覆盖即可，无需改动模板与数据库。
 
 ## 数据库设计（10 张表）
 

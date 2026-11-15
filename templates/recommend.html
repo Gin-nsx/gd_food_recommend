@@ -27,14 +27,33 @@
     .food-card .food-image {
         width: 100%;
         height: 170px;
-        background: #e8e0d8;
+        background: linear-gradient(135deg, #f6efe7 0%, #e7d9c9 100%);
         border-radius: 12px;
+        overflow: hidden;
+        position: relative;
         display: flex;
         align-items: center;
         justify-content: center;
-        color: #999;
+        color: #b9a894;
         font-size: 14px;
         margin-bottom: 12px;
+    }
+    .food-card .food-image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+        transition: transform 0.5s ease;
+    }
+    .food-card:hover .food-image img { transform: scale(1.07); }
+    /* 底部渐变压暗：既提升叠字可读性，也遮住生成图右下角的水印 */
+    .food-card .food-image::after {
+        content: '';
+        position: absolute;
+        left: 0; right: 0; bottom: 0;
+        height: 45%;
+        background: linear-gradient(to top, rgba(25,18,12,0.45), rgba(25,18,12,0));
+        pointer-events: none;
     }
     .food-card .food-name {
         font-size: 20px;
@@ -122,7 +141,13 @@
         {% for food in foods %}
         <div class="food-card"
              onclick="location.href='{{ url_for('food.food_detail', food_id=food.id) }}'">
-            <div class="food-image">📷 美食图片</div>
+            <div class="food-image">
+                {% if food.image_url %}
+                <img src="{{ url_for('static', filename=food.image_url) }}" alt="{{ food.name }}" loading="lazy" onerror="this.remove()">
+                {% else %}
+                <span>{{ food.name }}</span>
+                {% endif %}
+            </div>
             <div class="food-name">{{ food.name }}</div>
             <div class="food-meta">
                 <span class="food-rating">⭐ {{ food.avg_rating or '暂无' }}</span>
