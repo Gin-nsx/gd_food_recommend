@@ -1,14 +1,31 @@
 from flask import Flask, render_template, request, session
 import pymysql
-from config import DB_CONFIG
-from routes.auth import auth_bp
-from routes.merchant import merchant_bp
+
+from config import (
+    DEBUG,
+    HOST,
+    PORT,
+    SECRET_KEY,
+    SESSION_COOKIE_HTTPONLY,
+    SESSION_COOKIE_SAMESITE,
+    PERMANENT_SESSION_LIFETIME,
+)
 from routes.admin import admin_bp
+from routes.auth import auth_bp
 from routes.food import food_bp
-from routes.user import user_bp
+from routes.merchant import merchant_bp
 from routes.recommend import recommend_bp
+from routes.user import user_bp
+from utils.db import get_db_connection
+
 app = Flask(__name__)
-app.secret_key = 'your-secret-key-here-change-it-later'
+# 密钥不写死在源码里，见 config.load_secret_key()
+app.secret_key = SECRET_KEY
+app.config.update(
+    SESSION_COOKIE_HTTPONLY=SESSION_COOKIE_HTTPONLY,
+    SESSION_COOKIE_SAMESITE=SESSION_COOKIE_SAMESITE,
+    PERMANENT_SESSION_LIFETIME=PERMANENT_SESSION_LIFETIME,
+)
 
 # 注册蓝图
 app.register_blueprint(auth_bp)
@@ -17,17 +34,19 @@ app.register_blueprint(admin_bp)
 app.register_blueprint(food_bp)
 app.register_blueprint(user_bp)
 app.register_blueprint(recommend_bp)
+
+
 @app.route('/')
 def index():
     """首页：展示美食列表，支持搜索和分类筛选"""
     keyword = request.args.get('q', '').strip()
     category_id = request.args.get('category', '')
 
-    conn = pymysql.connect(**DB_CONFIG)
+    conn = get_db_connection()
     cursor = conn.cursor(pymysql.cursors.DictCursor)
 
     sql = """
-        SELECT f.*, u.username as merchant_name 
+        SELECT f.*, COALESCE(u.merchant_name, u.username) AS merchant_name
         FROM foods f
         LEFT JOIN users u ON f.merchant_id = u.id
         WHERE f.status = 'approved'
@@ -78,6 +97,5 @@ def index():
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
-
-
+    # debug 由环境变量 FLASK_DEBUG 控制，默认关闭（开着等于把调试器暴露给外部）
+    app.run(host=HOST, port=PORT, debug=DEBUG)
