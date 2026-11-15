@@ -28,11 +28,15 @@
     .btn {
         display: inline-block;
         padding: 4px 14px;
+        border: none;
+        cursor: pointer;
+        font-family: inherit;
         border-radius: 6px;
         color: white;
         text-decoration: none;
         font-size: 13px;
     }
+    .action-form { display: inline; margin: 0; }
     .btn-danger { background: #e74c3c; }
     .btn-danger:hover { background: #c0392b; }
     .btn-success { background: #27ae60; }
@@ -100,9 +104,12 @@
             <td>{{ user.created_at }}</td>
             <td>
                 {% if user.role != 'admin' %}
-                    <a href="{{ url_for('admin.toggle_user', user_id=user.id) }}" class="btn {% if user.is_active %}btn-danger{% else %}btn-success{% endif %}">
-                        {% if user.is_active %}禁用{% else %}启用{% endif %}
-                    </a>
+                    <form class="action-form" method="post" action="{{ url_for('admin.toggle_user', user_id=user.id) }}"
+                          onsubmit="return confirm('确认{% if user.is_active %}禁用{% else %}启用{% endif %}该用户？')">
+                        <button type="submit" class="btn {% if user.is_active %}btn-danger{% else %}btn-success{% endif %}">
+                            {% if user.is_active %}禁用{% else %}启用{% endif %}
+                        </button>
+                    </form>
                 {% else %}
                     <span style="color:#999; font-size:13px;">不可操作</span>
                 {% endif %}

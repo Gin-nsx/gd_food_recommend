@@ -147,7 +147,7 @@ def edit_food(food_id):
 
 
 # ========== 商家下架美食 ==========
-@merchant_bp.route('/merchant/food/offline/<int:food_id>')
+@merchant_bp.route('/merchant/food/offline/<int:food_id>', methods=['POST'])
 def offline_food(food_id):
     """商家下架美食"""
     if 'user_id' not in session or session.get('role') != 'merchant':

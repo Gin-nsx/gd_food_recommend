@@ -50,12 +50,16 @@
     .btn {
         display: inline-block;
         padding: 6px 14px;
+        border: none;
+        cursor: pointer;
+        font-family: inherit;
         border-radius: 6px;
         color: white;
         text-decoration: none;
         font-size: 13px;
         margin-right: 4px;
     }
+    .action-form { display: inline; margin: 0; }
     .btn-primary { background: #3498db; }
     .btn-primary:hover { background: #2980b9; }
     .btn-warning { background: #f39c12; }
@@ -162,7 +166,10 @@
             <td>
                 <a href="{{ url_for('merchant.edit_food', food_id=food.id) }}" class="btn btn-primary">编辑</a>
                 {% if food.status != 'offline' %}
-                    <a href="{{ url_for('merchant.offline_food', food_id=food.id) }}" class="btn btn-danger" onclick="return confirm('确认下架该美食？')">下架</a>
+                    <form class="action-form" method="post" action="{{ url_for('merchant.offline_food', food_id=food.id) }}"
+                          onsubmit="return confirm('确认下架该美食？')">
+                        <button type="submit" class="btn btn-danger">下架</button>
+                    </form>
                 {% endif %}
             </td>
         </tr>

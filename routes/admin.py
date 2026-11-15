@@ -53,7 +53,7 @@ def admin_dashboard():
 
 
 # ========== 审核商家 ==========
-@admin_bp.route('/admin/merchant/approve/<int:user_id>')
+@admin_bp.route('/admin/merchant/approve/<int:user_id>', methods=['POST'])
 def approve_merchant(user_id):
     """通过商家审核"""
     if 'user_id' not in session or session.get('role') != 'admin':
@@ -79,7 +79,7 @@ def approve_merchant(user_id):
 
 
 # ========== 拒绝商家 ==========
-@admin_bp.route('/admin/merchant/reject/<int:user_id>')
+@admin_bp.route('/admin/merchant/reject/<int:user_id>', methods=['POST'])
 def reject_merchant(user_id):
     """拒绝商家审核"""
     if 'user_id' not in session or session.get('role') != 'admin':
@@ -105,7 +105,7 @@ def reject_merchant(user_id):
 
 
 # ========== 审核美食 ==========
-@admin_bp.route('/admin/food/approve/<int:food_id>')
+@admin_bp.route('/admin/food/approve/<int:food_id>', methods=['POST'])
 def approve_food(food_id):
     """通过美食审核"""
     if 'user_id' not in session or session.get('role') != 'admin':
@@ -129,7 +129,7 @@ def approve_food(food_id):
 
 
 # ========== 拒绝美食 ==========
-@admin_bp.route('/admin/food/reject/<int:food_id>')
+@admin_bp.route('/admin/food/reject/<int:food_id>', methods=['POST'])
 def reject_food(food_id):
     """拒绝美食审核"""
     if 'user_id' not in session or session.get('role') != 'admin':
@@ -174,7 +174,7 @@ def manage_users():
 
 
 # ========== 禁用/启用用户 ==========
-@admin_bp.route('/admin/user/toggle/<int:user_id>')
+@admin_bp.route('/admin/user/toggle/<int:user_id>', methods=['POST'])
 def toggle_user(user_id):
     """禁用或启用用户"""
     if 'user_id' not in session or session.get('role') != 'admin':

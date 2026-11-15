@@ -57,11 +57,16 @@
     .btn {
         display: inline-block;
         padding: 4px 14px;
+        border: none;
+        cursor: pointer;
+        font-family: inherit;
         border-radius: 6px;
         color: white;
         text-decoration: none;
         font-size: 13px;
     }
+    /* 审核按钮改为 POST 表单提交，保持按钮外观 */
+    .action-form { display: inline; margin: 0; }
     .btn-success { background: #27ae60; }
     .btn-success:hover { background: #1e8449; }
     .btn-danger { background: #e74c3c; }
@@ -152,8 +157,13 @@
                 <td>{{ m.merchant_address or '未填写' }}</td>
                 <td>{{ m.created_at }}</td>
                 <td>
-                    <a href="{{ url_for('admin.approve_merchant', user_id=m.id) }}" class="btn btn-success">通过</a>
-                    <a href="{{ url_for('admin.reject_merchant', user_id=m.id) }}" class="btn btn-danger">拒绝</a>
+                    <form class="action-form" method="post" action="{{ url_for('admin.approve_merchant', user_id=m.id) }}">
+                        <button type="submit" class="btn btn-success">通过</button>
+                    </form>
+                    <form class="action-form" method="post" action="{{ url_for('admin.reject_merchant', user_id=m.id) }}"
+                          onsubmit="return confirm('确认拒绝该商家申请？')">
+                        <button type="submit" class="btn btn-danger">拒绝</button>
+                    </form>
                 </td>
             </tr>
             {% endfor %}
@@ -174,8 +184,13 @@
                 <td>{{ f.merchant_name }}</td>
                 <td>¥{{ f.price }}</td>
                 <td>
-                    <a href="{{ url_for('admin.approve_food', food_id=f.id) }}" class="btn btn-success">通过</a>
-                    <a href="{{ url_for('admin.reject_food', food_id=f.id) }}" class="btn btn-danger">拒绝</a>
+                    <form class="action-form" method="post" action="{{ url_for('admin.approve_food', food_id=f.id) }}">
+                        <button type="submit" class="btn btn-success">通过</button>
+                    </form>
+                    <form class="action-form" method="post" action="{{ url_for('admin.reject_food', food_id=f.id) }}"
+                          onsubmit="return confirm('确认拒绝该美食？')">
+                        <button type="submit" class="btn btn-danger">拒绝</button>
+                    </form>
                 </td>
             </tr>
             {% endfor %}
