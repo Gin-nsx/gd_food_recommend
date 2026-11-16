@@ -1021,7 +1021,7 @@ def rc04():
       '以零评分新用户访问 /recommend', '卡片评分全部 ≥ 3.5')
 def rc05():
     body = html_of(mk(U2_ID, U2_NAME, 'user').get('/recommend'))
-    ratings = [float(x) for x in re.findall(r'⭐\s*([0-9.]+)', body)]
+    ratings = [float(x) for x in re.findall(r'[⭐★](?:</span>)?\s*([0-9.]+)', body)]
     assert ratings, '未解析到评分'
     low = [r for r in ratings if r < 3.5]
     assert not low, f'出现低分推荐 {low}'

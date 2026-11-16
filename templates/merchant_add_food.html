@@ -5,62 +5,58 @@
 {% block content %}
 
 <style>
+    .form-head {
+        max-width: 680px;
+        margin: 0 auto 22px;
+        text-align: center;
+    }
+    .form-head h2 {
+        font-family: var(--font-serif);
+        font-size: 28px;
+        font-weight: 700;
+        letter-spacing: .04em;
+        color: var(--ink);
+    }
+    .form-head .sub { margin-top: 7px; font-size: 13px; color: var(--ink-3); }
+
     .form-box {
-        max-width: 600px;
+        max-width: 680px;
         margin: 0 auto;
-        background: white;
-        padding: 35px 40px;
-        border-radius: 16px;
-        box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--r-lg);
+        box-shadow: var(--sh-1);
+        padding: 30px 34px 34px;
     }
-    .form-box label {
+    .form-box form > label {
         display: block;
+        margin: 18px 0 7px;
+        font-size: 12.5px;
         font-weight: 600;
-        margin: 14px 0 4px;
-        color: #333;
+        letter-spacing: .04em;
+        color: var(--ink-2);
     }
-    .form-box input, .form-box select, .form-box textarea {
-        width: 100%;
-        padding: 10px 14px;
-        border: 1px solid #ddd;
-        border-radius: 8px;
-        font-size: 15px;
-    }
-    .form-box textarea {
-        height: 80px;
-        resize: vertical;
-    }
-    .form-box .btn {
-        width: 100%;
-        padding: 12px;
-        background: #c0392b;
-        color: white;
-        border: none;
-        border-radius: 8px;
-        font-size: 18px;
-        font-weight: 600;
-        cursor: pointer;
-        margin-top: 20px;
-    }
-    .form-box .btn:hover { background: #a93226; }
-    .form-box .hint {
-        font-size: 13px;
-        color: #7f8c8d;
-        margin-top: 4px;
-    }
-    .form-box input[type="file"] {
-        padding: 8px;
-        background: #fafafa;
-    }
-    .preview {
-        margin-top: 10px;
-        width: 100%;
-        max-width: 260px;
-        border-radius: 10px;
+    .form-box form > label:first-of-type { margin-top: 0; }
+    .form-box .req { color: var(--brand); font-weight: 600; }
+    .form-box .hint { font-size: 11.5px; color: var(--ink-4); margin-top: 5px; line-height: 1.6; }
+    .form-box .preview {
         display: block;
-        border: 1px solid #eee;
+        width: 100%;
+        max-width: 320px;
+        aspect-ratio: 4 / 3;
+        object-fit: cover;
+        border-radius: var(--r);
+        border: 1px solid var(--line);
+        margin-top: 12px;
+        background: var(--surface-2);
     }
-    .hidden { display: none; }
+    .form-box .preview.hidden, .form-box .hidden { display: none !important; }
+    .form-box button.btn { width: 100%; margin-top: 24px; height: 46px; font-size: 15px; letter-spacing: .1em; }
+    .form-box .btn-secondary { width: 100%; margin-top: 10px; text-align: center; }
+    @media (max-width: 680px) {
+        .form-box { padding: 22px 18px 26px; border-radius: var(--r); }
+        .form-head h2 { font-size: 23px; }
+    }
 </style>
 
 <script>
@@ -78,12 +74,12 @@
     });
 </script>
 
-<h2 style="text-align:center; color:#c0392b; margin-bottom:24px;">➕ 上传新美食</h2>
+<div class="form-head"><h2>上传新美食</h2><p class="sub">填写菜品信息，提交后由管理员审核上线</p></div>
 
 <div class="form-box">
     <form method="POST" enctype="multipart/form-data">
         <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-        <label>美食名称 <span style="color:#e74c3c;">*</span></label>
+        <label>美食名称 <span class="req">*</span></label>
         <input type="text" name="name" placeholder="如：秘制叉烧肠粉" required>
 
         <label>分类</label>
@@ -94,7 +90,7 @@
             {% endfor %}
         </select>
 
-        <label>价格（元） <span style="color:#e74c3c;">*</span></label>
+        <label>价格（元） <span class="req">*</span></label>
         <input type="number" name="price" step="0.01" placeholder="如 15.00" required>
 
         <label>原材料</label>

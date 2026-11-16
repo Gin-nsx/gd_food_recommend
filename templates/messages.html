@@ -5,149 +5,148 @@
 {% block content %}
 
 <style>
-    .msg-head {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-end;
-        flex-wrap: wrap;
-        gap: 12px;
-        margin-bottom: 18px;
+    .msg-head { margin-bottom: 24px; }
+    .msg-head .eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 10.5px;
+        font-weight: 600;
+        letter-spacing: .22em;
+        text-transform: uppercase;
+        color: var(--gold);
+        margin-bottom: 8px;
     }
+    .msg-head .eyebrow::before { content: ""; width: 20px; height: 1px; background: var(--gold); opacity: .6; }
     .msg-head h2 {
-        font-size: 26px;
-        color: #2c3e50;
+        font-family: var(--font-serif);
+        font-size: 30px;
+        font-weight: 700;
+        letter-spacing: .03em;
+        color: var(--ink);
     }
-    .msg-head .sub {
-        color: #95a5a6;
-        font-size: 13px;
-        margin-top: 4px;
-    }
+    .msg-head .sub { margin-top: 6px; font-size: 13px; color: var(--ink-3); }
 
-    /* ===== 会话列表 ===== */
     .conv-list {
-        background: #fff;
-        border-radius: 14px;
-        box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--r-lg);
         overflow: hidden;
+        box-shadow: var(--sh-1);
     }
     .conv-item {
         display: flex;
         align-items: center;
         gap: 14px;
-        padding: 16px 20px;
+        padding: 16px 22px;
+        border-bottom: 1px solid var(--line);
         text-decoration: none;
-        color: inherit;
-        border-bottom: 1px solid #f6f1ec;
-        transition: background 0.16s;
+        transition: background .2s var(--ease);
+        position: relative;
     }
-    .conv-item:last-child { border-bottom: none; }
-    .conv-item:hover { background: #fffaf9; }
-    .conv-item.has-unread { background: #fffaf9; }
-    .conv-item.has-unread:hover { background: #fff4f2; }
+    .conv-item:last-child { border-bottom: 0; }
+    .conv-item:hover { background: #FCF8F2; }
+    .conv-item.has-unread { background: #FFFCF7; }
+    .conv-item.has-unread::before {
+        content: "";
+        position: absolute;
+        left: 0; top: 0; bottom: 0;
+        width: 2.5px;
+        background: linear-gradient(180deg, var(--brand), var(--gold));
+    }
 
     .conv-avatar {
         position: relative;
-        width: 46px;
-        height: 46px;
         flex: 0 0 auto;
+        width: 44px; height: 44px;
+        display: flex; align-items: center; justify-content: center;
         border-radius: 50%;
-        background: #fdeceb;
-        color: #c0392b;
-        font-weight: 700;
-        font-size: 18px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        font-size: 15px;
+        font-weight: 600;
+        color: var(--ink-3);
+        text-transform: uppercase;
     }
-    .conv-avatar.admin { background: #fdeceb; color: #c0392b; }
-    .conv-avatar.merchant { background: #fdf6e3; color: #b7950b; }
-    .conv-avatar.user { background: #eef3f8; color: #5b7c99; }
+    .conv-avatar.admin { background: var(--brand-soft); color: var(--brand); border-color: rgba(162,58,37,.16); }
+    .conv-avatar.merchant { background: var(--gold-soft); color: #8A6520; border-color: rgba(185,138,62,.2); }
+
     .conv-dot {
         position: absolute;
-        top: -2px;
-        right: -2px;
-        min-width: 18px;
-        height: 18px;
+        top: -3px; right: -3px;
+        min-width: 18px; height: 18px;
         padding: 0 5px;
-        border-radius: 9px;
-        background: #c0392b;
+        display: inline-flex; align-items: center; justify-content: center;
+        border-radius: 99px;
+        background: var(--brand);
         color: #fff;
-        font-size: 11px;
-        font-weight: 600;
-        line-height: 18px;
-        text-align: center;
-        box-shadow: 0 0 0 2px #fff;
+        font-family: var(--font-num);
+        font-size: 10.5px;
+        font-weight: 700;
+        border: 2px solid var(--surface);
     }
 
-    .conv-main {
-        flex: 1;
-        min-width: 0;
-    }
-    .conv-name-row {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        margin-bottom: 4px;
-    }
-    .conv-name {
-        font-size: 15.5px;
-        font-weight: 700;
-        color: #2c3e50;
-    }
+    .conv-main { flex: 1; min-width: 0; }
+    .conv-name-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .conv-name { font-size: 14.5px; font-weight: 600; color: var(--ink); }
     .role-tag {
-        font-size: 11px;
+        display: inline-flex;
         padding: 1px 8px;
-        border-radius: 10px;
-        background: #eef3f8;
-        color: #5b7c99;
-        flex: 0 0 auto;
+        border-radius: 99px;
+        font-size: 10.5px;
+        font-weight: 600;
+        letter-spacing: .04em;
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        color: var(--ink-3);
     }
-    .role-tag.admin { background: #fdeceb; color: #c0392b; }
-    .role-tag.merchant { background: #fdf6e3; color: #b7950b; }
+    .role-tag.admin { background: var(--brand-soft); color: var(--brand); border-color: rgba(162,58,37,.14); }
+    .role-tag.merchant { background: var(--gold-soft); color: #8A6520; border-color: rgba(185,138,62,.2); }
+
     .conv-preview {
-        font-size: 13.5px;
-        color: #98a0a6;
-        white-space: nowrap;
+        margin-top: 4px;
+        font-size: 13px;
+        color: var(--ink-3);
         overflow: hidden;
         text-overflow: ellipsis;
-    }
-    .conv-preview .me {
-        color: #c0b6ae;
-    }
-    .conv-item.has-unread .conv-preview {
-        color: #6b6159;
-        font-weight: 500;
-    }
-    .conv-side {
-        flex: 0 0 auto;
-        text-align: right;
-        align-self: flex-start;
-        padding-top: 2px;
-    }
-    .conv-time {
-        font-size: 12px;
-        color: #b0a49b;
         white-space: nowrap;
     }
+    .conv-preview .me { color: var(--ink-4); }
+    .conv-side { flex: 0 0 auto; text-align: right; }
+    .conv-time { font-family: var(--font-num); font-size: 11.5px; color: var(--ink-4); }
 
     .empty-box {
-        background: #fff;
-        border-radius: 14px;
-        padding: 60px 20px;
         text-align: center;
-        color: #b0a49b;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.04);
-        line-height: 1.9;
+        padding: 74px 24px;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--r-lg);
+        color: var(--ink-3);
+        font-size: 14.5px;
+        line-height: 2;
     }
-    @media (max-width: 640px) {
-        .conv-item { padding: 14px; }
-        .conv-avatar { width: 40px; height: 40px; font-size: 16px; }
+    .empty-box::before {
+        content: "";
+        display: block;
+        width: 50px; height: 50px;
+        margin: 0 auto 16px;
+        border-radius: 50%;
+        border: 1px dashed var(--ink-4);
+        background: radial-gradient(circle at 50% 45%, var(--surface-2), transparent 70%);
+    }
+    .empty-box span { font-size: 12.5px; color: var(--ink-4); }
+
+    @media (max-width: 768px) {
+        .msg-head h2 { font-size: 24px; }
+        .conv-item { padding: 14px 16px; gap: 11px; }
+        .conv-avatar { width: 38px; height: 38px; font-size: 13px; }
     }
 </style>
 
 <div class="msg-head">
     <div>
-        <h2>✉️ 我的消息</h2>
+        <div class="eyebrow">Messages</div>
+        <h2>我的消息</h2>
         <p class="sub">
             {% if conversations %}
             共 {{ conversations|length }} 个对话{% if unread %}，{{ unread }} 条未读{% endif %} · 点进去可以看到完整聊天记录
@@ -190,8 +189,9 @@
 </div>
 {% else %}
 <div class="empty-box">
-    📭 还没有任何消息<br>
-    <span style="font-size:13px;">有举报需要核实时，管理员会在这里联系你</span>
+    还没有任何消息
+    <br>
+    <span>有举报需要核实时，管理员会在这里联系你</span>
 </div>
 {% endif %}
 

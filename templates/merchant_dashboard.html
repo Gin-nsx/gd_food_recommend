@@ -5,141 +5,168 @@
 {% block content %}
 
 <style>
+    .page-head { margin-bottom: 20px; }
+    .page-head h1 {
+        font-family: var(--font-serif);
+        font-size: 30px;
+        font-weight: 700;
+        letter-spacing: .03em;
+        color: var(--ink);
+    }
+    .page-head .sub { margin-top: 6px; font-size: 13px; color: var(--ink-3); }
+
+    .status-banner {
+        padding: 13px 18px;
+        border-radius: var(--r);
+        margin-bottom: 18px;
+        font-size: 13.5px;
+        border: 1px solid transparent;
+        line-height: 1.7;
+    }
+    .status-banner.pending { background: var(--gold-soft); border-color: rgba(185,138,62,.22); color: #8A6520; }
+    .status-banner.rejected { background: var(--danger-soft); border-color: rgba(178,58,50,.18); color: var(--danger); }
+
     .stats {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-        gap: 16px;
-        margin-bottom: 30px;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 260px));
+        gap: 14px;
+        margin-bottom: 20px;
     }
     .stat-card {
-        background: white;
-        padding: 20px;
-        border-radius: 12px;
-        text-align: center;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        padding: 18px 20px;
+        border-radius: var(--r);
+        background: var(--surface);
+        border: 1px solid var(--line);
+        box-shadow: var(--sh-1);
     }
     .stat-card .num {
-        font-size: 32px;
+        font-family: var(--font-num);
+        font-size: 30px;
         font-weight: 700;
-        color: #c0392b;
+        letter-spacing: -.03em;
+        color: var(--brand);
+        line-height: 1.1;
     }
     .stat-card .label {
-        font-size: 14px;
-        color: #7f8c8d;
+        margin-top: 5px;
+        font-size: 12px;
+        letter-spacing: .1em;
+        text-transform: uppercase;
+        color: var(--ink-4);
     }
-    .food-table {
-        width: 100%;
-        background: white;
-        border-radius: 12px;
-        overflow: hidden;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+
+    .charts-row {
+        display: grid;
+        grid-template-columns: 1.15fr 1fr;
+        gap: 16px;
+        margin-bottom: 22px;
     }
-    .food-table th {
-        background: #c0392b;
-        color: white;
-        padding: 12px 16px;
-        text-align: left;
+    .chart-box {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--r-lg);
+        box-shadow: var(--sh-1);
+        padding: 18px 20px 12px;
     }
-    .food-table td {
-        padding: 12px 16px;
-        border-bottom: 1px solid #eee;
+    .chart-box h3 {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14.5px;
+        font-weight: 600;
+        color: var(--ink);
+        margin-bottom: 8px;
     }
-    .food-table .status-pending { color: #f39c12; font-weight: 600; }
-    .food-table .status-approved { color: #27ae60; font-weight: 600; }
-    .food-table .status-offline { color: #95a5a6; font-weight: 600; }
-    .food-table .status-rejected { color: #e74c3c; font-weight: 600; }
-    .food-table .thumb {
-        width: 64px;
-        height: 48px;
-        object-fit: cover;
-        border-radius: 6px;
-        display: block;
-        background: #f4efea;
+    .chart-box h3::before {
+        content: "";
+        width: 3px; height: 13px;
+        border-radius: 2px;
+        background: linear-gradient(180deg, var(--brand), var(--gold));
     }
-    .food-table .thumb-empty {
-        width: 64px;
-        height: 48px;
-        border-radius: 6px;
-        background: #f4efea;
-        color: #b9aca3;
-        font-size: 11px;
+    .chart-container { width: 100%; height: 260px; }
+    .chart-empty {
         display: flex;
         align-items: center;
         justify-content: center;
-    }
-    /* 审核状态的提示条 */
-    .status-banner {
-        border-radius: 12px;
-        padding: 14px 20px;
-        margin-bottom: 20px;
-        font-size: 15px;
-        line-height: 1.6;
-    }
-    .status-banner.pending { background: #fef5e7; color: #b9770e; border: 1px solid #f8d7a3; }
-    .status-banner.rejected { background: #fdecea; color: #c0392b; border: 1px solid #f5c6c6; }
-    .btn {
-        display: inline-block;
-        padding: 6px 14px;
-        border: none;
-        cursor: pointer;
-        font-family: inherit;
-        border-radius: 6px;
-        color: white;
-        text-decoration: none;
+        height: 100%;
+        color: var(--ink-4);
         font-size: 13px;
-        margin-right: 4px;
+        letter-spacing: .04em;
     }
-    .action-form { display: inline; margin: 0; }
-    .btn-primary { background: #3498db; }
-    .btn-primary:hover { background: #2980b9; }
-    .btn-warning { background: #f39c12; }
-    .btn-warning:hover { background: #d68910; }
-    .btn-danger { background: #e74c3c; }
-    .btn-danger:hover { background: #c0392b; }
-    .btn-success { background: #27ae60; }
-    .btn-success:hover { background: #1e8449; }
-    .mt-20 { margin-top: 20px; }
-    .text-right { text-align: right; }
 
-    /* 图表相关 */
-    .charts-row {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 20px;
-        margin-bottom: 24px;
+    .list-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+        flex-wrap: wrap;
+        margin: 26px 0 14px;
     }
-    .chart-box {
-        background: white;
-        border-radius: 12px;
-        padding: 20px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    .list-head h3 {
+        font-family: var(--font-serif);
+        font-size: 19px;
+        font-weight: 700;
+        letter-spacing: .02em;
     }
-    .chart-box h3 {
-        color: #2c3e50;
-        margin-bottom: 16px;
-        padding-bottom: 8px;
-        border-bottom: 2px solid #f0ece8;
-        font-size: 16px;
+    .list-head .hint { font-size: 12.5px; color: var(--ink-4); }
+
+    .food-table .thumb {
+        width: 56px; height: 42px;
+        border-radius: var(--r-xs);
+        object-fit: cover;
+        display: block;
+        border: 1px solid var(--line);
     }
-    .chart-container {
-        width: 100%;
-        height: 320px;
+    .food-table .thumb-empty {
+        width: 56px; height: 42px;
+        border-radius: var(--r-xs);
+        background: var(--surface-2);
+        border: 1px dashed var(--line-2);
+        display: flex; align-items: center; justify-content: center;
+        font-size: 10.5px;
+        color: var(--ink-4);
     }
-    @media (max-width: 768px) {
+    .food-table td { font-size: 13.5px; }
+    .food-table td .price { font-family: var(--font-num); color: var(--ink); }
+    .food-table td .rt { font-family: var(--font-num); color: var(--gold); font-weight: 600; }
+    .action-form { display: inline-flex; margin: 0 0 0 6px; }
+    .food-table .btn { padding: 5px 12px; font-size: 12.5px; border-radius: var(--r-xs); }
+
+    .status-pending, .status-approved, .status-offline, .status-rejected {
+        display: inline-flex;
+        align-items: center;
+        padding: 2px 9px;
+        border-radius: 99px;
+        font-size: 11.5px;
+        font-weight: 600;
+        border: 1px solid transparent;
+        white-space: nowrap;
+    }
+    .status-pending { background: var(--gold-soft); color: #8A6520; border-color: rgba(185,138,62,.22); }
+    .status-approved { background: var(--jade-soft); color: var(--jade); border-color: rgba(47,107,87,.16); }
+    .status-offline { background: var(--surface-2); color: var(--ink-3); border-color: var(--line); }
+    .status-rejected { background: var(--danger-soft); color: var(--danger); border-color: rgba(178,58,50,.16); }
+
+    @media (max-width: 900px) {
         .charts-row { grid-template-columns: 1fr; }
+        .page-head h1 { font-size: 24px; }
+        .chart-container { height: 230px; }
     }
 </style>
 
-<h1 style="color:#c0392b; font-size:28px;">📊 商家中心</h1>
-<p style="color:#7f8c8d; margin-bottom:20px;">欢迎回来，{{ session.get('username') }}</p>
+<div class="page-head">
+    <div class="eyebrow">Merchant</div>
+    <h1>商家中心</h1>
+    <p class="sub">欢迎回来，{{ session.get('username') }}</p>
+</div>
 
 {% if merchant_status == 'pending' %}
 <div class="status-banner pending">
-    ⏳ 商家资料待管理员审核。审核通过后即可上传、编辑美食，当前只能查看数据。
+    商家资料待管理员审核。审核通过后即可上传、编辑美食，当前只能查看数据。
 </div>
 {% elif merchant_status == 'rejected' %}
 <div class="status-banner rejected">
-    ❌ 商家申请未通过审核，如有疑问请联系平台管理员。
+    商家申请未通过审核，如有疑问请联系平台管理员。
 </div>
 {% endif %}
 
@@ -157,26 +184,26 @@
 <!-- 图表区 -->
 <div class="charts-row">
     <div class="chart-box">
-        <h3>⭐ 本店美食评分</h3>
+        <h3>本店美食评分</h3>
         <div id="ratingChart" class="chart-container"></div>
     </div>
     <div class="chart-box">
-        <h3>👍 点赞排行</h3>
+        <h3>点赞排行</h3>
         <div id="likesChart" class="chart-container"></div>
     </div>
 </div>
 
-<div class="text-right">
+<div class="list-head">
+    <h3>我的美食</h3>
     {% if merchant_status == 'approved' %}
-    <a href="{{ url_for('merchant.add_food') }}" class="btn btn-success" style="padding:10px 24px; font-size:16px;">➕ 上传新美食</a>
+    <a href="{{ url_for('merchant.add_food') }}" class="btn btn-primary">上传新美食</a>
     {% else %}
-    <span style="color:#b9aca3; font-size:14px;">审核通过后才能上传美食</span>
+    <span class="hint">审核通过后才能上传美食</span>
     {% endif %}
 </div>
 
-<h3 style="margin:20px 0 12px;">我的美食列表</h3>
-
-<table class="food-table">
+<div class="table-wrap">
+<table class="table food-table">
     <thead>
         <tr>
             <th>图片</th>
@@ -201,16 +228,16 @@
                 <div class="thumb-empty">无图</div>
                 {% endif %}
             </td>
-            <td>{{ food.name }}</td>
+            <td style="color:var(--ink); font-weight:500;">{{ food.name }}</td>
             <td>{{ food.category_name or '未分类' }}</td>
-            <td>¥{{ food.price }}</td>
-            <td>⭐ {{ food.avg_rating or '暂无' }}</td>
+            <td><span class="price">¥{{ '%g'|format(food.price|float) }}</span></td>
+            <td><span class="rt">★ {{ food.avg_rating or '—' }}</span></td>
             <td>{{ food.like_count or 0 }}</td>
             <td>
                 {% if food.status == 'pending' %}
-                    <span class="status-pending">⏳ 待审核</span>
+                    <span class="status-pending">待审核</span>
                 {% elif food.status == 'approved' %}
-                    <span class="status-approved">✅ 已通过</span>
+                    <span class="status-approved">已通过</span>
                 {% elif food.status == 'offline' %}
                     <span class="status-offline">已下架</span>
                 {% elif food.status == 'rejected' %}
@@ -221,7 +248,7 @@
             </td>
             <td>
                 {% if merchant_status == 'approved' %}
-                <a href="{{ url_for('merchant.edit_food', food_id=food.id) }}" class="btn btn-primary">编辑</a>
+                <a href="{{ url_for('merchant.edit_food', food_id=food.id) }}" class="btn btn-ghost">编辑</a>
                 {% endif %}
                 {% if food.status != 'offline' and merchant_status == 'approved' %}
                     <form class="action-form" method="post" action="{{ url_for('merchant.offline_food', food_id=food.id) }}"
@@ -233,40 +260,73 @@
                     <form class="action-form" method="post" action="{{ url_for('merchant.relist_food', food_id=food.id) }}"
                           onsubmit="return confirm('重新上架需要管理员再审一次，确认提交？')">
                         <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-                        <button type="submit" class="btn btn-success">重新上架</button>
+                        <button type="submit" class="btn btn-ghost">重新上架</button>
                     </form>
                 {% endif %}
+            </td>
+        </tr>
+        {% else %}
+        <tr>
+            <td colspan="8" style="text-align:center; color:var(--ink-4); padding:40px 10px;">
+                还没有上传美食{% if merchant_status == 'approved' %}，点右上角「上传新美食」开始{% endif %}
             </td>
         </tr>
         {% endfor %}
     </tbody>
 </table>
+</div>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    var axisLabel = { fontSize: 11, color: '#8C8076' };
+    var axisLine = { lineStyle: { color: 'rgba(34,28,24,.12)' } };
+    var splitLine = { lineStyle: { color: 'rgba(34,28,24,.06)' } };
+
     // 1. 本店美食评分柱状图
     fetch('{{ url_for("merchant.merchant_stats_rating") }}')
         .then(r => r.json())
         .then(data => {
-            const chart = echarts.init(document.getElementById('ratingChart'));
+            const el = document.getElementById('ratingChart');
+            if (!data.labels || !data.labels.length) {
+                el.innerHTML = '<div class="chart-empty">还没有评分数据</div>';
+                return;
+            }
+            const chart = echarts.init(el);
             chart.setOption({
-                tooltip: { trigger: 'axis' },
-                grid: { left: '10%', right: '5%', top: '10%', bottom: '25%' },
+                tooltip: {
+                    trigger: 'axis',
+                    backgroundColor: '#2A211B',
+                    borderWidth: 0,
+                    textStyle: { color: '#FFF6EC', fontSize: 12 }
+                },
+                grid: { left: '9%', right: '4%', top: '12%', bottom: '30%' },
                 xAxis: {
                     type: 'category',
                     data: data.labels,
-                    axisLabel: { rotate: 30, fontSize: 11, interval: 0 }
+                    axisLabel: Object.assign({}, axisLabel, { rotate: 42, interval: 0, fontSize: 10, width: 56, overflow: 'truncate' }),
+                    axisLine: axisLine,
+                    axisTick: { show: false }
                 },
-                yAxis: { type: 'value', max: 5, minInterval: 1 },
+                yAxis: {
+                    type: 'value',
+                    max: 5,
+                    minInterval: 1,
+                    axisLabel: axisLabel,
+                    splitLine: splitLine,
+                    axisLine: { show: false }
+                },
                 series: [{
                     type: 'bar',
                     data: data.values,
-                    barWidth: '50%',
+                    barWidth: '46%',
                     itemStyle: {
-                        color: '#c0392b',
-                        borderRadius: [6, 6, 0, 0]
+                        color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                            { offset: 0, color: '#B44A31' },
+                            { offset: 1, color: '#8E2E1C' }
+                        ]),
+                        borderRadius: [4, 4, 0, 0]
                     },
-                    label: { show: true, position: 'top', fontSize: 12 }
+                    label: { show: true, position: 'top', fontSize: 11, color: '#5A5049' }
                 }]
             });
         });
@@ -275,25 +335,41 @@ document.addEventListener('DOMContentLoaded', function() {
     fetch('{{ url_for("merchant.merchant_stats_likes") }}')
         .then(r => r.json())
         .then(data => {
-            const chart = echarts.init(document.getElementById('likesChart'));
+            const el = document.getElementById('likesChart');
+            if (!data.length) {
+                el.innerHTML = '<div class="chart-empty">还没有点赞数据</div>';
+                return;
+            }
+            const chart = echarts.init(el);
             chart.setOption({
-                tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
-                grid: { left: '25%', right: '10%', top: '5%', bottom: '5%' },
-                xAxis: { type: 'value', minInterval: 1 },
+                tooltip: {
+                    trigger: 'axis',
+                    axisPointer: { type: 'shadow' },
+                    backgroundColor: '#2A211B',
+                    borderWidth: 0,
+                    textStyle: { color: '#FFF6EC', fontSize: 12 }
+                },
+                grid: { left: '28%', right: '12%', top: '6%', bottom: '8%' },
+                xAxis: { type: 'value', minInterval: 1, axisLabel: axisLabel, splitLine: splitLine, axisLine: { show: false } },
                 yAxis: {
                     type: 'category',
                     data: data.map(d => d.name),
-                    axisLabel: { fontSize: 12 }
+                    axisLabel: Object.assign({}, axisLabel, { fontSize: 12 }),
+                    axisLine: axisLine,
+                    axisTick: { show: false }
                 },
                 series: [{
                     type: 'bar',
                     data: data.map(d => d.value),
-                    barWidth: '60%',
+                    barWidth: '54%',
                     itemStyle: {
-                        color: '#e67e22',
-                        borderRadius: [0, 6, 6, 0]
+                        color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [
+                            { offset: 0, color: '#D9AE6B' },
+                            { offset: 1, color: '#B98A3E' }
+                        ]),
+                        borderRadius: [0, 4, 4, 0]
                     },
-                    label: { show: true, position: 'right', fontSize: 12 }
+                    label: { show: true, position: 'right', fontSize: 11, color: '#5A5049' }
                 }]
             });
         });

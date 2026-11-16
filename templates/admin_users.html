@@ -1,86 +1,137 @@
 {% extends "base.html" %}
 
-{% block title %}用户管理 - 管理后台{% endblock %}
+{% block title %}用户管理 - 广东美食推荐{% endblock %}
 
 {% block content %}
 
 <style>
-    .section {
-        background: white;
-        border-radius: 12px;
-        padding: 20px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    .page-head { margin-bottom: 20px; }
+    .page-head h1 {
+        font-family: var(--font-serif);
+        font-size: 28px;
+        font-weight: 700;
+        letter-spacing: .03em;
+        color: var(--ink);
     }
-    .table {
-        width: 100%;
-        border-collapse: collapse;
+    .page-head .sub { margin-top: 6px; font-size: 13px; color: var(--ink-3); }
+
+    .toolbar {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        align-items: center;
+        padding: 14px 18px;
+        margin-bottom: 16px;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--r);
+        box-shadow: var(--sh-1);
     }
-    .table th {
-        text-align: left;
-        padding: 10px 12px;
-        background: #f8f4f0;
-        font-weight: 600;
+    .toolbar input[type="text"] { width: 220px; padding: 8px 12px; font-size: 13.5px; }
+    .toolbar select { width: auto; min-width: 118px; padding: 8px 30px 8px 12px; font-size: 13.5px; }
+    .toolbar .btn { padding: 8px 18px; font-size: 13.5px; }
+    .toolbar .clear-link { font-size: 12.5px; color: var(--ink-4); }
+    .toolbar .clear-link:hover { color: var(--brand); }
+    .toolbar .count {
+        margin-left: auto;
+        font-size: 12.5px;
+        color: var(--ink-4);
+        font-family: var(--font-num);
     }
-    .table td {
-        padding: 10px 12px;
-        border-bottom: 1px solid #eee;
-    }
-    .btn {
-        display: inline-block;
-        padding: 4px 14px;
-        border: none;
-        cursor: pointer;
-        font-family: inherit;
-        border-radius: 6px;
-        color: white;
-        text-decoration: none;
-        font-size: 13px;
-    }
-    .action-form { display: inline; margin: 0; }
-    .btn-danger { background: #e74c3c; }
-    .btn-danger:hover { background: #c0392b; }
-    .btn-success { background: #27ae60; }
-    .btn-success:hover { background: #1e8449; }
+
     .badge {
-        display: inline-block;
-        padding: 2px 12px;
-        border-radius: 20px;
-        font-size: 12px;
+        display: inline-flex;
+        align-items: center;
+        padding: 2px 9px;
+        border-radius: 99px;
+        font-size: 11.5px;
+        font-weight: 600;
+        border: 1px solid transparent;
+        white-space: nowrap;
+    }
+    .badge-admin { background: var(--brand-soft); color: var(--brand); border-color: rgba(162,58,37,.16); }
+    .badge-merchant { background: var(--gold-soft); color: #8A6520; border-color: rgba(185,138,62,.2); }
+    .badge-user { background: var(--surface-2); color: var(--ink-3); border-color: var(--line); }
+    .badge-active { background: var(--jade-soft); color: var(--jade); border-color: rgba(47,107,87,.16); }
+    .badge-inactive { background: var(--danger-soft); color: var(--danger); border-color: rgba(178,58,50,.16); }
+    .badge-pending { background: var(--gold-soft); color: #8A6520; border-color: rgba(185,138,62,.22); }
+
+    .table td { font-size: 13.5px; }
+    .table th:nth-child(1) { width: 72px; }
+    .table th:nth-child(3) { width: 100px; }
+    .table th:nth-child(4) { width: 90px; }
+    .table th:nth-child(5) { width: 108px; }
+    .table th:nth-child(6) { width: 176px; }
+    .table th:nth-child(7) { width: 96px; }
+    .table td.uid { font-family: var(--font-num); color: var(--ink-4); font-size: 12.5px; }
+    .table td.uname { color: var(--ink); font-weight: 500; }
+    .action-form { display: inline-flex; margin: 0; }
+    .table .btn { padding: 4px 12px; font-size: 12px; border-radius: var(--r-xs); }
+
+    .pager {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 6px;
+        flex-wrap: wrap;
+        margin-top: 20px;
+    }
+    .pager a, .pager .cur, .pager .gap {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 34px;
+        height: 34px;
+        padding: 0 11px;
+        border-radius: var(--r-xs);
+        font-size: 13px;
+        text-decoration: none;
+        border: 1px solid var(--line-2);
+        background: var(--surface);
+        color: var(--ink-2);
+        transition: all .2s var(--ease);
+    }
+    .pager a:hover { border-color: var(--brand); color: var(--brand); background: var(--brand-soft); }
+    .pager .cur {
+        background: var(--brand);
+        border-color: var(--brand);
+        color: #fff;
+        font-family: var(--font-num);
         font-weight: 600;
     }
-    .badge-admin { background: #e74c3c; color: white; }
-    .badge-merchant { background: #f39c12; color: white; }
-    .badge-user { background: #3498db; color: white; }
-    .badge-active { background: #27ae60; color: white; }
-    .badge-inactive { background: #95a5a6; color: white; }
-    .badge-pending { background: #f39c12; color: white; }
+    .pager .gap { border: 0; background: none; color: var(--ink-4); min-width: 20px; padding: 0 2px; }
+
+    @media (max-width: 768px) {
+        .page-head h1 { font-size: 23px; }
+        .toolbar input[type="text"] { flex: 1; min-width: 120px; width: auto; }
+        .toolbar .count { width: 100%; margin-left: 0; }
+    }
 </style>
 
-<div class="section">
-    <h2 style="color:#2c3e50; margin-bottom:16px;">👥 用户管理</h2>
+<div class="page-head">
+    <div class="eyebrow">Users</div>
+    <h1>用户管理</h1>
+    <p class="sub">查看全站账号，调整启用状态与商家审核结果</p>
+</div>
 
-    <form method="get" action="{{ url_for('admin.manage_users') }}"
-          style="display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:14px;">
-        <input type="text" name="q" value="{{ keyword }}" placeholder="按用户名搜索"
-               style="padding:8px 12px; border:1px solid #ddd; border-radius:6px; font-size:13px; width:200px;">
-        <select name="role"
-                style="padding:8px 12px; border:1px solid #ddd; border-radius:6px; font-size:13px;">
-            <option value="" {% if not role %}selected{% endif %}>全部角色</option>
-            <option value="user" {% if role == 'user' %}selected{% endif %}>普通用户</option>
-            <option value="merchant" {% if role == 'merchant' %}selected{% endif %}>商家</option>
-            <option value="admin" {% if role == 'admin' %}selected{% endif %}>管理员</option>
-        </select>
-        <button type="submit" class="btn" style="background:#c0392b; padding:8px 18px;">筛选</button>
-        {% if keyword or role %}
-            <a href="{{ url_for('admin.manage_users') }}"
-               style="font-size:13px; color:#7f8c8d;">清除条件</a>
-        {% endif %}
-        <span style="margin-left:auto; font-size:13px; color:#7f8c8d;">
-            共 {{ total }} 个账号，第 {{ page }} / {{ total_pages }} 页
-        </span>
-    </form>
+<form class="toolbar" method="get" action="{{ url_for('admin.manage_users') }}">
+    <input type="text" name="q" value="{{ keyword }}" placeholder="按用户名搜索">
+    <select name="role">
+        <option value="" {% if not role %}selected{% endif %}>全部角色</option>
+        <option value="user" {% if role == 'user' %}selected{% endif %}>普通用户</option>
+        <option value="merchant" {% if role == 'merchant' %}selected{% endif %}>商家</option>
+        <option value="admin" {% if role == 'admin' %}selected{% endif %}>管理员</option>
+    </select>
+    <button type="submit" class="btn btn-primary">筛选</button>
+    {% if keyword or role %}
+        <a href="{{ url_for('admin.manage_users') }}" class="clear-link">清除条件</a>
+    {% endif %}
+    <span class="count">共 {{ total }} 个账号 · 第 {{ page }} / {{ total_pages }} 页</span>
+</form>
 
-    <table class="table">
+<div class="table-wrap">
+<table class="table">
+    <thead>
         <tr>
             <th>ID</th>
             <th>用户名</th>
@@ -90,10 +141,12 @@
             <th>注册时间</th>
             <th>操作</th>
         </tr>
+    </thead>
+    <tbody>
         {% for user in users %}
         <tr>
-            <td>{{ user.id }}</td>
-            <td>{{ user.username }}</td>
+            <td class="uid">#{{ user.id }}</td>
+            <td class="uname">{{ user.username }}</td>
             <td>
                 {% if user.role == 'admin' %}
                     <span class="badge badge-admin">管理员</span>
@@ -120,60 +173,58 @@
                         <span class="badge badge-inactive">已拒绝</span>
                     {% endif %}
                 {% else %}
-                    —
+                    <span class="muted" style="color:var(--ink-4);">—</span>
                 {% endif %}
             </td>
-            <td>{{ user.created_at }}</td>
+            <td class="nowrap" style="color:var(--ink-3);">{{ user.created_at }}</td>
             <td>
                 {% if user.role != 'admin' %}
                     <form class="action-form" method="post" action="{{ url_for('admin.toggle_user', user_id=user.id) }}"
                           onsubmit="return confirm('确认{% if user.is_active %}禁用{% else %}启用{% endif %}该用户？')">
-            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-                        <button type="submit" class="btn {% if user.is_active %}btn-danger{% else %}btn-success{% endif %}">
+                        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn {% if user.is_active %}btn-danger{% else %}btn-primary{% endif %}">
                             {% if user.is_active %}禁用{% else %}启用{% endif %}
                         </button>
                     </form>
                 {% else %}
-                    <span style="color:#999; font-size:13px;">不可操作</span>
+                    <span class="muted" style="color:var(--ink-4); font-size:12.5px;">不可操作</span>
                 {% endif %}
             </td>
         </tr>
         {% endfor %}
         {% if not users %}
         <tr>
-            <td colspan="7" style="text-align:center; color:#95a5a6; padding:28px;">
+            <td colspan="7" style="text-align:center; color:var(--ink-4); padding:36px;">
                 没有匹配的账号
             </td>
         </tr>
         {% endif %}
-    </table>
-
-    {% if total_pages > 1 %}
-    <div style="display:flex; justify-content:center; gap:6px; margin-top:16px; flex-wrap:wrap;">
-        {% if page > 1 %}
-            <a href="{{ url_for('admin.manage_users', page=page-1, q=keyword, role=role) }}"
-               class="btn" style="background:#ecf0f1; color:#2c3e50; padding:6px 14px;">上一页</a>
-        {% endif %}
-        {% for p in range(1, total_pages + 1) %}
-            {% if p == page %}
-                <span class="btn" style="background:#c0392b; padding:6px 14px;">{{ p }}</span>
-            {% elif p <= 2 or p > total_pages - 2 or (p >= page - 1 and p <= page + 1) %}
-                <a href="{{ url_for('admin.manage_users', page=p, q=keyword, role=role) }}"
-                   class="btn" style="background:#ecf0f1; color:#2c3e50; padding:6px 14px;">{{ p }}</a>
-            {% elif p == 3 or p == total_pages - 2 %}
-                <span style="padding:6px 4px; color:#95a5a6;">…</span>
-            {% endif %}
-        {% endfor %}
-        {% if page < total_pages %}
-            <a href="{{ url_for('admin.manage_users', page=page+1, q=keyword, role=role) }}"
-               class="btn" style="background:#ecf0f1; color:#2c3e50; padding:6px 14px;">下一页</a>
-        {% endif %}
-    </div>
-    {% endif %}
+    </tbody>
+</table>
 </div>
 
-<div style="margin-top:16px;">
-    <a href="{{ url_for('admin.admin_dashboard') }}" class="btn" style="background:#7f8c8d; padding:8px 20px; color:white; text-decoration:none; border-radius:6px;">返回后台首页</a>
+{% if total_pages > 1 %}
+<div class="pager">
+    {% if page > 1 %}
+        <a href="{{ url_for('admin.manage_users', page=page-1, q=keyword, role=role) }}">上一页</a>
+    {% endif %}
+    {% for p in range(1, total_pages + 1) %}
+        {% if p == page %}
+            <span class="cur">{{ p }}</span>
+        {% elif p <= 2 or p > total_pages - 2 or (p >= page - 1 and p <= page + 1) %}
+            <a href="{{ url_for('admin.manage_users', page=p, q=keyword, role=role) }}">{{ p }}</a>
+        {% elif p == 3 or p == total_pages - 2 %}
+            <span class="gap">…</span>
+        {% endif %}
+    {% endfor %}
+    {% if page < total_pages %}
+        <a href="{{ url_for('admin.manage_users', page=page+1, q=keyword, role=role) }}">下一页</a>
+    {% endif %}
+</div>
+{% endif %}
+
+<div class="mt-24">
+    <a href="{{ url_for('admin.admin_dashboard') }}" class="btn btn-ghost">返回后台首页</a>
 </div>
 
 {% endblock %}

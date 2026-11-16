@@ -5,88 +5,219 @@
 {% block content %}
 
 <style>
-    .eval-title { font-size: 26px; color: #2c3e50; margin-bottom: 6px; }
-    .eval-subtitle { font-size: 14px; color: #95a5a6; margin-bottom: 22px; }
-
-    .stat-row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 22px; }
-    .stat-card {
-        flex: 1; min-width: 130px; background: #fff; border-radius: 10px;
-        padding: 14px 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-        border-left: 3px solid #c0392b;
+    .eval-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        gap: 20px;
+        flex-wrap: wrap;
+        margin-bottom: 24px;
     }
-    .stat-card .label { font-size: 12px; color: #95a5a6; margin-bottom: 4px; }
-    .stat-card .value { font-size: 21px; font-weight: 700; color: #2c3e50; }
-    .stat-card .unit { font-size: 12px; color: #7f8c8d; font-weight: 400; }
+    .eval-head .eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 10.5px;
+        font-weight: 600;
+        letter-spacing: .22em;
+        text-transform: uppercase;
+        color: var(--gold);
+        margin-bottom: 8px;
+    }
+    .eval-head .eyebrow::before { content: ""; width: 20px; height: 1px; background: var(--gold); opacity: .6; }
+    .eval-title {
+        font-family: var(--font-serif);
+        font-size: 30px;
+        font-weight: 700;
+        letter-spacing: .03em;
+        color: var(--ink);
+    }
+    .eval-subtitle {
+        margin-top: 6px;
+        font-size: 13px;
+        color: var(--ink-3);
+        max-width: 66ch;
+        line-height: 1.7;
+    }
+    .eval-tools { display: flex; flex-direction: column; align-items: flex-end; gap: 10px; }
+
+    .seg {
+        display: inline-flex;
+        padding: 3px;
+        border-radius: 99px;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        box-shadow: var(--sh-1);
+    }
+    .seg a {
+        padding: 5px 15px;
+        border-radius: 99px;
+        font-size: 12.5px;
+        color: var(--ink-3);
+        text-decoration: none;
+        font-family: var(--font-num);
+        transition: all .2s var(--ease);
+    }
+    .seg a:hover { color: var(--brand); }
+    .seg a.active {
+        background: var(--brand);
+        color: #fff;
+        font-weight: 600;
+        box-shadow: 0 4px 10px -6px rgba(122, 40, 22, .9);
+    }
+    .back-link { font-size: 12.5px; color: var(--ink-4); }
+    .back-link:hover { color: var(--brand); }
+
+    .stat-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(148px, 1fr));
+        gap: 12px;
+        margin-bottom: 18px;
+    }
+    .stat-card {
+        padding: 15px 18px;
+        border-radius: var(--r);
+        background: var(--surface);
+        border: 1px solid var(--line);
+        box-shadow: var(--sh-1);
+    }
+    .stat-card .label {
+        font-size: 11px;
+        letter-spacing: .1em;
+        text-transform: uppercase;
+        color: var(--ink-4);
+        margin-bottom: 6px;
+    }
+    .stat-card .value {
+        font-family: var(--font-num);
+        font-size: 23px;
+        font-weight: 700;
+        letter-spacing: -.03em;
+        color: var(--ink);
+        line-height: 1.15;
+    }
+    .stat-card .unit { font-size: 12px; font-weight: 400; color: var(--ink-4); }
 
     .panel {
-        background: #fff; border-radius: 12px; padding: 18px 20px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.07); margin-bottom: 22px;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--r-lg);
+        box-shadow: var(--sh-1);
+        padding: 22px 24px;
+        margin-bottom: 18px;
     }
-    .panel h3 {
-        font-size: 16px; color: #2c3e50; margin: 0 0 4px 0;
-        display: flex; align-items: center; gap: 8px;
+    .panel > h3 {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 15px;
+        font-weight: 600;
+        color: var(--ink);
+        margin-bottom: 6px;
     }
-    .panel .hint { font-size: 12px; color: #95a5a6; margin-bottom: 14px; }
+    .panel > h3::before {
+        content: "";
+        width: 3px; height: 14px;
+        border-radius: 2px;
+        background: linear-gradient(180deg, var(--brand), var(--gold));
+    }
+    .panel .hint {
+        font-size: 12.5px;
+        color: var(--ink-3);
+        line-height: 1.75;
+        margin-bottom: 16px;
+        max-width: 90ch;
+    }
 
-    .charts { display: flex; gap: 16px; flex-wrap: wrap; }
-    .chart-box { flex: 1; min-width: 320px; height: 300px; }
+    .charts {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+    }
+    .chart-box { width: 100%; height: 300px; }
 
-    .eval-table { width: 100%; border-collapse: collapse; }
+    .eval-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
     .eval-table th {
-        background: #fbf3f1; color: #a5342a; padding: 11px 10px;
-        font-size: 13px; font-weight: 600; text-align: center;
-        border-bottom: 2px solid #f0deda; white-space: nowrap;
+        text-align: left;
+        padding: 10px 14px;
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+        color: var(--ink-3);
+        background: var(--surface-2);
+        border-bottom: 1px solid var(--line);
+        white-space: nowrap;
     }
+    .eval-table th:first-child { border-radius: var(--r-xs) 0 0 0; }
+    .eval-table th:last-child { border-radius: 0 var(--r-xs) 0 0; }
     .eval-table td {
-        padding: 11px 10px; text-align: center; font-size: 14px;
-        color: #2c3e50; border-bottom: 1px solid #f4f1ee;
+        padding: 12px 14px;
+        border-bottom: 1px solid var(--line);
+        color: var(--ink-2);
+        font-variant-numeric: tabular-nums;
     }
-    .eval-table tr:last-child td { border-bottom: none; }
-    .eval-table tr:hover { background: #fdfaf9; }
-    .eval-table td.name { text-align: left; font-weight: 600; }
-    .best-row { background: #f0f9f4 !important; }
+    .eval-table tbody tr:last-child td { border-bottom: 0; }
+    .eval-table td b { color: var(--ink); font-weight: 600; font-family: var(--font-num); }
+    .eval-table td.name { color: var(--ink); font-weight: 500; }
+    .eval-table .best-row { background: var(--gold-soft); }
+    .eval-table .best-row td { color: #6B4E17; }
+    .eval-table .best-row td b { color: #6B4E17; }
     .tag-best {
-        display: inline-block; background: #27ae60; color: #fff;
-        font-size: 11px; padding: 1px 7px; border-radius: 8px; margin-left: 6px;
-        font-weight: 400;
+        display: inline-flex;
+        margin-left: 7px;
+        padding: 1px 8px;
+        border-radius: 99px;
+        background: var(--gold);
+        color: #fff;
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: .04em;
+        vertical-align: 1px;
     }
-
-    .seg { display: inline-flex; border: 1px solid #e6ddd8; border-radius: 8px; overflow: hidden; }
-    .seg a {
-        padding: 6px 14px; font-size: 13px; text-decoration: none;
-        color: #7f8c8d; border-right: 1px solid #e6ddd8;
-    }
-    .seg a:last-child { border-right: none; }
-    .seg a.active { background: #c0392b; color: #fff; }
 
     .conclusion {
-        background: #f8f9fa; border-left: 4px solid #c0392b; border-radius: 8px;
-        padding: 14px 18px; font-size: 14px; line-height: 1.85; color: #34495e;
+        padding: 20px 24px;
+        border-radius: var(--r-lg);
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-left: 3px solid var(--gold);
+        box-shadow: var(--sh-1);
+        font-size: 13.5px;
+        line-height: 1.9;
+        color: var(--ink-2);
     }
-    .conclusion b { color: #c0392b; }
-    .empty { color: #e67e22; font-size: 14px; padding: 12px 0; }
+    .conclusion strong { color: var(--ink); }
+    .conclusion b { color: var(--brand); font-family: var(--font-num); }
+
+    @media (max-width: 980px) {
+        .charts { grid-template-columns: 1fr; }
+        .chart-box { height: 260px; }
+    }
+    @media (max-width: 768px) {
+        .eval-title { font-size: 24px; }
+        .eval-tools { align-items: flex-start; }
+        .panel { padding: 16px 15px; overflow-x: auto; }
+        .eval-table { min-width: 620px; }
+    }
 </style>
 
-<div style="display: flex; justify-content: space-between; align-items: flex-start;">
+<div class="eval-head">
     <div>
-        <h2 class="eval-title">📊 推荐效果评估</h2>
+        <div class="eyebrow">Evaluation</div>
+        <h2 class="eval-title">推荐效果评估</h2>
         <p class="eval-subtitle">
             按用户分层留出法（测试集 20%）离线评估，比较随机、热门、User-CF、Item-CF 四种策略
         </p>
     </div>
-    <div style="text-align: right;">
-        <div class="seg" style="margin-bottom: 8px;">
+    <div class="eval-tools">
+        <div class="seg">
             {% for n in [5, 10, 20] %}
                 <a href="{{ url_for('recommend.evaluate_page', top_n=n) }}"
                    class="{% if n == top_n %}active{% endif %}">Top-{{ n }}</a>
             {% endfor %}
         </div>
-        <br>
-        <a href="{{ url_for('admin.admin_dashboard') }}"
-           style="color: #7f8c8d; text-decoration: none; font-size: 13px;
-                  padding: 6px 14px; border: 1px solid #ddd; border-radius: 8px;">
-            ← 返回管理后台
-        </a>
+        <a href="{{ url_for('admin.admin_dashboard') }}" class="back-link">← 返回管理后台</a>
     </div>
 </div>
 
@@ -120,10 +251,9 @@
 </div>
 
 <div class="panel">
-    <h3>📈 算法对比</h3>
+    <h3>算法对比</h3>
     <div class="hint">
-        左图为各算法在 Top-{{ top_n }} 下的准确率对比（协同过滤取 K=5）；
-        右图为近邻数 K 对协同过滤的影响
+        左图为各算法在 Top-{{ top_n }} 下的准确率对比（协同过滤取 K=5）；右图为近邻数 K 对协同过滤的影响
     </div>
     <div class="charts">
         <div id="barChart" class="chart-box"></div>
@@ -132,7 +262,7 @@
 </div>
 
 <div class="panel">
-    <h3>📋 Top-{{ top_n }} 推荐指标明细</h3>
+    <h3>Top-{{ top_n }} 推荐指标明细</h3>
     <div class="hint">
         Precision = 推荐命中数 / N；Recall = 推荐命中数 / 测试集中喜欢的菜品数；
         NDCG 考虑命中位置；覆盖率 = 推荐过的菜品数 / 全部菜品数
@@ -171,7 +301,7 @@
 </div>
 
 <div class="panel">
-    <h3>🎯 评分预测精度（User-CF）</h3>
+    <h3>评分预测精度（User-CF）</h3>
     <div class="hint">
         衡量「预测用户会打几分」的误差，MAE / RMSE 越小越好；与上面的 Top-N 指标互为补充
     </div>
@@ -187,7 +317,7 @@
         <tbody>
             {% for r in mae_rows %}
             <tr>
-                <td>K = {{ r.k }}</td>
+                <td class="name">K = {{ r.k }}</td>
                 <td><b>{{ r.mae if r.mae is not none else '—' }}</b></td>
                 <td>{{ r.rmse if r.rmse is not none else '—' }}</td>
                 <td>{{ r.count }}</td>
@@ -213,59 +343,71 @@
 <script>
     var chartData = {{ chart | tojson }};
 
+    var axisLabel = { fontSize: 11, color: '#8C8076' };
+    var axisLine = { lineStyle: { color: 'rgba(34,28,24,.12)' } };
+    var splitLine = { lineStyle: { color: 'rgba(34,28,24,.06)' } };
+    var tip = { backgroundColor: '#2A211B', borderWidth: 0, textStyle: { color: '#FFF6EC', fontSize: 12 } };
+    var titleStyle = { fontSize: 12.5, color: '#5A5049', fontWeight: 500 };
+
     var bar = echarts.init(document.getElementById('barChart'));
     bar.setOption({
-        title: { text: '准确率对比（Top-{{ top_n }}）', left: 'center', textStyle: { fontSize: 13, color: '#2c3e50' } },
-        tooltip: { trigger: 'axis' },
-        legend: { bottom: 0, textStyle: { fontSize: 11, color: '#7f8c8d' } },
-        grid: { left: 45, right: 20, top: 45, bottom: 45 },
+        title: { text: '准确率对比（Top-{{ top_n }}）', left: 'center', top: 2, textStyle: titleStyle },
+        tooltip: Object.assign({ trigger: 'axis' }, tip),
+        legend: { bottom: 0, itemWidth: 10, itemHeight: 10, icon: 'roundRect', textStyle: { fontSize: 11, color: '#8C8076' } },
+        grid: { left: 48, right: 18, top: 46, bottom: 48 },
         xAxis: {
             type: 'category',
             data: chartData.bar.names,
-            axisLabel: { fontSize: 11, color: '#7f8c8d' },
-            axisLine: { lineStyle: { color: '#e6ddd8' } }
+            axisLabel: axisLabel,
+            axisLine: axisLine,
+            axisTick: { show: false }
         },
-        yAxis: {
-            type: 'value',
-            axisLabel: { fontSize: 11, color: '#7f8c8d' },
-            splitLine: { lineStyle: { color: '#f4f1ee' } }
-        },
+        yAxis: { type: 'value', axisLabel: axisLabel, splitLine: splitLine, axisLine: { show: false } },
         series: [
             { name: 'Precision', type: 'bar', data: chartData.bar.precision,
-              itemStyle: { color: '#c0392b', borderRadius: [4, 4, 0, 0] }, barMaxWidth: 28 },
+              itemStyle: {
+                  color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                      { offset: 0, color: '#B44A31' }, { offset: 1, color: '#8E2E1C' }
+                  ]),
+                  borderRadius: [4, 4, 0, 0]
+              }, barMaxWidth: 26 },
             { name: 'NDCG', type: 'bar', data: chartData.bar.ndcg,
-              itemStyle: { color: '#e8a598', borderRadius: [4, 4, 0, 0] }, barMaxWidth: 28 }
+              itemStyle: {
+                  color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                      { offset: 0, color: '#D9B37C' }, { offset: 1, color: '#B98A3E' }
+                  ]),
+                  borderRadius: [4, 4, 0, 0]
+              }, barMaxWidth: 26 }
         ]
     });
 
     var line = echarts.init(document.getElementById('lineChart'));
     line.setOption({
-        title: { text: '近邻数 K 的影响', left: 'center', textStyle: { fontSize: 13, color: '#2c3e50' } },
-        tooltip: { trigger: 'axis' },
-        legend: { bottom: 0, textStyle: { fontSize: 11, color: '#7f8c8d' } },
-        grid: { left: 45, right: 20, top: 45, bottom: 45 },
+        title: { text: '近邻数 K 的影响', left: 'center', top: 2, textStyle: titleStyle },
+        tooltip: Object.assign({ trigger: 'axis' }, tip),
+        legend: { bottom: 0, itemWidth: 14, itemHeight: 8, icon: 'roundRect', textStyle: { fontSize: 11, color: '#8C8076' } },
+        grid: { left: 48, right: 18, top: 46, bottom: 56 },
         xAxis: {
             type: 'category',
             data: chartData.k_list.map(function (k) { return 'K=' + k; }),
-            axisLabel: { fontSize: 11, color: '#7f8c8d' },
-            axisLine: { lineStyle: { color: '#e6ddd8' } }
+            axisLabel: axisLabel,
+            axisLine: axisLine,
+            axisTick: { show: false }
         },
-        yAxis: {
-            type: 'value',
-            axisLabel: { fontSize: 11, color: '#7f8c8d' },
-            splitLine: { lineStyle: { color: '#f4f1ee' } }
-        },
+        yAxis: { type: 'value', axisLabel: axisLabel, splitLine: splitLine, axisLine: { show: false } },
         series: [
             { name: 'User-CF Precision', type: 'line', smooth: true,
-              data: chartData.user_cf.precision, itemStyle: { color: '#c0392b' },
-              symbolSize: 6 },
+              data: chartData.user_cf.precision,
+              lineStyle: { color: '#A23A25', width: 2.4 },
+              itemStyle: { color: '#A23A25' }, symbolSize: 5 },
             { name: 'Item-CF Precision', type: 'line', smooth: true,
-              data: chartData.item_cf.precision, itemStyle: { color: '#2980b9' },
-              symbolSize: 6 },
-            { name: 'User-CF NDCG', type: 'line', smooth: true, lineStyle: { type: 'dashed' },
-              data: chartData.user_cf.ndcg, itemStyle: { color: '#e8a598' }, symbolSize: 5 },
-            { name: 'Item-CF NDCG', type: 'line', smooth: true, lineStyle: { type: 'dashed' },
-              data: chartData.item_cf.ndcg, itemStyle: { color: '#85c1e9' }, symbolSize: 5 }
+              data: chartData.item_cf.precision,
+              lineStyle: { color: '#2F6B57', width: 2.4 },
+              itemStyle: { color: '#2F6B57' }, symbolSize: 5 },
+            { name: 'User-CF NDCG', type: 'line', smooth: true, lineStyle: { type: 'dashed', color: '#D08C4A', width: 1.8 },
+              data: chartData.user_cf.ndcg, itemStyle: { color: '#D08C4A' }, symbolSize: 4 },
+            { name: 'Item-CF NDCG', type: 'line', smooth: true, lineStyle: { type: 'dashed', color: '#C9A15A', width: 1.8 },
+              data: chartData.item_cf.ndcg, itemStyle: { color: '#C9A15A' }, symbolSize: 4 }
         ]
     });
 

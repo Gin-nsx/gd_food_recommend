@@ -6,186 +6,8 @@
     <!-- CSRF 令牌：页面内的 fetch 会自动带上，普通表单会自动补隐藏域 -->
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{% block title %}广东美食推荐{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}">
     <script src="{{ url_for('static', filename='js/echarts.min.js') }}"></script>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Microsoft YaHei', sans-serif; background: #f8f4f0; }
-
-        /* ===== 顶部导航栏 ===== */
-        .navbar {
-            background: #c0392b;
-            padding: 14px 40px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-        .navbar .nav-left {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-        }
-        .navbar .logo {
-            color: white;
-            font-size: 24px;
-            font-weight: 700;
-            text-decoration: none;
-            letter-spacing: 2px;
-        }
-        .navbar .logo:hover { color: #fde8e8; }
-
-        /* 返回按钮：导航条内、logo 左侧，仅内页显示 */
-        .navbar .nav-back {
-            width: 34px;
-            height: 34px;
-            flex: 0 0 auto;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 50%;
-            background: rgba(255,255,255,0.16);
-            border: 1px solid rgba(255,255,255,0.32);
-            color: #fff;
-            font-size: 17px;
-            line-height: 1;
-            text-decoration: none;
-            transition: all 0.25s ease;
-        }
-        .navbar .nav-back:hover {
-            background: rgba(255,255,255,0.32);
-            border-color: #fff;
-            transform: translateX(-3px);
-        }
-        .navbar .nav-links {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-            flex-wrap: wrap;
-        }
-        .navbar .nav-links a {
-            color: rgba(255,255,255,0.85);
-            text-decoration: none;
-            font-size: 15px;
-            padding: 6px 14px;
-            border-radius: 6px;
-            transition: 0.3s;
-        }
-        .navbar .nav-links a:hover {
-            background: rgba(255,255,255,0.15);
-            color: white;
-        }
-        .navbar .nav-links .welcome {
-            color: rgba(255,255,255,0.9);
-            font-size: 15px;
-        }
-        .navbar .nav-links .welcome strong {
-            color: #ffe08a;
-        }
-        /* 消息入口的未读红点 */
-        .navbar .nav-links .nav-msg { position: relative; }
-        .navbar .nav-links .nav-dot {
-            display: inline-block;
-            min-width: 17px;
-            padding: 0 5px;
-            margin-left: 3px;
-            background: #ffe08a;
-            color: #a93226;
-            border-radius: 9px;
-            font-size: 11px;
-            line-height: 17px;
-            text-align: center;
-            font-weight: 700;
-            vertical-align: 1px;
-        }
-        .navbar .nav-links .btn-outline {
-            border: 1px solid rgba(255,255,255,0.4);
-        }
-        .navbar .nav-links .btn-outline:hover {
-            background: rgba(255,255,255,0.2);
-            border-color: white;
-        }
-        /* 退出登录改成表单提交（POST），样式仍按链接呈现 */
-        .navbar .nav-links form { display: inline-flex; margin: 0; }
-        .navbar .nav-links button.btn-outline {
-            background: none;
-            font-family: inherit;
-            font-size: 15px;
-            color: rgba(255,255,255,0.85);
-            padding: 6px 14px;
-            border-radius: 6px;
-            border: 1px solid rgba(255,255,255,0.4);
-            cursor: pointer;
-            transition: 0.3s;
-        }
-        .navbar .nav-links button.btn-outline:hover {
-            background: rgba(255,255,255,0.2);
-            border-color: white;
-            color: white;
-        }
-
-        /* ===== 页面主体 ===== */
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 30px 20px;
-        }
-
-        /* ===== Flash 消息 ===== */
-        .flash-container {
-            max-width: 1200px;
-            margin: 16px auto 0;
-            padding: 0 20px;
-        }
-        .flash-msg {
-            padding: 12px 20px;
-            border-radius: 8px;
-            font-size: 15px;
-            margin-bottom: 8px;
-        }
-        .flash-success {
-            background: #e8f8ed;
-            color: #27ae60;
-            border: 1px solid #c3e6d0;
-        }
-        .flash-error {
-            background: #fde8e8;
-            color: #c0392b;
-            border: 1px solid #f5c6c6;
-        }
-        .flash-info {
-            background: #e8f0fe;
-            color: #2c3e50;
-            border: 1px solid #c6d9f5;
-        }
-
-        /* ===== 通用 ===== */
-        .text-center { text-align: center; }
-        .mt-20 { margin-top: 20px; }
-
-        /* ===== 窄屏适配（手机/小笔记本） ===== */
-        /* 导航条本来就允许换行，但 40px 内边距和 24px 的 logo 在手机上会把
-           链接挤成两行还溢出，这里统一收紧一档 */
-        @media (max-width: 768px) {
-            .navbar { padding: 10px 14px; gap: 8px; }
-            .navbar .logo { font-size: 19px; letter-spacing: 1px; }
-            .navbar .nav-left { gap: 10px; }
-            .navbar .nav-links { gap: 6px 10px; }
-            .navbar .nav-links a,
-            .navbar .nav-links button.btn-outline {
-                font-size: 13.5px;
-                padding: 5px 9px;
-            }
-            .navbar .nav-links .welcome { font-size: 13px; }
-            .container { padding: 20px 14px; }
-            .flash-container { padding: 0 14px; }
-        }
-
-        @media (max-width: 480px) {
-            /* 一个屏幕放不下时，先把"欢迎，xxx"收起来，优先保留功能入口 */
-            .navbar .nav-links .welcome { display: none; }
-        }
-    </style>
 </head>
 <body>
 
@@ -202,32 +24,42 @@
                title="{{ (back_label if back_label is defined and back_label else '返回') }}"
                aria-label="返回">←</a>
             {% endif %}
-            <a href="{{ url_for('index') }}" class="logo">🍜 美食推荐</a>
+            <a href="{{ url_for('index') }}" class="logo">
+                <span class="logo-mark">粤</span>
+                <span class="logo-text">
+                    <span class="cn">美食推荐</span>
+                    <span class="en">GuangdongFood</span>
+                </span>
+            </a>
         </div>
         <div class="nav-links">
             <a href="{{ url_for('index') }}">首页</a>
             {% if session.get('user_id') %}
-            <a href="{{ url_for('recommend.recommend_page') }}">✨ 猜你喜欢</a>
+            <a href="{{ url_for('recommend.recommend_page') }}">猜你喜欢</a>
             {% endif %}
             <a href="{{ url_for('user.user_dashboard') }}">个人中心</a>
 
             {% if session.get('user_id') %}
                 {# 已登录 #}
                 <a href="{{ url_for('message.inbox') }}" class="nav-msg">
-                    ✉️ 消息{% if unread_messages %}<span class="nav-dot">{{ unread_messages }}</span>{% endif %}
+                    消息{% if unread_messages %}<span class="nav-dot">{{ unread_messages }}</span>{% endif %}
                 </a>
-                <span class="welcome">👋 欢迎，<strong>{{ session.get('username') }}</strong></span>
 
                 {% if session.get('role') == 'merchant' %}
-                    <a href="{{ url_for('merchant.merchant_dashboard') }}">📊 商家中心</a>
+                    <a href="{{ url_for('merchant.merchant_dashboard') }}">商家中心</a>
                 {% endif %}
 
                 {% if session.get('role') == 'admin' %}
-                    <a href="{{ url_for('admin.admin_dashboard') }}">⚙️ 管理后台</a>
+                    <a href="{{ url_for('admin.admin_dashboard') }}">管理后台</a>
                 {% endif %}
 
+                <span class="welcome">
+                    <span class="avatar">{{ session.get('username')[:1] }}</span>
+                    <span class="uname"><strong>{{ session.get('username') }}</strong></span>
+                </span>
+
                 <form method="post" action="{{ url_for('auth.logout') }}">
-            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
                     <button type="submit" class="btn-outline">退出</button>
                 </form>
 
@@ -257,6 +89,32 @@
     <div class="container">
         {% block content %}{% endblock %}
     </div>
+
+    <!-- ====== 页脚 ====== -->
+    {% block footer %}
+    <footer class="site-footer">
+        <div class="foot-top">
+            <div class="foot-brand">
+                <span class="mark">粤</span>
+                <span class="name">食在广东 · 美食推荐系统</span>
+            </div>
+            <div class="foot-links">
+                <a href="{{ url_for('index') }}">美食广场</a>
+                {% if session.get('user_id') %}
+                <a href="{{ url_for('recommend.recommend_page') }}">猜你喜欢</a>
+                <a href="{{ url_for('message.inbox') }}">消息</a>
+                {% else %}
+                <a href="{{ url_for('auth.login_page') }}">登录</a>
+                <a href="{{ url_for('auth.register_page') }}">注册</a>
+                {% endif %}
+            </div>
+        </div>
+        <div class="foot-bottom">
+            <span>© 广东美食推荐系统 · 基于协同过滤的口味推荐</span>
+            <span>食在广州，味在顺德</span>
+        </div>
+    </footer>
+    {% endblock %}
 
     <script>
         // 返回按钮：

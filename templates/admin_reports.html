@@ -5,257 +5,231 @@
 {% block content %}
 
 <style>
+    .page-head { margin-bottom: 20px; }
+    .page-head h1 {
+        font-family: var(--font-serif);
+        font-size: 28px;
+        font-weight: 700;
+        letter-spacing: .03em;
+        color: var(--ink);
+    }
+    .page-head .sub { margin-top: 6px; font-size: 13px; color: var(--ink-3); }
+
     .report-section {
-        background: white;
-        border-radius: 12px;
-        padding: 20px;
-        margin-bottom: 24px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--r-lg);
+        box-shadow: var(--sh-1);
+        padding: 20px 22px 10px;
+        margin-bottom: 18px;
     }
-    .report-section h3 {
-        color: #2c3e50;
-        margin-bottom: 16px;
-        padding-bottom: 8px;
-        border-bottom: 2px solid #f0ece8;
+    .report-section > h3 {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 15px;
+        font-weight: 600;
+        color: var(--ink);
+        margin-bottom: 14px;
     }
-    .table-wrap {
-        overflow-x: auto;
+    .report-section > h3::before {
+        content: "";
+        width: 3px; height: 14px;
+        border-radius: 2px;
+        background: linear-gradient(180deg, var(--brand), var(--gold));
     }
-    .report-table {
-        width: 100%;
-        border-collapse: collapse;
-        min-width: 760px;
-    }
+    .report-section > p { color: var(--ink-4); font-size: 13.5px; padding: 8px 0 14px; }
+
+    .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--r-sm); margin-bottom: 12px; }
+    .report-table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 900px; }
     .report-table th {
         text-align: left;
-        padding: 10px 12px;
-        background: #f8f4f0;
+        padding: 11px 14px;
+        font-size: 11px;
         font-weight: 600;
-        font-size: 13px;
+        letter-spacing: .1em;
+        text-transform: uppercase;
+        color: var(--ink-3);
+        background: var(--surface-2);
+        border-bottom: 1px solid var(--line);
         white-space: nowrap;
     }
     .report-table td {
-        padding: 10px 12px;
-        border-bottom: 1px solid #eee;
-        font-size: 14px;
-        vertical-align: middle;
+        padding: 12px 14px;
+        border-bottom: 1px solid var(--line);
+        color: var(--ink-2);
+        vertical-align: top;
     }
-    .report-table td.nowrap { white-space: nowrap; }
-    /* 从消息页点「相关举报 #x」跳过来时，把对应行highlight一下 */
-    .report-table tr:target {
-        background: #fff6f4;
-        box-shadow: inset 3px 0 0 #c0392b;
-        scroll-margin-top: 90px;
-    }
-    .report-table td.nowrap.time { color: #7f8c8d; font-size: 12.5px; }
-    .report-table td.col-ops { width: 168px; }
-    .status-pending { color: #f39c12; font-weight: 600; }
-    .status-resolved { color: #27ae60; font-weight: 600; }
-    .status-rejected { color: #95a5a6; font-weight: 600; }
-    .btn {
-        display: inline-block;
-        padding: 4px 14px;
-        border-radius: 6px;
-        color: white;
-        text-decoration: none;
-        font-size: 13px;
-        border: none;
-        cursor: pointer;
-    }
-    .btn-success { background: #27ae60; }
-    .btn-success:hover { background: #1e8449; }
-    .btn-secondary { background: #95a5a6; }
-    .btn-secondary:hover { background: #7f8c8d; }
-    .note-text {
-        color: #7f8c8d;
-        font-size: 12px;
-        max-width: 200px;
-        display: inline-block;
-        word-break: break-all;
-    }
+    .report-table tbody tr:last-child td { border-bottom: 0; }
+    .report-table tbody tr { transition: background .18s var(--ease); }
+    .report-table tbody tr:hover { background: #FCF9F4; }
+    .report-table tbody tr:target { background: var(--gold-soft); box-shadow: inset 3px 0 0 var(--gold); }
+
     .link-food {
-        color: #3498db;
+        color: var(--brand);
+        font-weight: 500;
         text-decoration: none;
-        font-weight: 600;
     }
     .link-food:hover { text-decoration: underline; }
-    .merchant-tag {
-        font-size: 12px;
-        color: #7f8c8d;
-        display: block;
-        margin-top: 2px;
-    }
-    .comment-preview {
-        max-width: 220px;
-        display: inline-block;
-        color: #555;
-        font-size: 13px;
-    }
-    .comment-source {
-        font-size: 12px;
-        color: #7f8c8d;
-        display: block;
-        margin-top: 2px;
-    }
-    /* 美食当前状态（被下架/待审核时提醒管理员） */
-    .state-chip {
-        display: inline-block;
-        margin-left: 6px;
-        padding: 0 8px;
-        border-radius: 9px;
-        font-size: 11px;
-        line-height: 17px;
-        background: #f0ece8;
-        color: #8a7c70;
-        vertical-align: 1px;
-    }
-    .state-chip.offline { background: #fde8e8; color: #c0392b; }
-    .state-chip.rejected { background: #f4f1ee; color: #95a5a6; }
-    .state-chip.pending { background: #fef9e7; color: #b7950b; }
-    /* 联系方式：管理员找商家/用户核实情况 */
     .obj-sub {
         display: block;
-        font-size: 12px;
-        color: #95a5a6;
-        margin-top: 3px;
+        margin-top: 4px;
+        font-size: 11.5px;
+        color: var(--ink-4);
+        line-height: 1.6;
     }
-    .ops { white-space: nowrap; }
-    .ops .op-row { margin-bottom: 6px; }
-    .ops .op-row:last-child { margin-bottom: 0; }
-    .chip-btn {
+    .comment-preview { color: var(--ink-2); font-style: italic; }
+    .comment-source {
         display: inline-block;
-        padding: 3px 10px;
-        margin: 2px 4px 2px 0;
-        border: 1px solid #dbe6f0;
-        background: #f4f8fc;
-        color: #4a7ba7;
-        border-radius: 8px;
-        font-size: 12px;
-        font-family: inherit;
-        cursor: pointer;
-        transition: 0.2s;
+        margin-top: 4px;
+        font-size: 11.5px;
+        color: var(--gold);
+        text-decoration: none;
     }
-    .chip-btn:hover {
-        background: #4a7ba7;
-        border-color: #4a7ba7;
-        color: #fff;
+    .comment-source:hover { text-decoration: underline; }
+    .state-chip {
+        display: inline-flex;
+        margin-left: 5px;
+        padding: 1px 7px;
+        border-radius: 99px;
+        font-size: 10.5px;
+        font-weight: 600;
+        background: var(--surface-2);
+        color: var(--ink-3);
+        border: 1px solid var(--line);
+        white-space: nowrap;
     }
-    /* 联系当事人弹窗 */
-    .contact-who {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        background: #f8f4f0;
-        border-radius: 9px;
-        padding: 9px 14px;
-        margin-bottom: 12px;
-        font-size: 14px;
-    }
-    .contact-who .k { color: #8a7c70; }
-    .contact-who .v { color: #2c3e50; font-weight: 700; }
-    .quick-tpl {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-        margin-bottom: 10px;
-    }
-    .quick-tpl button {
-        background: #fff;
-        border: 1px dashed #e2d7cc;
-        color: #8a7c70;
-        border-radius: 8px;
-        padding: 5px 11px;
-        font-size: 12.5px;
-        font-family: inherit;
-        cursor: pointer;
-        transition: 0.2s;
-    }
-    .quick-tpl button:hover {
-        border-color: #c0392b;
-        color: #c0392b;
-    }
+    .state-chip.offline { background: var(--danger-soft); color: var(--danger); border-color: rgba(178,58,50,.16); }
+    .state-chip.pending { background: var(--gold-soft); color: #8A6520; border-color: rgba(185,138,62,.2); }
 
-    /* 自定义弹窗 */
+    .status-pending, .status-resolved, .status-rejected {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 2px 9px;
+        border-radius: 99px;
+        font-size: 11.5px;
+        font-weight: 600;
+        border: 1px solid transparent;
+        white-space: nowrap;
+    }
+    .status-pending { background: var(--gold-soft); color: #8A6520; border-color: rgba(185,138,62,.22); }
+    .status-resolved { background: var(--jade-soft); color: var(--jade); border-color: rgba(47,107,87,.16); }
+    .status-rejected { background: var(--surface-2); color: var(--ink-3); border-color: var(--line); }
+
+    .note-text {
+        display: block;
+        max-width: 220px;
+        font-size: 12.5px;
+        color: var(--ink-3);
+        line-height: 1.6;
+        word-break: break-word;
+    }
+    .nowrap { white-space: nowrap; }
+    .time { font-family: var(--font-num); font-size: 11.5px; color: var(--ink-4); }
+
+    .ops { min-width: 210px; }
+    .op-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 6px; }
+    .op-row .btn {
+        padding: 4px 11px;
+        font-size: 12px;
+        border-radius: var(--r-xs);
+    }
+    .chip-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 3px 11px;
+        border-radius: 99px;
+        border: 1px solid var(--line-2);
+        background: var(--surface);
+        color: var(--ink-3);
+        font-family: inherit;
+        font-size: 11.5px;
+        cursor: pointer;
+        transition: all .2s var(--ease);
+        white-space: nowrap;
+    }
+    .chip-btn:hover { background: var(--brand-soft); border-color: rgba(162,58,37,.25); color: var(--brand); }
+
+    /* 弹窗 */
     .modal-overlay {
         display: none;
         position: fixed;
-        top: 0; left: 0; right: 0; bottom: 0;
-        background: rgba(0,0,0,0.5);
-        z-index: 9999;
+        inset: 0;
+        z-index: 200;
+        background: rgba(20, 12, 8, .55);
+        backdrop-filter: blur(3px);
+        -webkit-backdrop-filter: blur(3px);
         align-items: center;
         justify-content: center;
+        padding: 20px;
     }
     .modal-overlay.show { display: flex; }
     .modal-box {
-        background: white;
-        border-radius: 16px;
-        padding: 28px 32px;
-        width: 90%;
-        max-width: 480px;
-        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-        animation: modalIn 0.25s ease-out;
-    }
-    @keyframes modalIn {
-        from { opacity: 0; transform: translateY(-20px) scale(0.95); }
-        to { opacity: 1; transform: translateY(0) scale(1); }
-    }
-    .modal-box h3 {
-        color: #2c3e50;
-        font-size: 20px;
-        margin-bottom: 8px;
-    }
-    .modal-box .modal-tip {
-        color: #999;
-        font-size: 13px;
-        margin-bottom: 16px;
-    }
-    .modal-box textarea {
         width: 100%;
-        padding: 12px 14px;
-        border: 2px solid #e8e0d8;
-        border-radius: 10px;
-        font-size: 14px;
-        resize: vertical;
-        min-height: 80px;
-        outline: none;
-        transition: 0.2s;
-        font-family: inherit;
-        box-sizing: border-box;
+        max-width: 480px;
+        max-height: 88vh;
+        overflow-y: auto;
+        background: var(--surface);
+        border-radius: var(--r-lg);
+        padding: 26px 26px 22px;
+        box-shadow: var(--sh-3);
+        animation: modalIn .28s var(--ease) both;
     }
-    .modal-box textarea:focus {
-        border-color: #c0392b;
+    @keyframes modalIn { from { opacity: 0; transform: translateY(10px) scale(.98); } to { opacity: 1; transform: none; } }
+    .modal-box h3 {
+        font-family: var(--font-serif);
+        font-size: 18px;
+        margin-bottom: 6px;
+        color: var(--ink);
     }
-    .modal-actions {
+    .modal-tip { font-size: 12.5px; color: var(--ink-3); margin-bottom: 16px; line-height: 1.7; }
+    .modal-box textarea { min-height: 100px; }
+    .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px; }
+    .modal-box label { display: block; font-size: 12.5px; font-weight: 600; color: var(--ink-2); margin-bottom: 6px; }
+
+    .contact-who {
         display: flex;
-        justify-content: flex-end;
+        align-items: baseline;
         gap: 10px;
-        margin-top: 18px;
+        padding: 10px 14px;
+        margin-bottom: 14px;
+        border-radius: var(--r-sm);
+        background: var(--surface-2);
+        font-size: 13px;
     }
-    .modal-actions button {
-        padding: 9px 22px;
-        border: none;
-        border-radius: 8px;
-        font-size: 14px;
+    .contact-who .k { font-size: 11px; letter-spacing: .12em; color: var(--ink-4); text-transform: uppercase; }
+    .contact-who .v { color: var(--ink); font-weight: 600; }
+
+    .quick-tpl { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+    .quick-tpl button {
+        padding: 3px 11px;
+        border-radius: 99px;
+        border: 1px solid var(--line-2);
+        background: var(--surface);
+        color: var(--ink-3);
+        font-family: inherit;
+        font-size: 11.5px;
         cursor: pointer;
-        transition: 0.2s;
+        transition: all .2s var(--ease);
     }
-    .modal-actions .btn-cancel {
-        background: #f0ece8;
-        color: #7f8c8d;
+    .quick-tpl button:hover { background: var(--brand-soft); border-color: rgba(162,58,37,.25); color: var(--brand); }
+
+    @media (max-width: 768px) {
+        .page-head h1 { font-size: 23px; }
+        .report-section { padding: 16px 13px 6px; }
     }
-    .modal-actions .btn-cancel:hover { background: #e8e0d8; }
-    .modal-actions .btn-confirm {
-        background: #c0392b;
-        color: white;
-    }
-    .modal-actions .btn-confirm:hover { background: #a93226; }
 </style>
 
-<h1 style="color:#c0392b; font-size:28px;">🚨 举报管理</h1>
-<p style="color:#7f8c8d; margin-bottom:20px;">查看和处理用户提交的举报</p>
+<div class="page-head">
+    <div class="eyebrow">Reports</div>
+    <h1>举报管理</h1>
+    <p class="sub">查看和处理用户提交的举报，处理结果会同步通知到举报人</p>
+</div>
 
 <div class="report-section">
-    <h3>🍽️ 美食举报</h3>
+    <h3>美食举报</h3>
     {% if food_reports %}
         <div class="table-wrap">
         <table class="report-table">
@@ -291,15 +265,15 @@
                             {{ r.food_name or '（已删除）' }}
                         {% endif %}
                         <span class="obj-sub">
-                            🏠 {{ r.merchant_name or '商家信息缺失' }}
+                            {{ r.merchant_name or '商家信息缺失' }}
                             {% if r.merchant_id %}· 商家 ID {{ r.merchant_id }}{% endif %}
                         </span>
                     </td>
                     <td>{{ r.reason }}</td>
                     <td class="nowrap time">{{ r.created_at }}</td>
                     <td class="nowrap">
-                        {% if r.status == 'pending' %}<span class="status-pending">⏳ 待处理</span>
-                        {% elif r.status == 'resolved' %}<span class="status-resolved">✅ 已处理</span>
+                        {% if r.status == 'pending' %}<span class="status-pending">待处理</span>
+                        {% elif r.status == 'resolved' %}<span class="status-resolved">已处理</span>
                         {% else %}<span class="status-rejected">已驳回</span>{% endif %}
                     </td>
                     <td>
@@ -326,13 +300,13 @@
                                     data-receiver-id="{{ r.merchant_id }}"
                                     data-receiver-name="{{ r.merchant_name or '商家' }}"
                                     data-role="商家"
-                                    data-report-id="{{ r.id }}">💬 联系商家</button>
+                                    data-report-id="{{ r.id }}">联系商家</button>
                             {% endif %}
                             <button type="button" class="chip-btn contact-btn"
                                     data-receiver-id="{{ r.reporter_id }}"
                                     data-receiver-name="{{ r.reporter_name }}"
                                     data-role="举报人"
-                                    data-report-id="{{ r.id }}">💬 联系举报人</button>
+                                    data-report-id="{{ r.id }}">联系举报人</button>
                         </div>
                     </td>
                 </tr>
@@ -341,12 +315,12 @@
         </table>
         </div>
     {% else %}
-        <p style="color:#999; padding:16px 0;">✅ 暂无美食举报</p>
+        <p style="color:#999; padding:16px 0;">暂无美食举报</p>
     {% endif %}
 </div>
 
 <div class="report-section">
-    <h3>💬 评论举报</h3>
+    <h3>评论举报</h3>
     {% if comment_reports %}
         <div class="table-wrap">
         <table class="report-table">
@@ -369,24 +343,24 @@
                         {% if r.comment_content %}
                             <span class="comment-preview">"{{ r.comment_content[:40] }}{% if r.comment_content|length > 40 %}...{% endif %}"</span>
                         {% else %}
-                            <span style="color:#bbb;">（已删除）</span>
+                            <span class="muted" style="color:var(--ink-4);">（已删除）</span>
                         {% endif %}
                         {% if r.comment_user_name %}
-                        <span class="obj-sub">✍️ 评论者：{{ r.comment_user_name }}</span>
+                        <span class="obj-sub">评论者 · {{ r.comment_user_name }}</span>
                         {% endif %}
                         {% if r.comment_food_id %}
-                        <a class="comment-source" style="color:#3498db; text-decoration:none;"
+                        <a class="comment-source"
                            href="{{ url_for('food.food_detail', food_id=r.comment_food_id) }}?from=%2Fadmin%2Freports#comment-{{ r.comment_id }}"
                            target="_blank" rel="noopener" title="在新标签页定位到这条评论">
-                            🔗 查看原文（{{ r.comment_food_name or '所属美食' }}）↗
+                            查看原文（{{ r.comment_food_name or '所属美食' }}）↗
                         </a>
                         {% endif %}
                     </td>
                     <td>{{ r.reason }}</td>
                     <td class="nowrap time">{{ r.created_at }}</td>
                     <td class="nowrap">
-                        {% if r.status == 'pending' %}<span class="status-pending">⏳ 待处理</span>
-                        {% elif r.status == 'resolved' %}<span class="status-resolved">✅ 已处理</span>
+                        {% if r.status == 'pending' %}<span class="status-pending">待处理</span>
+                        {% elif r.status == 'resolved' %}<span class="status-resolved">已处理</span>
                         {% else %}<span class="status-rejected">已驳回</span>{% endif %}
                     </td>
                     <td>
@@ -411,20 +385,20 @@
                                     data-receiver-id="{{ r.comment_user_id }}"
                                     data-receiver-name="{{ r.comment_user_name }}"
                                     data-role="评论者"
-                                    data-report-id="{{ r.id }}">💬 评论者</button>
+                                    data-report-id="{{ r.id }}">评论者</button>
                             {% endif %}
                             {% if r.merchant_id %}
                             <button type="button" class="chip-btn contact-btn"
                                     data-receiver-id="{{ r.merchant_id }}"
                                     data-receiver-name="{{ r.merchant_name or '商家' }}"
                                     data-role="商家"
-                                    data-report-id="{{ r.id }}">💬 商家</button>
+                                    data-report-id="{{ r.id }}">商家</button>
                             {% endif %}
                             <button type="button" class="chip-btn contact-btn"
                                     data-receiver-id="{{ r.reporter_id }}"
                                     data-receiver-name="{{ r.reporter_name }}"
                                     data-role="举报人"
-                                    data-report-id="{{ r.id }}">💬 举报人</button>
+                                    data-report-id="{{ r.id }}">举报人</button>
                         </div>
                     </td>
                 </tr>
@@ -433,14 +407,14 @@
         </table>
         </div>
     {% else %}
-        <p style="color:#999; padding:16px 0;">✅ 暂无评论举报</p>
+        <p style="color:#999; padding:16px 0;">暂无评论举报</p>
     {% endif %}
 </div>
 
 <!-- 联系当事人弹窗（站内消息） -->
 <div class="modal-overlay" id="contactModal">
     <div class="modal-box">
-        <h3>💬 联系<span id="contactTitle">商家</span></h3>
+        <h3>联系<span id="contactTitle">商家</span></h3>
         <p class="modal-tip">消息会发到对方的「我的消息」，对方可以在那里回复你，处理过程有据可查。</p>
         <form method="POST" action="{{ url_for('message.send') }}">
             <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
@@ -473,15 +447,15 @@
 <!-- 处理举报弹窗 -->
 <div class="modal-overlay" id="handleModal">
     <div class="modal-box">
-        <h3 id="handleModalTitle">🚨 处理举报</h3>
+        <h3 id="handleModalTitle">处理举报</h3>
         <p class="modal-tip" id="handleModalTip">请填写处理说明，提交后用户可在"我的举报"中查看。</p>
         <form id="handleForm" method="POST" action="">
             <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
             <input type="hidden" name="action" id="handleAction" value="">
             <div id="targetActionBox">
-                <label for="targetAction" style="display:block; font-size:14px; color:#555; margin-bottom:6px;">同步执行</label>
+                <label for="targetAction">同步执行</label>
                 <select name="target_action" id="targetAction"
-                        style="width:100%; padding:9px 12px; border:1px solid #e2dbd4; border-radius:8px; font-family:inherit; font-size:14px;">
+                       >
                 </select>
             </div>
             <textarea name="handle_note" id="handleNote"
@@ -510,7 +484,7 @@
     function openHandleModal(reportId, action, kind, targetName) {
         var isResolved = action === 'resolved';
         document.getElementById('handleModalTitle').textContent =
-            (isResolved ? '✅ 处理举报（' : '❌ 驳回举报（') + targetName + '）';
+            (isResolved ? '处理举报（' : '驳回举报（') + targetName + '）';
         document.getElementById('handleModalTip').textContent = isResolved
             ? '请填写处理说明，用户可在"我的举报"中看到；也可以顺手处理掉被举报的内容。'
             : '请填写驳回说明，用户可在"我的举报"中看到。';

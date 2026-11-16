@@ -5,338 +5,368 @@
 {% block content %}
 
 <style>
-    /* ===== 搜索区域 ===== */
-    .search-section {
-        background: white;
-        border-radius: 16px;
-        padding: 24px 30px;
-        margin-bottom: 16px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-        display: flex;
-        flex-wrap: wrap;
-        gap: 12px;
-        align-items: center;
-    }
-    /* 同义词提示条 */
-    .synonym-note {
-        background: #fffdf6;
-        border: 1px solid #f3e7c8;
-        border-radius: 10px;
-        padding: 8px 16px;
-        margin: -6px 0 16px;
-        font-size: 13px;
-        color: #9a8a63;
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        gap: 6px;
-    }
-    .synonym-note .syn-word {
-        background: #fdf3dc;
-        color: #a5762a;
-        border-radius: 12px;
-        padding: 1px 10px;
-        font-size: 12px;
-    }
-    .search-section .search-input {
-        flex: 1;
-        min-width: 200px;
-        padding: 10px 16px;
-        border: 2px solid #e8e0d8;
-        border-radius: 8px;
-        font-size: 15px;
-        outline: none;
-        transition: 0.3s;
-    }
-    .search-section .search-input:focus {
-        border-color: #c0392b;
-    }
-    .search-section .search-btn {
-        padding: 10px 28px;
-        background: #c0392b;
-        color: white;
-        border: none;
-        border-radius: 8px;
-        font-size: 15px;
-        cursor: pointer;
-        transition: 0.3s;
-    }
-    .search-section .search-btn:hover {
-        background: #a93226;
-    }
-    .search-section .category-select {
-        padding: 10px 16px;
-        border: 2px solid #e8e0d8;
-        border-radius: 8px;
-        font-size: 15px;
-        background: white;
-        outline: none;
-        cursor: pointer;
-        min-width: 120px;
-    }
-    .search-section .category-select:focus {
-        border-color: #c0392b;
-    }
-    .search-section .clear-btn {
-        padding: 10px 20px;
-        background: #7f8c8d;
-        color: white;
-        border: none;
-        border-radius: 8px;
-        font-size: 15px;
-        cursor: pointer;
-        text-decoration: none;
-        transition: 0.3s;
-    }
-    .search-section .clear-btn:hover {
-        background: #5d6d7e;
-    }
-    .search-section .result-count {
-        color: #7f8c8d;
-        font-size: 14px;
-        margin-left: auto;
-    }
-
-    /* ===== 过敏/忌口控制栏 ===== */
-    .pref-controls {
-        display: flex;
-        gap: 20px;
-        padding: 10px 0 14px;
-        border-bottom: 1px solid #eee;
-        margin-bottom: 16px;
-        flex-wrap: wrap;
-        align-items: center;
-        background: #faf8f6;
-        border-radius: 10px;
-        padding: 10px 18px;
-        border: 1px solid #eee;
-    }
-    .pref-controls label {
-        font-size: 14px;
-        color: #555;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        cursor: pointer;
-    }
-    .pref-controls input[type="checkbox"] {
-        width: 16px;
-        height: 16px;
-        cursor: pointer;
-        accent-color: #c0392b;
-    }
-    .pref-controls .pref-tags {
-        font-size: 13px;
-        color: #999;
-        margin-left: auto;
-    }
-    .pref-controls .pref-tags .allergy-tag {
-        color: #c0392b;
-        font-weight: 500;
-    }
-    .pref-controls .pref-tags .taboo-tag {
-        color: #b7950b;
-        font-weight: 500;
-    }
-    .hide-note {
-        font-size: 13px;
-        color: #a2968c;
-        margin: -6px 0 16px;
-        padding-left: 4px;
-    }
-
-    /* ===== 美食卡片 ===== */
-    .food-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-        gap: 20px;
-    }
-    .food-card {
-        background: white;
-        border-radius: 16px;
-        padding: 18px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-        transition: 0.3s;
-        border: 1px solid #eee;
-        cursor: pointer;
+    /* ===== 封面区 ===== */
+    .hero {
         position: relative;
-    }
-    .food-card:hover {
-        transform: translateY(-6px);
-        box-shadow: 0 8px 24px rgba(0,0,0,0.15);
-    }
-    .food-card .food-image {
-        width: 100%;
-        height: 170px;
-        background: linear-gradient(135deg, #f6efe7 0%, #e7d9c9 100%);
-        border-radius: 12px;
+        border-radius: var(--r-xl);
         overflow: hidden;
+        margin-bottom: 26px;
+        min-height: 352px;
+        display: flex;
+        align-items: center;
+        background: #2A1A12 url("{{ url_for('static', filename='images/foods/1.jpg') }}") center 62% / cover no-repeat;
+        box-shadow: var(--sh-3);
+    }
+    /* 左侧压暗，保证文字可读；右侧保留照片的通透 */
+    .hero::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background:
+            linear-gradient(96deg, rgba(26, 14, 8, .92) 0%, rgba(30, 17, 10, .80) 34%,
+                                    rgba(32, 18, 11, .42) 62%, rgba(32, 18, 11, .12) 85%),
+            radial-gradient(120% 100% at 100% 50%, transparent 40%, rgba(20, 10, 5, .35) 100%);
+    }
+    .hero-inner {
         position: relative;
+        z-index: 1;
+        padding: 44px 46px;
+        width: 100%;
+        max-width: 620px;
+    }
+    .hero-eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 10.5px;
+        font-weight: 600;
+        letter-spacing: .28em;
+        text-transform: uppercase;
+        color: rgba(240, 211, 168, .8);
+        margin-bottom: 16px;
+    }
+    .hero-eyebrow::before {
+        content: "";
+        width: 26px; height: 1px;
+        background: rgba(240, 211, 168, .6);
+    }
+    .hero h1 {
+        font-family: var(--font-serif);
+        font-size: 44px;
+        line-height: 1.28;
+        font-weight: 700;
+        color: #FFF8EF;
+        letter-spacing: .04em;
+        margin-bottom: 12px;
+        text-shadow: 0 2px 24px rgba(0, 0, 0, .3);
+    }
+    .hero h1 em {
+        font-style: normal;
+        color: #E8C48C;
+    }
+    .hero-desc {
+        font-size: 14px;
+        line-height: 1.85;
+        color: rgba(255, 244, 231, .72);
+        max-width: 42ch;
+        margin-bottom: 24px;
+    }
+
+    /* 搜索：白底一块，按钮嵌在右侧 */
+    .hero-search {
+        display: flex;
+        align-items: center;
+        gap: 0;
+        background: #FFFCF7;
+        border-radius: var(--r);
+        padding: 5px 5px 5px 6px;
+        box-shadow: 0 10px 30px -12px rgba(0, 0, 0, .55), 0 0 0 1px rgba(255, 255, 255, .1);
+        max-width: 540px;
+    }
+    .hero-search .s-icon {
+        flex: 0 0 auto;
+        width: 34px;
         display: flex;
         align-items: center;
         justify-content: center;
-        color: #b9a894;
+        color: var(--ink-4);
+    }
+    .hero-search input[type="text"] {
+        flex: 1;
+        min-width: 0;
+        border: 0;
+        background: transparent;
+        padding: 9px 2px;
+        font-size: 14.5px;
+        color: var(--ink);
+        box-shadow: none;
+    }
+    .hero-search input[type="text"]:focus { box-shadow: none; }
+    .hero-search select {
+        flex: 0 0 auto;
+        width: auto;
+        max-width: 116px;
+        border: 0;
+        border-left: 1px solid var(--line);
+        border-radius: 0;
+        background-color: transparent;
+        padding: 8px 26px 8px 12px;
+        font-size: 13.5px;
+        color: var(--ink-2);
+        box-shadow: none;
+    }
+    .hero-search select:focus { box-shadow: none; }
+    .hero-search .s-btn {
+        flex: 0 0 auto;
+        padding: 9px 22px;
+        border: 0;
+        border-radius: var(--r-sm);
+        background: linear-gradient(180deg, #AE4029, #963220);
+        color: #FFF8F2;
+        font-family: inherit;
         font-size: 14px;
-        margin-bottom: 12px;
+        font-weight: 500;
+        letter-spacing: .08em;
+        cursor: pointer;
+        transition: all .2s var(--ease);
     }
-    .food-card .food-image img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        display: block;
-        transition: transform 0.5s ease;
+    .hero-search .s-btn:hover { background: linear-gradient(180deg, #BC4A32, #882C1A); }
+
+    .hero-hot {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        flex-wrap: wrap;
+        margin-top: 16px;
+        font-size: 12.5px;
+        color: rgba(255, 244, 231, .48);
     }
-    .food-card:hover .food-image img { transform: scale(1.07); }
-    .food-card .food-name {
+    .hero-hot a {
+        color: rgba(255, 244, 231, .82);
+        border-bottom: 1px solid rgba(255, 244, 231, .26);
+        padding-bottom: 1px;
+    }
+    .hero-hot a:hover { color: #fff; border-bottom-color: #E8C48C; }
+
+    /* ===== 分类快筛 ===== */
+    .category-bar {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-bottom: 18px;
+    }
+    .category-bar .cat-label {
+        font-size: 11.5px;
+        letter-spacing: .16em;
+        text-transform: uppercase;
+        color: var(--ink-4);
+        margin-right: 4px;
+    }
+
+    /* ===== 结果工具条 ===== */
+    .result-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+        flex-wrap: wrap;
+        padding-bottom: 14px;
+        margin-bottom: 20px;
+        border-bottom: 1px solid var(--line);
+    }
+    .result-bar .title {
+        font-family: var(--font-serif);
         font-size: 20px;
         font-weight: 700;
-        color: #2c3e50;
-        margin-bottom: 6px;
+        color: var(--ink);
+        letter-spacing: .02em;
     }
-    .food-card .food-meta {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        font-size: 14px;
-        color: #7f8c8d;
-        margin-bottom: 6px;
+    .result-bar .title small {
+        font-family: var(--font-sans);
+        font-size: 12.5px;
+        font-weight: 400;
+        color: var(--ink-3);
+        letter-spacing: .02em;
+        margin-left: 10px;
     }
-    .food-card .food-rating {
-        color: #f39c12;
-        font-weight: 700;
-        font-size: 16px;
-    }
-    .food-card .food-price {
-        color: #e74c3c;
-        font-weight: 700;
-        font-size: 18px;
-    }
-    .food-card .food-merchant {
+    .result-bar .clear-link {
         font-size: 13px;
-        color: #95a5a6;
-        margin-top: 8px;
-        padding-top: 8px;
-        border-top: 1px solid #f0ece8;
-    }
-    .food-card .food-merchant span {
-        color: #3498db;
-    }
-    .food-card .food-tags {
-        display: flex;
-        gap: 6px;
-        flex-wrap: wrap;
-        margin: 8px 0 4px;
-    }
-    .food-card .food-tags span {
-        background: #f0ece8;
-        padding: 2px 12px;
-        border-radius: 20px;
-        font-size: 12px;
-        color: #7f8c8d;
-    }
-
-    /* ===== 过敏/忌口标签（在卡片上） ===== */
-    .food-warnings {
-        margin-top: 8px;
-        display: flex;
-        gap: 6px;
-        flex-wrap: wrap;
-    }
-    .food-warnings .warn-allergy {
-        background: #fde8e8;
-        color: #c0392b;
-        padding: 2px 10px;
-        border-radius: 12px;
-        font-size: 12px;
-        font-weight: 600;
-    }
-    .food-warnings .warn-taboo {
-        background: #fef9e7;
-        color: #b7950b;
-        padding: 2px 10px;
-        border-radius: 12px;
-        font-size: 12px;
-        font-weight: 600;
-    }
-
-    .no-data {
-        text-align: center;
-        color: #999;
-        font-size: 18px;
-        padding: 60px 0;
-        grid-column: 1 / -1;
-    }
-    .no-data .suggest-words {
+        color: var(--ink-3);
         display: inline-flex;
+        align-items: center;
+        gap: 5px;
+    }
+    .result-bar .clear-link:hover { color: var(--brand); }
+
+    /* 同义词提示 */
+    .synonym-note {
+        display: flex;
         flex-wrap: wrap;
+        align-items: center;
+        gap: 7px;
+        padding: 10px 16px;
+        margin-bottom: 18px;
+        border-radius: var(--r);
+        background: var(--gold-soft);
+        border: 1px solid rgba(185, 138, 62, .18);
+        font-size: 12.5px;
+        color: #8A6520;
+    }
+    .synonym-note .syn-word {
+        padding: 1px 10px;
+        border-radius: 99px;
+        background: rgba(255, 255, 255, .7);
+        border: 1px solid rgba(185, 138, 62, .2);
+        font-size: 12px;
+    }
+
+    /* ===== 偏好控制条 ===== */
+    .pref-controls {
+        display: flex;
+        align-items: center;
+        gap: 18px;
+        flex-wrap: wrap;
+        padding: 12px 18px;
+        margin-bottom: 18px;
+        border-radius: var(--r);
+        background: rgba(255, 255, 255, .6);
+        border: 1px solid var(--line);
+    }
+    .pref-controls label {
+        display: flex;
+        align-items: center;
         gap: 8px;
-        justify-content: center;
-        margin-top: 10px;
+        font-size: 13.5px;
+        color: var(--ink-2);
+        cursor: pointer;
+        user-select: none;
     }
-    .no-data .suggest-words a {
-        display: inline-block;
-        background: #fdf3f0;
-        color: #c0392b;
-        border-radius: 16px;
-        padding: 3px 14px;
-        font-size: 13px;
-        text-decoration: none;
-        transition: 0.2s;
+    .pref-controls .pref-tags {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-left: auto;
+        font-size: 12.5px;
+        color: var(--ink-4);
     }
-    .no-data .suggest-words a:hover { background: #f8dfd9; }
+    .pref-controls .allergy-tag { color: var(--danger); font-weight: 500; }
+    .pref-controls .taboo-tag { color: #8A6520; font-weight: 500; }
+    .pref-controls .edit-pref { color: var(--brand); text-decoration: none; }
+    .pref-controls .edit-pref:hover { text-decoration: underline; }
+    .hide-note {
+        font-size: 12.5px;
+        color: var(--ink-3);
+        margin: -8px 0 16px;
+        padding-left: 2px;
+    }
+
+    @media (max-width: 768px) {
+        .hero { min-height: 300px; border-radius: var(--r-lg); }
+        .hero-inner { padding: 30px 22px; }
+        .hero h1 { font-size: 30px; }
+        .hero-desc { font-size: 13px; margin-bottom: 18px; }
+        .hero-search { flex-wrap: wrap; padding: 6px; }
+        .hero-search select { display: none; }
+        .hero-search .s-btn { padding: 8px 16px; }
+        .result-bar .title { font-size: 17px; }
+        .pref-controls { gap: 10px 14px; padding: 11px 13px; }
+        .pref-controls .pref-tags { margin-left: 0; width: 100%; }
+    }
 </style>
 
-<!-- ====== 搜索区域 ====== -->
-<div class="search-section">
-    <form method="GET" action="{{ url_for('index') }}" style="display: contents;">
-        <input type="text" name="q" class="search-input"
-               placeholder="🔍 搜索美食名称或原材料..."
-               value="{{ keyword }}">
+<!-- ====== 封面 ====== -->
+<section class="hero">
+    <div class="hero-inner">
+        <div class="hero-eyebrow">Guangdong · 粤菜图谱</div>
+        <h1>食在广东，<em>一味一城</em></h1>
+        <p class="hero-desc">
+            从清晨一碟肠粉，到深夜一炉烧鹅。广府、潮汕、客家，把岭南的味道装进你的下一顿。
+        </p>
 
-        <select name="category" class="category-select" onchange="this.form.submit()">
-            <option value="">所有分类</option>
-            {% for cat in categories %}
-                <option value="{{ cat.id }}" {% if selected_category|string == cat.id|string %}selected{% endif %}>
-                    {{ cat.name }}
-                </option>
-            {% endfor %}
-        </select>
+        <form method="GET" action="{{ url_for('index') }}">
+            <div class="hero-search">
+                <span class="s-icon">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                        <circle cx="7" cy="7" r="4.6" stroke="currentColor" stroke-width="1.6"/>
+                        <path d="M10.6 10.6 14 14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+                    </svg>
+                </span>
+                <input type="text" name="q" placeholder="搜菜名、原材料，如「白切鸡」「双皮奶」"
+                       value="{{ keyword }}" aria-label="搜索美食">
+                <select name="category" onchange="this.form.submit()" aria-label="选择分类">
+                    <option value="">全部分类</option>
+                    {% for cat in categories %}
+                        <option value="{{ cat.id }}" {% if selected_category|string == cat.id|string %}selected{% endif %}>
+                            {{ cat.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+                <button type="submit" class="s-btn">搜索</button>
+            </div>
+        </form>
 
-        <button type="submit" class="search-btn">搜索</button>
-    </form>
+        <div class="hero-hot">
+            <span>热门</span>
+            <a href="{{ url_for('index', q='白切鸡') }}">白切鸡</a>
+            <a href="{{ url_for('index', q='肠粉') }}">肠粉</a>
+            <a href="{{ url_for('index', q='烧鹅') }}">烧鹅</a>
+            <a href="{{ url_for('index', q='双皮奶') }}">双皮奶</a>
+            <a href="{{ url_for('index', q='生蚝') }}">生蚝</a>
+        </div>
+    </div>
+</section>
 
-    {% if keyword or selected_category %}
-        <a href="{{ url_for('index') }}" class="clear-btn">清除筛选</a>
-    {% endif %}
-
-    <span class="result-count">共 {{ foods|length }} 道美食</span>
+<!-- ====== 分类快筛 ====== -->
+{% if categories %}
+<div class="category-bar">
+    <span class="cat-label">Category</span>
+    <a class="chip {% if not selected_category %}chip-btn active{% endif %}"
+       href="{{ url_for('index', q=keyword or none) }}">全部</a>
+    {% for cat in categories %}
+    <a class="chip {% if selected_category|string == cat.id|string %}chip-btn active{% endif %}"
+       href="{{ url_for('index', q=keyword or none, category=cat.id) }}">{{ cat.name }}</a>
+    {% endfor %}
 </div>
+{% endif %}
 
 {% if synonyms %}
 <div class="synonym-note">
-    🔎 「{{ keyword }}」已按同义词一起检索：
+    <span>「{{ keyword }}」已按同义词一并检索</span>
     {% for s in synonyms %}<span class="syn-word">{{ s }}</span>{% endfor %}
 </div>
 {% endif %}
 
+<!-- ====== 结果工具条 ====== -->
+<div class="result-bar">
+    <div class="title">
+        {% if keyword %}「{{ keyword }}」的结果{% elif selected_category %}分类精选{% else %}今日推荐{% endif %}
+        <small>共 {{ foods|length }} 道</small>
+    </div>
+    {% if keyword or selected_category %}
+    <a href="{{ url_for('index') }}" class="clear-link">清除筛选 ×</a>
+    {% endif %}
+</div>
+
 <!-- ====== 过敏/忌口控制栏 ====== -->
 <div class="pref-controls">
-    <label>
-        <input type="checkbox" id="hideRisk" {% if hide_risk %}checked{% endif %}> 🙅 隐藏含过敏/忌口的美食
+    <label for="hideRisk">
+        <input type="checkbox" id="hideRisk" {% if hide_risk %}checked{% endif %}>
+        隐藏含过敏 / 忌口的美食
     </label>
     <span class="pref-tags">
         {% if user_allergy %}
-            <span class="allergy-tag">⚠️ 过敏：{{ user_allergy }}</span>
+            <span class="allergy-tag">过敏 · {{ user_allergy }}</span>
         {% endif %}
-        {% if user_allergy and user_taboo %} | {% endif %}
         {% if user_taboo %}
-            <span class="taboo-tag">🙅 忌口：{{ user_taboo }}</span>
+            <span class="taboo-tag">忌口 · {{ user_taboo }}</span>
         {% endif %}
         {% if not user_allergy and not user_taboo %}
-            <span style="color:#bbb;">未设置过敏/忌口</span>
+            <span>尚未设置过敏 / 忌口</span>
         {% endif %}
         {% if session.get('user_id') %}
-            <a href="{{ url_for('user.user_dashboard') }}" style="color:#c0392b; text-decoration:none;">修改偏好</a>
+            <a href="{{ url_for('user.user_dashboard') }}" class="edit-pref">修改偏好</a>
         {% endif %}
     </span>
 </div>
@@ -358,29 +388,28 @@
             </div>
             <div class="food-name">{{ food.name }}</div>
             <div class="food-meta">
-                <span class="food-rating">⭐ {{ food.avg_rating or '暂无' }}</span>
-                <span class="food-price">¥{{ food.price }}</span>
+                <span class="food-rating"><span class="star">★</span>{{ food.avg_rating or '—' }}</span>
+                <span class="food-price"><span class="cur">¥</span>{{ '%g'|format(food.price|float) }}</span>
             </div>
             <div class="food-tags">
-                <span>👍 {{ food.like_count or 0 }} 人点赞</span>
+                <span>{{ food.like_count or 0 }} 人点赞</span>
+                {% if food.category_name %}<span>{{ food.category_name }}</span>{% endif %}
             </div>
-            <div class="food-merchant">
-                🏠 店铺：<span>{{ food.merchant_name or '未知商家' }}</span>
-            </div>
+            <div class="food-merchant">店家 · <span>{{ food.merchant_name or '未知商家' }}</span></div>
 
             <!-- 过敏/忌口标签 -->
             <div class="food-warnings">
                 {% if user_allergy %}
                     {% for a in user_allergy.split(',') %}
                         {% if a.strip() and (a.strip() in food.ingredients or a.strip() in food.name) %}
-                            <span class="warn-allergy" data-type="allergy">🚫 含过敏：{{ a.strip() }}</span>
+                            <span class="warn-allergy" data-type="allergy">含过敏原 · {{ a.strip() }}</span>
                         {% endif %}
                     {% endfor %}
                 {% endif %}
                 {% if user_taboo %}
                     {% for t in user_taboo.split(',') %}
                         {% if t.strip() and (t.strip() in food.ingredients or t.strip() in food.name) %}
-                            <span class="warn-taboo" data-type="taboo">🙅 含忌口：{{ t.strip() }}</span>
+                            <span class="warn-taboo" data-type="taboo">含忌口 · {{ t.strip() }}</span>
                         {% endif %}
                     {% endfor %}
                 {% endif %}
@@ -389,8 +418,8 @@
         {% endfor %}
     {% else %}
         <div class="no-data">
-            😅 没有找到匹配的美食<br>
-            <span style="font-size:14px; color:#bbb;">换个说法试试，比如：</span>
+            没有找到匹配的美食
+            <div style="font-size:13px; color:var(--ink-4); margin-top:6px;">换个说法试试，或者看看这些：</div>
             <span class="suggest-words">
                 <a href="{{ url_for('index', q='白切鸡') }}">白切鸡</a>
                 <a href="{{ url_for('index', q='肠粉') }}">肠粉</a>
@@ -416,14 +445,14 @@
             document.querySelectorAll('.food-card').forEach(function (card) {
                 var risky = card.querySelector('.warn-allergy, .warn-taboo');
                 var shouldHide = on && !!risky;
-                card.style.display = shouldHide ? 'none' : 'block';
+                card.style.display = shouldHide ? 'none' : 'flex';
                 if (shouldHide) hidden++;
             });
 
             if (hidden > 0) {
-                note.textContent = '已按你的过敏/忌口隐藏 ' + hidden + ' 道美食，取消勾选可查看。';
+                note.textContent = '已按你的过敏 / 忌口隐藏 ' + hidden + ' 道美食，取消勾选可查看。';
             } else if (on) {
-                note.textContent = '当前列表中没有与你过敏/忌口冲突的美食。';
+                note.textContent = '当前列表中没有与你过敏 / 忌口冲突的美食。';
             } else {
                 note.textContent = '';
             }

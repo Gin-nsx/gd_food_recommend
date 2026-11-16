@@ -96,7 +96,7 @@
 </style>
 
 <div class="page-header">
-    <h2>❤️ 我的收藏</h2>
+    <h2>我的收藏</h2>
     <span class="count">共 {{ favorites|length }} 条</span>
 </div>
 
@@ -112,11 +112,11 @@
                     {% endif %}
                 </div>
                 <div class="meta">
-                    <span class="rating">⭐ {{ f.avg_rating or '暂无' }}</span>
+                    <span class="rating">★ {{ f.avg_rating or '暂无' }}</span>
                     &nbsp;·&nbsp;
                     <span class="price">¥{{ f.price }}</span>
                     &nbsp;·&nbsp;
-                    🏠 {{ f.merchant_name or '未知商家' }}
+                    {{ f.merchant_name or '未知商家' }}
                 </div>
             </div>
             <button class="btn-remove" onclick="removeFavorite({{ f.id }})">取消收藏</button>
@@ -125,7 +125,7 @@
     </div>
 {% else %}
     <div class="empty">
-        <span>📭</span>
+        
         还没有收藏任何美食<br>
         <span style="font-size:14px; color:#bbb;">去首页逛逛吧 →</span>
     </div>

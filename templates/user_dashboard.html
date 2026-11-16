@@ -7,392 +7,353 @@
 <style>
     /* ===== 个人信息横幅 ===== */
     .profile-hero {
-        background: linear-gradient(120deg, #c0392b 0%, #a5342a 55%, #8e2b22 100%);
-        border-radius: 18px;
-        padding: 26px 32px;
+        position: relative;
+        overflow: hidden;
         display: flex;
         align-items: center;
         gap: 22px;
         flex-wrap: wrap;
-        color: #fff;
-        box-shadow: 0 8px 24px rgba(192,57,43,0.22);
+        padding: 30px 32px;
+        border-radius: var(--r-xl);
+        color: #FFF6EA;
+        background: linear-gradient(112deg, #6E2415 0%, #521A0C 55%, #3A1207 100%);
+        box-shadow: var(--sh-2);
     }
-    .profile-hero .avatar-lg {
-        width: 72px;
-        height: 72px;
-        flex: 0 0 auto;
+    /* 右侧一抹旧金弧光 */
+    .profile-hero::after {
+        content: "";
+        position: absolute;
+        right: -120px; top: -160px;
+        width: 420px; height: 420px;
         border-radius: 50%;
-        background: rgba(255,255,255,0.18);
-        border: 2px solid rgba(255,255,255,0.45);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 34px;
+        background: radial-gradient(circle, rgba(232, 196, 140, .18), transparent 65%);
+        pointer-events: none;
     }
-    .profile-hero .who { flex: 1; min-width: 180px; }
-    .profile-hero .who .name {
-        font-size: 24px;
-        font-weight: 700;
-        letter-spacing: 0.5px;
-    }
-    .profile-hero .who .meta {
-        margin-top: 8px;
-        font-size: 13px;
-        color: rgba(255,255,255,0.82);
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px 16px;
-        align-items: center;
-    }
-    .badge-role {
-        display: inline-block;
-        padding: 2px 12px;
+    .profile-hero > * { position: relative; z-index: 1; }
+    .profile-hero .avatar-lg {
+        width: 72px; height: 72px;
+        flex: 0 0 auto;
+        display: flex; align-items: center; justify-content: center;
         border-radius: 20px;
-        font-size: 12px;
-        font-weight: 600;
-        background: rgba(255,255,255,0.22);
-        border: 1px solid rgba(255,255,255,0.35);
-        margin-left: 10px;
-        vertical-align: 3px;
+        background: rgba(255, 255, 255, .10);
+        border: 1px solid rgba(255, 255, 255, .24);
+        font-family: var(--font-serif);
+        font-size: 30px;
+        font-weight: 700;
+        color: #F4DDB4;
+        text-transform: uppercase;
+        box-shadow: 0 8px 24px -12px rgba(0, 0, 0, .8);
     }
-    .badge-ok { color: #b8f0cf; }
-    .badge-off { color: #ffd0c9; }
-    .profile-hero .hero-actions {
+    .profile-hero .who { flex: 1; min-width: 200px; }
+    .profile-hero .who .name {
         display: flex;
+        align-items: center;
         gap: 10px;
         flex-wrap: wrap;
+        font-family: var(--font-serif);
+        font-size: 25px;
+        font-weight: 700;
+        letter-spacing: .04em;
     }
+    .badge-role {
+        display: inline-flex;
+        align-items: center;
+        padding: 2px 11px;
+        border-radius: 99px;
+        font-family: var(--font-sans);
+        font-size: 11.5px;
+        font-weight: 600;
+        letter-spacing: .04em;
+        background: rgba(240, 211, 168, .16);
+        border: 1px solid rgba(240, 211, 168, .34);
+        color: #F4DDB4;
+    }
+    .profile-hero .who .meta {
+        margin-top: 9px;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px 16px;
+        font-size: 12.5px;
+        color: rgba(255, 240, 224, .58);
+    }
+    .profile-hero .who .meta .ok { color: #A8DCC2; }
+    .profile-hero .who .meta .off { color: #F2B5AB; }
+    .profile-hero .who .meta .sep { color: rgba(255, 255, 255, .2); }
+
+    .profile-hero .hero-actions { display: flex; gap: 9px; flex-wrap: wrap; }
     .profile-hero .hero-actions a {
-        background: rgba(255,255,255,0.16);
-        border: 1px solid rgba(255,255,255,0.34);
-        color: #fff;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 9px 18px;
+        border-radius: 99px;
+        border: 1px solid rgba(255, 255, 255, .24);
+        background: rgba(255, 255, 255, .06);
+        color: #FFF3E4;
+        font-size: 13px;
         text-decoration: none;
-        padding: 8px 18px;
-        border-radius: 9px;
-        font-size: 14px;
-        transition: 0.25s;
         white-space: nowrap;
+        transition: all .22s var(--ease);
     }
     .profile-hero .hero-actions a:hover {
-        background: #fff;
-        color: #c0392b;
-        border-color: #fff;
-    }
-
-    /* ===== 通用卡片 ===== */
-    .card {
-        background: #fff;
-        border-radius: 16px;
-        padding: 22px 28px;
-        margin-top: 18px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-    }
-    .card-head {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 12px;
-        flex-wrap: wrap;
-    }
-    .card-head h3 {
-        color: #2c3e50;
-        font-size: 18px;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-    .card-sub {
-        color: #a2968c;
-        font-size: 13px;
-        margin-top: 6px;
-        line-height: 1.6;
+        background: #FFF6EA;
+        color: #6E2415;
+        border-color: #FFF6EA;
     }
 
     /* ===== 我的动态：入口卡 ===== */
     .entry-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-        gap: 14px;
-        margin-top: 16px;
+        grid-template-columns: repeat(auto-fit, minmax(148px, 1fr));
+        gap: 12px;
+        margin-top: 18px;
     }
     .entry {
         display: block;
+        padding: 16px 18px 15px;
+        border-radius: var(--r);
+        background: var(--surface);
+        border: 1px solid var(--line);
         text-decoration: none;
-        background: #fdfaf7;
-        border: 1px solid #f2eae3;
-        border-radius: 13px;
-        padding: 16px 18px;
-        transition: 0.25s;
+        transition: all .28s var(--ease);
     }
     .entry:hover {
-        background: #fdf3f0;
-        border-color: #eec3bb;
+        border-color: rgba(162, 58, 37, .28);
+        background: #FFFCF8;
         transform: translateY(-3px);
-        box-shadow: 0 8px 18px rgba(192,57,43,0.10);
+        box-shadow: var(--sh-1);
     }
-    .entry .ico { font-size: 22px; }
+    .entry .ico {
+        font-size: 15px;
+        line-height: 1;
+        color: var(--gold);
+        margin-bottom: 10px;
+        letter-spacing: 0;
+    }
     .entry .num {
-        font-size: 26px;
+        font-family: var(--font-num);
+        font-size: 27px;
         font-weight: 700;
-        color: #c0392b;
-        line-height: 1.15;
-        margin-top: 4px;
+        letter-spacing: -.03em;
+        color: var(--ink);
+        line-height: 1.1;
     }
+    .entry:hover .num { color: var(--brand); }
     .entry .lbl {
-        font-size: 13px;
-        color: #8a7c70;
-        margin-top: 2px;
         display: flex;
         align-items: center;
         justify-content: space-between;
+        gap: 6px;
+        margin-top: 5px;
+        font-size: 12px;
+        color: var(--ink-3);
+        letter-spacing: .02em;
     }
-    .entry .lbl .arrow { color: #c9bdb2; font-size: 12px; }
+    .entry .lbl .arrow { color: var(--ink-4); font-size: 12px; transition: transform .22s var(--ease); }
+    .entry:hover .lbl .arrow { transform: translateX(3px); color: var(--brand); }
+
     .mini-stats {
-        margin-top: 14px;
-        padding-top: 14px;
-        border-top: 1px dashed #f0ece8;
-        color: #8a7c70;
-        font-size: 13.5px;
         display: flex;
         flex-wrap: wrap;
-        gap: 6px 22px;
+        gap: 8px 26px;
+        margin-top: 18px;
+        padding-top: 16px;
+        border-top: 1px solid var(--line);
+        font-size: 13px;
+        color: var(--ink-3);
     }
-    .mini-stats b { color: #c0392b; font-size: 15px; }
+    .mini-stats b {
+        font-family: var(--font-num);
+        font-size: 15px;
+        color: var(--ink);
+        margin: 0 2px;
+    }
 
     /* ===== 饮食偏好 ===== */
     .pref-grid {
         display: grid;
         grid-template-columns: 1fr 1fr;
-        gap: 18px;
-        margin-top: 16px;
-    }
-    .field label {
-        display: block;
-        font-size: 13.5px;
-        font-weight: 600;
-        color: #2c3e50;
-        margin-bottom: 7px;
-    }
-    .field input[type="text"] {
-        width: 100%;
-        padding: 10px 14px;
-        border: 1px solid #e8e0d8;
-        border-radius: 9px;
-        font-size: 14px;
-        font-family: inherit;
-        outline: none;
-        transition: 0.2s;
-        box-sizing: border-box;
-    }
-    .field input[type="text"]:focus { border-color: #c0392b; }
-    .switch-row {
+        gap: 16px;
         margin-top: 18px;
-        background: #fdfaf7;
-        border: 1px solid #f2eae3;
-        border-radius: 11px;
-        padding: 13px 16px;
+    }
+    .switch-row {
         display: flex;
-        align-items: center;
-        gap: 12px;
+        align-items: flex-start;
+        gap: 11px;
+        margin-top: 16px;
+        padding: 14px 16px;
+        border-radius: var(--r);
+        background: var(--surface-2);
+        border: 1px solid var(--line);
         cursor: pointer;
+        transition: all .2s var(--ease);
     }
-    .switch-row input[type="checkbox"] {
-        width: 17px;
-        height: 17px;
-        accent-color: #c0392b;
-        flex: 0 0 auto;
-        cursor: pointer;
-    }
-    .switch-row .switch-text {
-        font-size: 14px;
-        color: #4a4a4a;
-    }
+    .switch-row:hover { border-color: var(--line-2); }
+    .switch-row input[type="checkbox"] { margin-top: 2px; flex: 0 0 auto; }
+    .switch-row .switch-text { font-size: 13.5px; color: var(--ink); line-height: 1.6; }
     .switch-row .switch-text small {
         display: block;
-        color: #a2968c;
-        font-size: 12.5px;
-        margin-top: 2px;
+        margin-top: 3px;
+        font-size: 12px;
+        color: var(--ink-3);
+        line-height: 1.6;
     }
     .pref-actions {
-        margin-top: 18px;
         display: flex;
         align-items: center;
         justify-content: flex-end;
         gap: 14px;
+        margin-top: 18px;
     }
-    .pref-message { font-size: 13.5px; }
-
-    .btn-primary {
-        padding: 9px 26px;
-        background: #c0392b;
-        color: #fff;
-        border: none;
-        border-radius: 9px;
-        font-size: 14px;
-        font-family: inherit;
-        cursor: pointer;
-        transition: 0.25s;
-    }
-    .btn-primary:hover { background: #a93226; }
-    .btn-ghost {
-        padding: 7px 18px;
-        background: #fff;
-        color: #c0392b;
-        border: 1px solid #eac6bf;
-        border-radius: 9px;
-        font-size: 13.5px;
-        font-family: inherit;
-        cursor: pointer;
-        transition: 0.25s;
-    }
-    .btn-ghost:hover { background: #fdeceb; border-color: #c0392b; }
+    .pref-message { font-size: 13px; }
 
     /* ===== 修改密码（折叠） ===== */
     .pwd-form {
+        display: none;
         margin-top: 18px;
         padding-top: 18px;
-        border-top: 1px dashed #f0ece8;
-        display: none;
+        border-top: 1px solid var(--line);
     }
     .pwd-form.show { display: block; }
     .pwd-grid {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
-        gap: 16px;
+        gap: 14px;
     }
-    .pwd-grid input {
-        width: 100%;
-        padding: 10px 14px;
-        border: 1px solid #e8e0d8;
-        border-radius: 9px;
-        font-size: 14px;
-        font-family: inherit;
-        outline: none;
-        box-sizing: border-box;
-        transition: 0.2s;
-    }
-    .pwd-grid input:focus { border-color: #c0392b; }
-    .pwd-form .pref-actions { margin-top: 16px; }
 
-    /* ===== 商家信息 ===== */
+    /* ===== 店铺信息 ===== */
     .shop-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-        gap: 14px 30px;
-        margin-top: 14px;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 0 34px;
+        margin-top: 12px;
     }
     .shop-grid .item {
         display: flex;
         justify-content: space-between;
         gap: 12px;
-        padding: 9px 0;
-        border-bottom: 1px solid #f8f4f0;
-        font-size: 14px;
+        padding: 11px 0;
+        border-bottom: 1px solid var(--line);
+        font-size: 13.5px;
     }
-    .shop-grid .item .k { color: #8a7c70; }
-    .shop-grid .item .v { color: #2c3e50; font-weight: 500; text-align: right; }
+    .shop-grid .item .k { color: var(--ink-3); }
+    .shop-grid .item .v { color: var(--ink); font-weight: 500; text-align: right; }
 
     @media (max-width: 860px) {
         .pref-grid, .pwd-grid { grid-template-columns: 1fr; }
-        .profile-hero { padding: 22px; }
+        .profile-hero { padding: 22px; border-radius: var(--r-lg); }
+        .profile-hero .who .name { font-size: 21px; }
+    }
+    @media (max-width: 520px) {
+        .entry-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+        .entry { padding: 13px 14px; }
+        .entry .num { font-size: 22px; }
     }
 </style>
 
 <!-- ===== 个人信息横幅 ===== -->
 <div class="profile-hero">
-    <div class="avatar-lg">👤</div>
+    <div class="avatar-lg">{{ user.username[:1] }}</div>
     <div class="who">
         <div class="name">
             {{ user.username }}
             <span class="badge-role">
                 {% if user.role == 'admin' %}管理员
                 {% elif user.role == 'merchant' %}商家
-                {% else %}普通用户{% endif %}
+                {% else %}食客{% endif %}
             </span>
         </div>
         <div class="meta">
-            <span>🗓 注册于 {{ user.created_at }}</span>
-            <span class="{% if user.is_active %}badge-ok{% else %}badge-off{% endif %}">
-                {% if user.is_active %}● 账号正常{% else %}● 已被禁用{% endif %}
+            <span>注册于 {{ user.created_at }}</span>
+            <span class="sep">·</span>
+            <span class="{% if user.is_active %}ok{% else %}off{% endif %}">
+                {% if user.is_active %}账号正常{% else %}已被禁用{% endif %}
             </span>
             {% if user.role == 'merchant' %}
+            <span class="sep">·</span>
             <span>
-                {% if user.merchant_status == 'approved' %}✓ 已通过审核
-                {% elif user.merchant_status == 'pending' %}⏳ 待审核
-                {% else %}✕ 审核未通过{% endif %}
+                {% if user.merchant_status == 'approved' %}审核已通过
+                {% elif user.merchant_status == 'pending' %}待审核
+                {% else %}审核未通过{% endif %}
             </span>
             {% endif %}
         </div>
     </div>
     <div class="hero-actions">
         <a href="{{ url_for('message.inbox') }}">
-            ✉️ 我的消息{% if unread_messages %}（{{ unread_messages }}）{% endif %}
+            我的消息{% if unread_messages %} · {{ unread_messages }}{% endif %}
         </a>
         {% if user.role == 'merchant' %}
-        <a href="{{ url_for('merchant.merchant_dashboard') }}">📊 商家中心</a>
+        <a href="{{ url_for('merchant.merchant_dashboard') }}">商家中心</a>
         {% endif %}
         {% if user.role == 'admin' %}
-        <a href="{{ url_for('admin.admin_dashboard') }}">⚙️ 管理后台</a>
+        <a href="{{ url_for('admin.admin_dashboard') }}">管理后台</a>
         {% endif %}
     </div>
 </div>
 
 <!-- ===== 我的动态 ===== -->
-<div class="card">
+<div class="card mt-20">
     <div class="card-head">
-        <h3>📊 我的动态</h3>
+        <div>
+            <h3>我的动态</h3>
+            <p class="card-sub">收藏、足迹、举报，都在这里</p>
+        </div>
     </div>
+
     <div class="entry-grid">
         <a class="entry" href="{{ url_for('user.user_favorites') }}">
-            <div class="ico">❤️</div>
+            <div class="ico">♥</div>
             <div class="num">{{ favorite_count }}</div>
             <div class="lbl">我的收藏<span class="arrow">→</span></div>
         </a>
         <a class="entry" href="{{ url_for('food.history') }}">
-            <div class="ico">🕐</div>
+            <div class="ico">◷</div>
             <div class="num">{{ history_count }}</div>
             <div class="lbl">浏览记录<span class="arrow">→</span></div>
         </a>
         <a class="entry" href="{{ url_for('user.user_blacklist') }}">
-            <div class="ico">🚫</div>
+            <div class="ico">⊘</div>
             <div class="num">{{ blacklist_count }}</div>
             <div class="lbl">黑名单<span class="arrow">→</span></div>
         </a>
         <a class="entry" href="{{ url_for('food.my_reports') }}">
-            <div class="ico">📮</div>
+            <div class="ico">⚑</div>
             <div class="num">{{ report_count }}</div>
             <div class="lbl">我的举报<span class="arrow">→</span></div>
         </a>
         <a class="entry" href="{{ url_for('message.inbox') }}">
-            <div class="ico">✉️</div>
+            <div class="ico">✉</div>
             <div class="num">{{ unread_messages }}</div>
             <div class="lbl">未读消息<span class="arrow">→</span></div>
         </a>
     </div>
+
     <div class="mini-stats">
-        <span>⭐ 已给 <b>{{ rating_count }}</b> 道菜评分</span>
-        <span>💬 发表过 <b>{{ comment_count }}</b> 条评论</span>
+        <span>已给 <b>{{ rating_count }}</b> 道菜评分</span>
+        <span>发表过 <b>{{ comment_count }}</b> 条评论</span>
     </div>
 </div>
 
 <!-- ===== 饮食偏好 ===== -->
-<div class="card">
+<div class="card mt-20">
     <div class="card-head">
         <div>
-            <h3>🍽️ 饮食偏好</h3>
-            <p class="card-sub">含过敏/忌口的美食会在首页标出提醒，可选择隐藏，隐藏后不会推荐。</p>
+            <h3>饮食偏好</h3>
+            <p class="card-sub">含过敏原 / 忌口的美食会在首页标出提醒，也可以选择直接隐藏。</p>
         </div>
     </div>
 
     <form id="prefForm">
         <div class="pref-grid">
             <div class="field">
-                <label for="allergyInput">🚫 过敏食材</label>
+                <label for="allergyInput">过敏食材</label>
                 <input type="text" id="allergyInput" placeholder="如：花生、海鲜、芒果…"
                        value="{{ user.allergy or '' }}">
             </div>
             <div class="field">
-                <label for="tabooInput">🙅 忌口食材</label>
+                <label for="tabooInput">忌口食材</label>
                 <input type="text" id="tabooInput" placeholder="如：香菜、肥肉、内脏…"
                        value="{{ user.taboo or '' }}">
             </div>
@@ -401,26 +362,26 @@
         <label class="switch-row" for="hideRiskInput">
             <input type="checkbox" id="hideRiskInput" {% if user.hide_risk %}checked{% endif %}>
             <span class="switch-text">
-                在首页和推荐里隐藏含过敏/忌口的美食
-                <small>不勾选时只标提醒，仍可在首页看到；勾选后这类美食不再出现在首页与"猜你喜欢"</small>
+                在首页和推荐里隐藏含过敏 / 忌口的美食
+                <small>不勾选时只作标记提醒，仍可在首页看到；勾选后这类美食不再出现。</small>
             </span>
         </label>
 
         <div class="pref-actions">
             <span class="pref-message" id="prefMessage"></span>
-            <button type="button" class="btn-primary" id="savePrefBtn">保存设置</button>
+            <button type="button" class="btn btn-primary" id="savePrefBtn">保存设置</button>
         </div>
     </form>
 </div>
 
 <!-- ===== 账号安全 ===== -->
-<div class="card">
+<div class="card mt-20">
     <div class="card-head">
         <div>
-            <h3>🔑 账号安全</h3>
+            <h3>账号安全</h3>
             <p class="card-sub">定期更换密码可以让账号更安全</p>
         </div>
-        <button type="button" class="btn-ghost" id="pwdToggle">修改密码</button>
+        <button type="button" class="btn btn-ghost btn-sm" id="pwdToggle">修改密码</button>
     </div>
 
     <form class="pwd-form" id="pwdForm" method="post" action="{{ url_for('user.change_password') }}">
@@ -439,29 +400,29 @@
             <div class="field">
                 <label for="confirmPassword">确认新密码</label>
                 <input type="password" id="confirmPassword" name="confirm_password"
-                       placeholder="再输入一次新密码" required minlength="6" autocomplete="new-password">
+                       placeholder="再输入一次" required minlength="6" autocomplete="new-password">
             </div>
         </div>
         <div class="pref-actions">
-            <button type="button" class="btn-ghost" id="pwdCancel">取消</button>
-            <button type="submit" class="btn-primary">确认修改</button>
+            <button type="button" class="btn btn-ghost" id="pwdCancel">取消</button>
+            <button type="submit" class="btn btn-primary">确认修改</button>
         </div>
     </form>
 </div>
 
 {% if user.role == 'merchant' %}
 <!-- ===== 店铺信息 ===== -->
-<div class="card">
+<div class="card mt-20">
     <div class="card-head">
-        <h3>🏠 店铺信息</h3>
+        <h3>店铺信息</h3>
     </div>
     <div class="shop-grid">
         <div class="item"><span class="k">店铺名称</span><span class="v">{{ user.merchant_name or user.username }}</span></div>
         <div class="item"><span class="k">店铺地址</span><span class="v">{{ user.merchant_address or '未填写' }}</span></div>
         <div class="item"><span class="k">审核状态</span><span class="v">
-            {% if user.merchant_status == 'approved' %}✅ 已通过
-            {% elif user.merchant_status == 'pending' %}⏳ 待审核
-            {% else %}❌ 已拒绝{% endif %}
+            {% if user.merchant_status == 'approved' %}已通过
+            {% elif user.merchant_status == 'pending' %}待审核
+            {% else %}已拒绝{% endif %}
         </span></div>
     </div>
 </div>
@@ -485,14 +446,14 @@
         .then(function (res) { return res.json(); })
         .then(function (data) {
             if (data.success) {
-                msg.innerHTML = '<span style="color:#27ae60;">✅ 已保存</span>';
+                msg.innerHTML = '<span style="color:var(--jade);">已保存</span>';
                 setTimeout(function () { location.reload(); }, 700);
             } else {
-                msg.innerHTML = '<span style="color:#e74c3c;">❌ ' + data.message + '</span>';
+                msg.innerHTML = '<span style="color:var(--danger);">' + data.message + '</span>';
             }
         })
         .catch(function () {
-            msg.innerHTML = '<span style="color:#e74c3c;">❌ 网络异常，请稍后重试</span>';
+            msg.innerHTML = '<span style="color:var(--danger);">网络异常，请稍后重试</span>';
         });
     });
 

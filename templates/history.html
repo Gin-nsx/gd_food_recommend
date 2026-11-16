@@ -7,173 +7,154 @@
 <style>
     .history-header {
         display: flex;
+        align-items: flex-end;
         justify-content: space-between;
-        align-items: center;
-        margin-bottom: 20px;
+        gap: 16px;
         flex-wrap: wrap;
-        gap: 12px;
+        margin-bottom: 20px;
     }
     .history-header h2 {
-        color: #2c3e50;
-        font-size: 24px;
+        font-family: var(--font-serif);
+        font-size: 30px;
+        font-weight: 700;
+        letter-spacing: .03em;
+        color: var(--ink);
     }
     .history-header .count {
-        color: #7f8c8d;
-        font-size: 14px;
+        display: inline-block;
+        margin-top: 5px;
+        font-size: 12.5px;
+        color: var(--ink-4);
+        letter-spacing: .04em;
     }
-    .history-header .actions {
-        display: flex;
-        gap: 10px;
-        align-items: center;
-        flex-wrap: wrap;
-    }
-    .btn {
-        padding: 8px 20px;
-        border: none;
-        border-radius: 8px;
-        font-size: 14px;
-        cursor: pointer;
-        transition: 0.3s;
-        color: white;
-    }
-    .btn-danger { background: #e74c3c; }
-    .btn-danger:hover { background: #c0392b; }
-    .btn-danger:disabled { background: #bdc3c7; cursor: not-allowed; }
-    .btn-secondary { background: #7f8c8d; }
-    .btn-secondary:hover { background: #5d6d7e; }
-    .btn-primary { background: #3498db; }
-    .btn-primary:hover { background: #2980b9; }
-
-    .history-list {
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-    }
-    .history-item {
-        background: white;
-        border-radius: 12px;
-        padding: 14px 20px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        border: 1px solid #eee;
-        transition: 0.3s;
-    }
-    .history-item .left {
-        display: flex;
-        align-items: center;
-        gap: 16px;
-        flex: 1;
-        cursor: pointer;
-    }
-    .history-item .left:hover .name {
-        color: #c0392b;
-    }
-    .history-item .info .name {
-        font-size: 18px;
-        font-weight: 600;
-        color: #2c3e50;
-        transition: 0.3s;
-    }
-    .history-item .info .meta {
-        font-size: 14px;
-        color: #7f8c8d;
-    }
-    .history-item .info .meta .price {
-        color: #e74c3c;
-        font-weight: 600;
-    }
-    .history-item .info .meta .rating {
-        color: #f39c12;
-    }
-    .history-item .time {
-        font-size: 13px;
-        color: #95a5a6;
-        white-space: nowrap;
-        margin-right: 16px;
-    }
-    .history-item .checkbox-col {
-        margin-right: 12px;
-    }
-    .history-item .checkbox-col input[type="checkbox"] {
-        width: 18px;
-        height: 18px;
-        cursor: pointer;
-        accent-color: #c0392b;
-    }
-    .btn-delete {
-        background: none;
-        border: none;
-        color: #ccc;
-        font-size: 20px;
-        cursor: pointer;
-        padding: 0 6px;
-        transition: 0.3s;
-        line-height: 1;
-    }
-    .btn-delete:hover {
-        color: #e74c3c;
-        transform: scale(1.2);
-    }
-    .empty-history {
-        text-align: center;
-        padding: 60px 0;
-        color: #999;
-        font-size: 18px;
-    }
-    .empty-history span {
-        font-size: 48px;
-        display: block;
-        margin-bottom: 16px;
-    }
-    .toast {
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        padding: 14px 24px;
-        border-radius: 10px;
-        color: white;
-        font-size: 15px;
-        z-index: 9999;
-        opacity: 0;
-        transition: opacity 0.4s;
-        pointer-events: none;
-    }
-    .toast.show {
-        opacity: 1;
-    }
-    .toast-success { background: #27ae60; }
-    .toast-error { background: #e74c3c; }
+    .history-header .actions { display: flex; gap: 9px; flex-wrap: wrap; }
 
     .batch-bar {
-        display: flex;
+        display: none;
         align-items: center;
         gap: 12px;
-        padding: 8px 16px;
-        background: #f8f4f0;
-        border-radius: 8px;
-        display: none;
+        flex-wrap: wrap;
+        padding: 12px 18px;
+        margin-bottom: 14px;
+        border-radius: var(--r);
+        background: var(--brand-soft);
+        border: 1px solid rgba(162, 58, 37, .16);
+        font-size: 13px;
+        color: var(--ink-2);
     }
-    .batch-bar.show {
+    .batch-bar.show { display: flex; }
+    .batch-bar .info strong { color: var(--brand); font-family: var(--font-num); }
+
+    .history-list {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--r-lg);
+        overflow: hidden;
+        box-shadow: var(--sh-1);
+    }
+    .history-item {
         display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 15px 20px;
+        border-bottom: 1px solid var(--line);
+        transition: background .2s var(--ease);
     }
-    .batch-bar .info {
-        color: #555;
-        font-size: 14px;
+    .history-item:last-child { border-bottom: 0; }
+    .history-item:hover { background: #FCF8F2; }
+    .checkbox-col { flex: 0 0 auto; display: flex; align-items: center; }
+    .history-item .left { flex: 1; min-width: 0; cursor: pointer; }
+    .history-item .name { font-size: 15px; font-weight: 600; color: var(--ink); }
+    .history-item .meta {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-top: 3px;
+        font-size: 12.5px;
+        color: var(--ink-3);
+    }
+    .history-item .meta .rating { color: var(--gold); font-family: var(--font-num); font-weight: 600; }
+    .history-item .meta .price { color: var(--brand); font-family: var(--font-num); font-weight: 600; }
+    .history-item .time {
+        flex: 0 0 auto;
+        font-family: var(--font-num);
+        font-size: 11.5px;
+        color: var(--ink-4);
+    }
+    .btn-delete {
+        flex: 0 0 auto;
+        width: 28px; height: 28px;
+        display: inline-flex; align-items: center; justify-content: center;
+        border: 1px solid transparent;
+        border-radius: 50%;
+        background: transparent;
+        color: var(--ink-4);
+        font-size: 13px;
+        cursor: pointer;
+        transition: all .2s var(--ease);
+    }
+    .btn-delete:hover { background: var(--danger-soft); border-color: rgba(178,58,50,.2); color: var(--danger); }
+
+    .empty-history {
+        text-align: center;
+        padding: 74px 24px;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--r-lg);
+        color: var(--ink-3);
+        font-size: 14.5px;
+        line-height: 2;
+    }
+    .empty-history::before {
+        content: "";
+        display: block;
+        width: 50px; height: 50px;
+        margin: 0 auto 16px;
+        border-radius: 50%;
+        border: 1px dashed var(--ink-4);
+        background: radial-gradient(circle at 50% 45%, var(--surface-2), transparent 70%);
+    }
+    .empty-history span { font-size: 12.5px; color: var(--ink-4); }
+
+    .toast {
+        position: fixed;
+        left: 50%;
+        bottom: 36px;
+        transform: translate(-50%, 16px);
+        z-index: 300;
+        padding: 11px 22px;
+        border-radius: 99px;
+        background: #2A211B;
+        color: #FFF6EC;
+        font-size: 13.5px;
+        box-shadow: var(--sh-2);
+        opacity: 0;
+        pointer-events: none;
+        transition: all .3s var(--ease);
+    }
+    .toast.show { opacity: 1; transform: translate(-50%, 0); }
+    .toast-success { background: #2C5C4A; }
+    .toast-error { background: #8E2E27; }
+
+    @media (max-width: 768px) {
+        .history-header h2 { font-size: 24px; }
+        .history-header .actions { width: 100%; }
+        .history-item { padding: 13px 14px; gap: 10px; }
+        .history-item .time { display: none; }
     }
 </style>
 
 <div class="history-header">
     <div>
-        <h2>🕐 浏览记录</h2>
+        <h2>浏览记录</h2>
         <span class="count">共 {{ histories|length }} 条记录</span>
     </div>
     <div class="actions">
-        <button class="btn btn-primary" id="toggleSelectBtn">☑️ 选择</button>
-        <button class="btn btn-danger" id="batchDeleteBtn" disabled>🗑️ 批量删除</button>
+        <button class="btn btn-primary" id="toggleSelectBtn">选择</button>
+        <button class="btn btn-danger" id="batchDeleteBtn" disabled>批量删除</button>
         {% if histories %}
-            <button class="btn btn-danger" id="clearBtn">🗑️ 清空全部</button>
+            <button class="btn btn-danger" id="clearBtn"> 清空全部</button>
         {% endif %}
     </div>
 </div>
@@ -196,11 +177,11 @@
                 <div class="info">
                     <div class="name">{{ h.name }}</div>
                     <div class="meta">
-                        <span class="rating">⭐ {{ h.avg_rating or '暂无' }}</span>
+                        <span class="rating">★ {{ h.avg_rating or '暂无' }}</span>
                         &nbsp;·&nbsp;
                         <span class="price">¥{{ h.price }}</span>
                         &nbsp;·&nbsp;
-                        🏠 {{ h.merchant_name or '未知商家' }}
+                        {{ h.merchant_name or '未知商家' }}
                     </div>
                 </div>
             </div>
@@ -211,7 +192,7 @@
     </div>
 {% else %}
     <div class="empty-history">
-        <span>📭</span>
+        
         你还没有浏览过任何美食<br>
         <span style="font-size:14px; color:#bbb;">去首页逛逛吧 →</span>
     </div>
@@ -247,13 +228,13 @@
             if (data.success) {
                 const item = document.getElementById('history-' + historyId);
                 if (item) item.remove();
-                showToast('✅ 删除成功', 'success');
+                showToast('删除成功', 'success');
                 updateCounts();
                 if (document.querySelectorAll('.history-item').length === 0) {
                     location.reload();
                 }
             } else {
-                showToast('❌ ' + data.message, 'error');
+                showToast('' + data.message, 'error');
             }
         });
     }
@@ -268,12 +249,12 @@
         .then(res => res.json())
         .then(data => {
             if (data.success) {
-                showToast('✅ 已清空所有浏览记录', 'success');
+                showToast('已清空所有浏览记录', 'success');
                 setTimeout(function() {
                     location.reload();
                 }, 800);
             } else {
-                showToast('❌ ' + data.message, 'error');
+                showToast('' + data.message, 'error');
             }
         });
     });
@@ -291,7 +272,7 @@
         const checked = document.querySelectorAll('.history-checkbox:checked').length;
         selectedCount.textContent = checked;
         batchDeleteBtn.disabled = checked === 0;
-        batchDeleteBtn.textContent = checked === 0 ? '🗑️ 批量删除' : '🗑️ 批量删除 (' + checked + ')';
+        batchDeleteBtn.textContent = checked === 0 ? '批量删除' : '批量删除 (' + checked + ')';
     }
 
     function toggleSelectMode(show) {
@@ -301,10 +282,10 @@
             if (!show) cb.checked = false;
         });
         batchBar.classList.toggle('show', show);
-        toggleSelectBtn.textContent = show ? '取消选择' : '☑️ 选择';
+        toggleSelectBtn.textContent = show ? '取消选择' : '选择';
         if (!show) {
             batchDeleteBtn.disabled = true;
-            batchDeleteBtn.textContent = '🗑️ 批量删除';
+            batchDeleteBtn.textContent = '批量删除';
         }
         updateCounts();
     }
@@ -348,13 +329,13 @@
                     const item = document.getElementById('history-' + id);
                     if (item) item.remove();
                 });
-                showToast('✅ 已删除 ' + ids.length + ' 条记录', 'success');
+                showToast('已删除 ' + ids.length + ' 条记录', 'success');
                 toggleSelectMode(false);
                 if (document.querySelectorAll('.history-item').length === 0) {
                     location.reload();
                 }
             } else {
-                showToast('❌ ' + data.message, 'error');
+                showToast('' + data.message, 'error');
             }
         });
     });

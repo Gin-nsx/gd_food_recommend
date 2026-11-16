@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-16 14:02:07",
+  "generated_at": "2026-11-16 15:13:50",
   "env": {
     "python": "3.14.7",
     "flask": "3.1.3",
@@ -16,60 +16,60 @@
       "认证与账号": {
         "total": 14,
         "passed": 14,
-        "cost": 1327.4
+        "cost": 1457.2
       },
       "页面与权限": {
         "total": 23,
         "passed": 23,
-        "cost": 1083.3000000000002
+        "cost": 1239.3
       },
       "安全防护": {
         "total": 13,
         "passed": 13,
-        "cost": 513.6
+        "cost": 548.9
       },
       "美食业务": {
         "total": 24,
         "passed": 24,
-        "cost": 1707.3000000000002
+        "cost": 2103.2
       },
       "推荐算法": {
         "total": 13,
         "passed": 13,
-        "cost": 1275.8999999999999
+        "cost": 1641.3000000000002
       },
       "搜索功能": {
         "total": 5,
         "passed": 5,
-        "cost": 133.3
+        "cost": 144.5
       },
       "商家端": {
         "total": 8,
         "passed": 8,
-        "cost": 835.5
+        "cost": 906.6999999999999
       },
       "管理端": {
         "total": 10,
         "passed": 10,
-        "cost": 530.4
+        "cost": 715.1
       },
       "站内消息": {
         "total": 6,
         "passed": 6,
-        "cost": 487.70000000000005
+        "cost": 576.4
       },
       "异常边界": {
         "total": 9,
         "passed": 9,
-        "cost": 354.7
+        "cost": 506.2
       },
       "性能": {
         "total": 5,
         "passed": 5,
-        "cost": 1041.8
+        "cost": 1126.9
       }
     },
-    "total_cost_ms": 9290.9
+    "total_cost_ms": 10965.7
   },
   "results": [
     {
@@ -80,7 +80,7 @@
       "expected": "302 跳转首页，会话写入 user_id/role",
       "actual": "302 → /，会话 user_id 正确",
       "status": "passed",
-      "cost_ms": 213.4,
+      "cost_ms": 212.2,
       "kind": "功能"
     },
     {
@@ -91,7 +91,7 @@
       "expected": "302 回登录页并提示「用户名或密码错误」",
       "actual": "停留在登录页并提示用户名或密码错误",
       "status": "passed",
-      "cost_ms": 109.1,
+      "cost_ms": 111.5,
       "kind": "功能"
     },
     {
@@ -102,7 +102,7 @@
       "expected": "提示与密码错误相同，不暴露账号是否存在",
       "actual": "统一提示，未泄露账号是否存在",
       "status": "passed",
-      "cost_ms": 12.8,
+      "cost_ms": 27.2,
       "kind": "功能"
     },
     {
@@ -113,7 +113,7 @@
       "expected": "跳转登录页，数据库新增该账号",
       "actual": "注册成功，role=user",
       "status": "passed",
-      "cost_ms": 129.9,
+      "cost_ms": 169.6,
       "kind": "功能"
     },
     {
@@ -124,7 +124,7 @@
       "expected": "账号创建成功，merchant_status=pending",
       "actual": "role=merchant，merchant_status=pending",
       "status": "passed",
-      "cost_ms": 143.1,
+      "cost_ms": 187.9,
       "kind": "功能"
     },
     {
@@ -135,7 +135,7 @@
       "expected": "不创建账号，提示需要填写店铺地址",
       "actual": "未创建账号，提示需填写店铺地址",
       "status": "passed",
-      "cost_ms": 15.2,
+      "cost_ms": 29.1,
       "kind": "功能"
     },
     {
@@ -146,7 +146,7 @@
       "expected": "账号建成普通用户，不能提权",
       "actual": "role 被强制写成 user",
       "status": "passed",
-      "cost_ms": 150.0,
+      "cost_ms": 138.1,
       "kind": "功能"
     },
     {
@@ -157,7 +157,7 @@
       "expected": "提示用户名已存在，不产生第二个账号",
       "actual": "提示用户名已存在，账号数仍为 1",
       "status": "passed",
-      "cost_ms": 37.3,
+      "cost_ms": 61.8,
       "kind": "功能"
     },
     {
@@ -168,7 +168,7 @@
       "expected": "不创建账号，提示密码长度 6-64 位",
       "actual": "注册被拒，提示密码长度要求",
       "status": "passed",
-      "cost_ms": 28.7,
+      "cost_ms": 13.0,
       "kind": "功能"
     },
     {
@@ -179,7 +179,7 @@
       "expected": "不创建账号，提示用户名 2-20 位",
       "actual": "注册被拒，提示用户名长度要求",
       "status": "passed",
-      "cost_ms": 23.2,
+      "cost_ms": 12.7,
       "kind": "功能"
     },
     {
@@ -190,7 +190,7 @@
       "expected": "session 的 role 与账号一致",
       "actual": "admin / merchant 会话角色均正确",
       "status": "passed",
-      "cost_ms": 199.6,
+      "cost_ms": 228.3,
       "kind": "功能"
     },
     {
@@ -212,7 +212,7 @@
       "expected": "第 6 次提示「次数过多」，暂时锁定",
       "actual": "第 6 次被锁定并提示等待时间",
       "status": "passed",
-      "cost_ms": 103.3,
+      "cost_ms": 103.7,
       "kind": "功能"
     },
     {
@@ -223,7 +223,7 @@
       "expected": "提示账号已被禁用，会话不建立",
       "actual": "登录被拒，提示账号已禁用",
       "status": "passed",
-      "cost_ms": 160.8,
+      "cost_ms": 161.1,
       "kind": "功能"
     },
     {
@@ -234,7 +234,7 @@
       "expected": "返回 200",
       "actual": "200",
       "status": "passed",
-      "cost_ms": 36.9,
+      "cost_ms": 32.2,
       "kind": "功能"
     },
     {
@@ -256,7 +256,7 @@
       "expected": "返回 200",
       "actual": "200",
       "status": "passed",
-      "cost_ms": 0.6,
+      "cost_ms": 0.7,
       "kind": "功能"
     },
     {
@@ -267,7 +267,7 @@
       "expected": "返回 302",
       "actual": "302",
       "status": "passed",
-      "cost_ms": 0.7,
+      "cost_ms": 0.6,
       "kind": "功能"
     },
     {
@@ -311,7 +311,7 @@
       "expected": "返回 200",
       "actual": "200",
       "status": "passed",
-      "cost_ms": 55.2,
+      "cost_ms": 56.2,
       "kind": "功能"
     },
     {
@@ -322,7 +322,7 @@
       "expected": "返回 200",
       "actual": "200",
       "status": "passed",
-      "cost_ms": 48.2,
+      "cost_ms": 62.3,
       "kind": "功能"
     },
     {
@@ -333,7 +333,7 @@
       "expected": "返回 200",
       "actual": "200",
       "status": "passed",
-      "cost_ms": 37.9,
+      "cost_ms": 47.9,
       "kind": "功能"
     },
     {
@@ -344,7 +344,7 @@
       "expected": "返回 200",
       "actual": "200",
       "status": "passed",
-      "cost_ms": 35.1,
+      "cost_ms": 46.2,
       "kind": "功能"
     },
     {
@@ -355,7 +355,7 @@
       "expected": "返回 200",
       "actual": "200",
       "status": "passed",
-      "cost_ms": 47.1,
+      "cost_ms": 63.3,
       "kind": "功能"
     },
     {
@@ -366,7 +366,7 @@
       "expected": "返回 200",
       "actual": "200",
       "status": "passed",
-      "cost_ms": 175.7,
+      "cost_ms": 207.0,
       "kind": "功能"
     },
     {
@@ -377,7 +377,7 @@
       "expected": "返回 200",
       "actual": "200",
       "status": "passed",
-      "cost_ms": 63.2,
+      "cost_ms": 93.0,
       "kind": "功能"
     },
     {
@@ -388,7 +388,7 @@
       "expected": "返回 200",
       "actual": "200",
       "status": "passed",
-      "cost_ms": 52.5,
+      "cost_ms": 47.1,
       "kind": "功能"
     },
     {
@@ -399,7 +399,7 @@
       "expected": "返回 200",
       "actual": "200",
       "status": "passed",
-      "cost_ms": 60.5,
+      "cost_ms": 36.3,
       "kind": "功能"
     },
     {
@@ -410,7 +410,7 @@
       "expected": "返回 200",
       "actual": "200",
       "status": "passed",
-      "cost_ms": 42.9,
+      "cost_ms": 57.8,
       "kind": "功能"
     },
     {
@@ -421,7 +421,7 @@
       "expected": "返回 200",
       "actual": "200",
       "status": "passed",
-      "cost_ms": 320.4,
+      "cost_ms": 375.8,
       "kind": "功能"
     },
     {
@@ -432,7 +432,7 @@
       "expected": "返回 302",
       "actual": "302",
       "status": "passed",
-      "cost_ms": 1.3,
+      "cost_ms": 1.0,
       "kind": "功能"
     },
     {
@@ -443,7 +443,7 @@
       "expected": "200，含菜名与评分控件",
       "actual": "200，详情页正常",
       "status": "passed",
-      "cost_ms": 84.4,
+      "cost_ms": 77.9,
       "kind": "功能"
     },
     {
@@ -454,7 +454,7 @@
       "expected": "403 且显示中文无权限页",
       "actual": "403 + 中文错误页",
       "status": "passed",
-      "cost_ms": 16.2,
+      "cost_ms": 29.5,
       "kind": "功能"
     },
     {
@@ -465,7 +465,7 @@
       "expected": "404 且为中文页，不是 Flask 默认英文页",
       "actual": "404 + 中文错误页",
       "status": "passed",
-      "cost_ms": 1.0,
+      "cost_ms": 1.1,
       "kind": "功能"
     },
     {
@@ -476,7 +476,7 @@
       "expected": "405 且显示中文提示",
       "actual": "405 + 中文错误页",
       "status": "passed",
-      "cost_ms": 0.9,
+      "cost_ms": 0.8,
       "kind": "功能"
     },
     {
@@ -487,7 +487,7 @@
       "expected": "不执行登录，302 回原页",
       "actual": "请求被拦，未建立会话",
       "status": "passed",
-      "cost_ms": 1.0,
+      "cost_ms": 0.9,
       "kind": "功能"
     },
     {
@@ -498,7 +498,7 @@
       "expected": "请求被拒，登录不生效",
       "actual": "伪造令牌未通过校验",
       "status": "passed",
-      "cost_ms": 1.0,
+      "cost_ms": 0.9,
       "kind": "功能"
     },
     {
@@ -520,7 +520,7 @@
       "expected": "返回 200 且 success=true",
       "actual": "200，评分成功",
       "status": "passed",
-      "cost_ms": 26.5,
+      "cost_ms": 30.4,
       "kind": "功能"
     },
     {
@@ -531,7 +531,7 @@
       "expected": "登录成功但跳到站内首页，不是 evil.com",
       "actual": "Location=/",
       "status": "passed",
-      "cost_ms": 94.8,
+      "cost_ms": 110.5,
       "kind": "功能"
     },
     {
@@ -542,7 +542,7 @@
       "expected": "登录后直接跳到该站内地址",
       "actual": "Location=/admin/dashboard",
       "status": "passed",
-      "cost_ms": 95.4,
+      "cost_ms": 97.1,
       "kind": "功能"
     },
     {
@@ -553,7 +553,7 @@
       "expected": "返回按钮仍指向站内首页",
       "actual": "返回按钮 href=/",
       "status": "passed",
-      "cost_ms": 57.4,
+      "cost_ms": 58.4,
       "kind": "功能"
     },
     {
@@ -564,7 +564,7 @@
       "expected": "登录失败，不泄露数据",
       "actual": "注入串被当作普通用户名处理",
       "status": "passed",
-      "cost_ms": 23.3,
+      "cost_ms": 29.7,
       "kind": "功能"
     },
     {
@@ -575,7 +575,7 @@
       "expected": "页面出现转义后的实体，不出现可执行脚本",
       "actual": "输出已转义",
       "status": "passed",
-      "cost_ms": 24.1,
+      "cost_ms": 12.8,
       "kind": "功能"
     },
     {
@@ -586,7 +586,7 @@
       "expected": "以 scrypt/pbkdf2 哈希存储，不含明文",
       "actual": "哈希前缀 scrypt:32768:8:1…",
       "status": "passed",
-      "cost_ms": 21.8,
+      "cost_ms": 32.5,
       "kind": "功能"
     },
     {
@@ -597,7 +597,7 @@
       "expected": "只有 user_id/username/role，无 password",
       "actual": "会话键：['_flashes', 'role', 'user_id', 'username']",
       "status": "passed",
-      "cost_ms": 104.3,
+      "cost_ms": 113.5,
       "kind": "功能"
     },
     {
@@ -608,7 +608,7 @@
       "expected": "页面不含 Traceback / SQL 语句等内部细节",
       "actual": "无技术细节泄露",
       "status": "passed",
-      "cost_ms": 39.9,
+      "cost_ms": 48.6,
       "kind": "功能"
     },
     {
@@ -619,7 +619,7 @@
       "expected": "405，防止被 <img> 之类的 GET 请求强制下线",
       "actual": "GET 请求被拒绝（405）",
       "status": "passed",
-      "cost_ms": 23.5,
+      "cost_ms": 13.0,
       "kind": "功能"
     },
     {
@@ -630,7 +630,7 @@
       "expected": "200，success=true，数据库中新增评分记录",
       "actual": "评分写入成功",
       "status": "passed",
-      "cost_ms": 48.3,
+      "cost_ms": 45.5,
       "kind": "功能"
     },
     {
@@ -641,7 +641,7 @@
       "expected": "400，提示评分必须是 1-5 分",
       "actual": "400，参数校验生效",
       "status": "passed",
-      "cost_ms": 1.1,
+      "cost_ms": 1.0,
       "kind": "功能"
     },
     {
@@ -652,7 +652,7 @@
       "expected": "400，提示评分必须是 1-5 分",
       "actual": "400，参数校验生效",
       "status": "passed",
-      "cost_ms": 0.7,
+      "cost_ms": 0.8,
       "kind": "功能"
     },
     {
@@ -663,7 +663,7 @@
       "expected": "记录数不变，分值被覆盖为 3",
       "actual": "记录数不变，分值已更新",
       "status": "passed",
-      "cost_ms": 71.8,
+      "cost_ms": 101.3,
       "kind": "功能"
     },
     {
@@ -674,7 +674,7 @@
       "expected": "两者一致",
       "actual": "avg_rating=3.50",
       "status": "passed",
-      "cost_ms": 43.3,
+      "cost_ms": 52.5,
       "kind": "功能"
     },
     {
@@ -685,7 +685,7 @@
       "expected": "第一次 liked=true，第二次 liked=false，计数回到原值",
       "actual": "点赞计数 0 → 1 → 0",
       "status": "passed",
-      "cost_ms": 83.6,
+      "cost_ms": 147.5,
       "kind": "功能"
     },
     {
@@ -696,7 +696,7 @@
       "expected": "收藏页出现该菜，取消后记录消失",
       "actual": "收藏生效，取消后记录已删除",
       "status": "passed",
-      "cost_ms": 136.3,
+      "cost_ms": 194.5,
       "kind": "功能"
     },
     {
@@ -707,7 +707,7 @@
       "expected": "接口返回 success，评论列表接口能查到该内容",
       "actual": "评论已入库且出现在列表接口",
       "status": "passed",
-      "cost_ms": 72.2,
+      "cost_ms": 95.1,
       "kind": "功能"
     },
     {
@@ -718,7 +718,7 @@
       "expected": "400，提示最多 500 字",
       "actual": "400，长度校验生效",
       "status": "passed",
-      "cost_ms": 1.6,
+      "cost_ms": 1.1,
       "kind": "功能"
     },
     {
@@ -729,7 +729,7 @@
       "expected": "400，提示内容不能为空",
       "actual": "400",
       "status": "passed",
-      "cost_ms": 0.7,
+      "cost_ms": 0.6,
       "kind": "功能"
     },
     {
@@ -740,7 +740,7 @@
       "expected": "histories 表出现该用户与菜品的记录",
       "actual": "浏览记录已写入",
       "status": "passed",
-      "cost_ms": 107.8,
+      "cost_ms": 117.9,
       "kind": "功能"
     },
     {
@@ -751,7 +751,7 @@
       "expected": "该记录被删除",
       "actual": "记录已删除",
       "status": "passed",
-      "cost_ms": 55.6,
+      "cost_ms": 97.0,
       "kind": "功能"
     },
     {
@@ -762,7 +762,7 @@
       "expected": "该用户历史记录归零",
       "actual": "历史记录已清空",
       "status": "passed",
-      "cost_ms": 132.2,
+      "cost_ms": 150.9,
       "kind": "功能"
     },
     {
@@ -773,7 +773,7 @@
       "expected": "数据库 allergy/taboo 与提交值一致",
       "actual": "偏好已保存",
       "status": "passed",
-      "cost_ms": 46.2,
+      "cost_ms": 50.2,
       "kind": "功能"
     },
     {
@@ -784,7 +784,7 @@
       "expected": "users.hide_risk 变为 1",
       "actual": "hide_risk=1 已保存",
       "status": "passed",
-      "cost_ms": 35.5,
+      "cost_ms": 46.6,
       "kind": "功能"
     },
     {
@@ -795,7 +795,7 @@
       "expected": "加入后记录存在，移除后消失",
       "actual": "加入与移除均生效",
       "status": "passed",
-      "cost_ms": 77.9,
+      "cost_ms": 86.3,
       "kind": "功能"
     },
     {
@@ -804,9 +804,9 @@
       "title": "举报美食成功",
       "steps": "对某道菜提交举报原因",
       "expected": "接口 success，reports 表新增 pending 记录",
-      "actual": "举报单 #16 已创建",
+      "actual": "举报单 #26 已创建",
       "status": "passed",
-      "cost_ms": 42.0,
+      "cost_ms": 62.0,
       "kind": "功能"
     },
     {
@@ -817,7 +817,7 @@
       "expected": "提示已举报过，不产生第二条待处理记录",
       "actual": "重复举报被拦下",
       "status": "passed",
-      "cost_ms": 20.6,
+      "cost_ms": 32.3,
       "kind": "功能"
     },
     {
@@ -828,7 +828,7 @@
       "expected": "reports 表新增 comment_id 记录",
       "actual": "评论举报已创建",
       "status": "passed",
-      "cost_ms": 15.5,
+      "cost_ms": 33.2,
       "kind": "功能"
     },
     {
@@ -839,7 +839,7 @@
       "expected": "400，提示原因不能为空",
       "actual": "400",
       "status": "passed",
-      "cost_ms": 0.9,
+      "cost_ms": 1.0,
       "kind": "功能"
     },
     {
@@ -861,7 +861,7 @@
       "expected": "页面出现举报原因与「待处理」状态",
       "actual": "举报与状态均展示",
       "status": "passed",
-      "cost_ms": 45.3,
+      "cost_ms": 42.1,
       "kind": "功能"
     },
     {
@@ -872,7 +872,7 @@
       "expected": "提示旧密码不正确，密码未变",
       "actual": "提示旧密码错误，未修改",
       "status": "passed",
-      "cost_ms": 166.0,
+      "cost_ms": 194.5,
       "kind": "功能"
     },
     {
@@ -883,7 +883,7 @@
       "expected": "新密码登录成功，旧密码失效",
       "actual": "新密码登录成功，已恢复原密码",
       "status": "passed",
-      "cost_ms": 501.4,
+      "cost_ms": 548.5,
       "kind": "功能"
     },
     {
@@ -894,7 +894,7 @@
       "expected": "返回 200 且卡片数 ≥ 12",
       "actual": "41 张推荐卡片",
       "status": "passed",
-      "cost_ms": 182.1,
+      "cost_ms": 194.5,
       "kind": "功能"
     },
     {
@@ -905,7 +905,7 @@
       "expected": "交集为空",
       "actual": "无重复推荐",
       "status": "passed",
-      "cost_ms": 166.0,
+      "cost_ms": 216.8,
       "kind": "功能"
     },
     {
@@ -916,7 +916,7 @@
       "expected": "不出现「相似度 0.xx」这类原始数值",
       "actual": "理由条使用「很接近/比较接近」等表述",
       "status": "passed",
-      "cost_ms": 134.3,
+      "cost_ms": 207.4,
       "kind": "功能"
     },
     {
@@ -927,7 +927,7 @@
       "expected": "卡片 > 12 张，超出部分隐藏，按钮显示剩余数量",
       "actual": "共 41 张，首屏 12 张，隐藏 29 张",
       "status": "passed",
-      "cost_ms": 146.6,
+      "cost_ms": 237.8,
       "kind": "功能"
     },
     {
@@ -938,7 +938,7 @@
       "expected": "卡片评分全部 ≥ 3.5",
       "actual": "48 条推荐最低 3.5 分",
       "status": "passed",
-      "cost_ms": 167.0,
+      "cost_ms": 165.5,
       "kind": "功能"
     },
     {
@@ -949,7 +949,7 @@
       "expected": "页面不出现这些菜",
       "actual": "已排除 22 道低分高票菜",
       "status": "passed",
-      "cost_ms": 167.1,
+      "cost_ms": 210.9,
       "kind": "功能"
     },
     {
@@ -960,7 +960,7 @@
       "expected": "该菜被剔除，不进入推荐结果",
       "actual": "花生菜 #23 已被过滤",
       "status": "passed",
-      "cost_ms": 31.5,
+      "cost_ms": 60.4,
       "kind": "功能"
     },
     {
@@ -971,7 +971,7 @@
       "expected": "该菜不出现在安全列表中",
       "actual": "菜品 #23 已被过滤",
       "status": "passed",
-      "cost_ms": 10.1,
+      "cost_ms": 31.2,
       "kind": "功能"
     },
     {
@@ -982,7 +982,7 @@
       "expected": "该商家的菜全部不出现",
       "actual": "商家 #9 的菜被整体过滤",
       "status": "passed",
-      "cost_ms": 46.1,
+      "cost_ms": 54.6,
       "kind": "功能"
     },
     {
@@ -993,7 +993,7 @@
       "expected": "该菜不在安全列表中",
       "actual": "忌口「梅头肉」：未开启保留并标注，开启后过滤",
       "status": "passed",
-      "cost_ms": 62.6,
+      "cost_ms": 56.7,
       "kind": "功能"
     },
     {
@@ -1004,7 +1004,7 @@
       "expected": "含「相似口味推荐」区块，卡片 1-4 条",
       "actual": "4 条相似菜品",
       "status": "passed",
-      "cost_ms": 56.3,
+      "cost_ms": 88.5,
       "kind": "功能"
     },
     {
@@ -1015,7 +1015,7 @@
       "expected": "不出现 0.xx 相似度数字",
       "actual": "使用星级与「口味很接近」等表述",
       "status": "passed",
-      "cost_ms": 64.3,
+      "cost_ms": 58.2,
       "kind": "功能"
     },
     {
@@ -1026,7 +1026,7 @@
       "expected": "Item-CF 的 Precision@10 高于随机推荐",
       "actual": "随机 0.0651 vs Item-CF 0.1072（提升 65%）",
       "status": "passed",
-      "cost_ms": 41.9,
+      "cost_ms": 58.8,
       "kind": "功能"
     },
     {
@@ -1037,7 +1037,7 @@
       "expected": "页面出现含「肠粉」的菜品",
       "actual": "搜索结果正常",
       "status": "passed",
-      "cost_ms": 25.9,
+      "cost_ms": 14.1,
       "kind": "功能"
     },
     {
@@ -1048,7 +1048,7 @@
       "expected": "页面提示已按同义词检索（猪肠粉/布拉肠等）",
       "actual": "同义词扩展生效",
       "status": "passed",
-      "cost_ms": 12.7,
+      "cost_ms": 13.2,
       "kind": "功能"
     },
     {
@@ -1059,7 +1059,7 @@
       "expected": "结果卡片数量大于 0 且都属于该分类",
       "actual": "分类「早茶点心」返回 10 道菜（库内 10 道）",
       "status": "passed",
-      "cost_ms": 44.7,
+      "cost_ms": 53.8,
       "kind": "功能"
     },
     {
@@ -1070,7 +1070,7 @@
       "expected": "页面显示「没有找到匹配的美食」",
       "actual": "空态文案正确",
       "status": "passed",
-      "cost_ms": 13.0,
+      "cost_ms": 13.4,
       "kind": "功能"
     },
     {
@@ -1081,7 +1081,7 @@
       "expected": "卡片数等于在架菜品总数",
       "actual": "74 道菜全部展示",
       "status": "passed",
-      "cost_ms": 37.0,
+      "cost_ms": 50.0,
       "kind": "功能"
     },
     {
@@ -1090,9 +1090,9 @@
       "title": "商家上传美食（含图片）成功",
       "steps": "POST /merchant/food/add 带 PNG 图片",
       "expected": "菜品入库且状态为 pending，图片已落盘",
-      "actual": "菜品 #104 待审核，图片已保存",
+      "actual": "菜品 #109 待审核，图片已保存",
       "status": "passed",
-      "cost_ms": 254.5,
+      "cost_ms": 273.3,
       "kind": "功能"
     },
     {
@@ -1103,7 +1103,7 @@
       "expected": "不创建菜品，提示价格区间",
       "actual": "被拒绝，未创建",
       "status": "passed",
-      "cost_ms": 98.4,
+      "cost_ms": 98.5,
       "kind": "功能"
     },
     {
@@ -1114,7 +1114,7 @@
       "expected": "不创建菜品，提示价格格式",
       "actual": "被拒绝，未创建",
       "status": "passed",
-      "cost_ms": 84.5,
+      "cost_ms": 107.3,
       "kind": "功能"
     },
     {
@@ -1125,7 +1125,7 @@
       "expected": "提示图片格式不合法，菜品不入库",
       "actual": "格式校验拦下，未创建菜品",
       "status": "passed",
-      "cost_ms": 150.4,
+      "cost_ms": 168.0,
       "kind": "功能"
     },
     {
@@ -1136,7 +1136,7 @@
       "expected": "被拒绝（404 或重定向），不泄露数据",
       "actual": "返回 302",
       "status": "passed",
-      "cost_ms": 55.1,
+      "cost_ms": 95.6,
       "kind": "功能"
     },
     {
@@ -1147,7 +1147,7 @@
       "expected": "被拦回工作台并提示审核中",
       "actual": "提示商家资料审核中",
       "status": "passed",
-      "cost_ms": 66.6,
+      "cost_ms": 78.4,
       "kind": "功能"
     },
     {
@@ -1158,7 +1158,7 @@
       "expected": "状态变为 offline",
       "actual": "status=offline",
       "status": "passed",
-      "cost_ms": 51.6,
+      "cost_ms": 48.3,
       "kind": "功能"
     },
     {
@@ -1169,7 +1169,7 @@
       "expected": "状态回到 pending",
       "actual": "status=pending",
       "status": "passed",
-      "cost_ms": 74.4,
+      "cost_ms": 37.3,
       "kind": "功能"
     },
     {
@@ -1180,7 +1180,7 @@
       "expected": "状态变为 approved，首页可见",
       "actual": "approved 且首页可搜到",
       "status": "passed",
-      "cost_ms": 64.2,
+      "cost_ms": 71.2,
       "kind": "功能"
     },
     {
@@ -1191,7 +1191,7 @@
       "expected": "merchant_status=approved",
       "actual": "商家审核通过",
       "status": "passed",
-      "cost_ms": 48.9,
+      "cost_ms": 47.8,
       "kind": "功能"
     },
     {
@@ -1202,7 +1202,7 @@
       "expected": "merchant_status=rejected",
       "actual": "商家被驳回",
       "status": "passed",
-      "cost_ms": 39.7,
+      "cost_ms": 69.7,
       "kind": "功能"
     },
     {
@@ -1213,7 +1213,7 @@
       "expected": "举报状态 resolved，菜品状态变 offline",
       "actual": "举报已处理，菜品已下架",
       "status": "passed",
-      "cost_ms": 48.2,
+      "cost_ms": 77.6,
       "kind": "功能"
     },
     {
@@ -1224,7 +1224,7 @@
       "expected": "提示已处理过，不重复写入",
       "actual": "提示该举报已处理过",
       "status": "passed",
-      "cost_ms": 56.0,
+      "cost_ms": 73.7,
       "kind": "功能"
     },
     {
@@ -1235,7 +1235,7 @@
       "expected": "200，且页面提示该美食已下架",
       "actual": "可查看并提示下架状态",
       "status": "passed",
-      "cost_ms": 79.4,
+      "cost_ms": 91.5,
       "kind": "功能"
     },
     {
@@ -1246,7 +1246,7 @@
       "expected": "302 回首页",
       "actual": "302 重定向",
       "status": "passed",
-      "cost_ms": 25.0,
+      "cost_ms": 30.9,
       "kind": "功能"
     },
     {
@@ -1257,7 +1257,7 @@
       "expected": "该用户 is_active 取反",
       "actual": "状态 1 → 0 → 1",
       "status": "passed",
-      "cost_ms": 96.5,
+      "cost_ms": 155.4,
       "kind": "功能"
     },
     {
@@ -1268,7 +1268,7 @@
       "expected": "200 且 JSON 可解析、含分类数据",
       "actual": "返回 12 组数据",
       "status": "passed",
-      "cost_ms": 23.2,
+      "cost_ms": 31.2,
       "kind": "功能"
     },
     {
@@ -1279,7 +1279,7 @@
       "expected": "页面含指向美食详情的链接与联系入口",
       "actual": "链接与联系按钮均在",
       "status": "passed",
-      "cost_ms": 49.3,
+      "cost_ms": 66.1,
       "kind": "功能"
     },
     {
@@ -1288,9 +1288,9 @@
       "title": "管理员可向商家发送消息",
       "steps": "POST /messages/send receiver=商家",
       "expected": "消息入库，商家会话列表出现管理员",
-      "actual": "消息 #15 已送达，商家会话列表可见",
+      "actual": "消息 #25 已送达，商家会话列表可见",
       "status": "passed",
-      "cost_ms": 129.0,
+      "cost_ms": 136.4,
       "kind": "功能"
     },
     {
@@ -1301,7 +1301,7 @@
       "expected": "页面同时包含两个方向的气泡",
       "actual": "双向消息在同一对话页展示",
       "status": "passed",
-      "cost_ms": 76.7,
+      "cost_ms": 94.0,
       "kind": "功能"
     },
     {
@@ -1312,7 +1312,7 @@
       "expected": "该会话未读数变为 0",
       "actual": "未读 0 → 0",
       "status": "passed",
-      "cost_ms": 89.3,
+      "cost_ms": 97.0,
       "kind": "功能"
     },
     {
@@ -1323,7 +1323,7 @@
       "expected": "被拒绝，提示只能回复有往来的对象",
       "actual": "被拦截",
       "status": "passed",
-      "cost_ms": 58.6,
+      "cost_ms": 77.6,
       "kind": "功能"
     },
     {
@@ -1334,7 +1334,7 @@
       "expected": "均提示内容不合法，不入库",
       "actual": "两类非法内容均被拒",
       "status": "passed",
-      "cost_ms": 96.8,
+      "cost_ms": 108.8,
       "kind": "功能"
     },
     {
@@ -1345,7 +1345,7 @@
       "expected": "提示收件人不正确",
       "actual": "被拒绝",
       "status": "passed",
-      "cost_ms": 37.3,
+      "cost_ms": 62.6,
       "kind": "功能"
     },
     {
@@ -1356,7 +1356,7 @@
       "expected": "302 回首页并提示不存在",
       "actual": "302",
       "status": "passed",
-      "cost_ms": 11.1,
+      "cost_ms": 30.0,
       "kind": "功能"
     },
     {
@@ -1367,7 +1367,7 @@
       "expected": "404 且提示该美食已下架",
       "actual": "404 + 提示",
       "status": "passed",
-      "cost_ms": 12.8,
+      "cost_ms": 31.3,
       "kind": "功能"
     },
     {
@@ -1378,7 +1378,7 @@
       "expected": "404 中文错误页",
       "actual": "404",
       "status": "passed",
-      "cost_ms": 1.0,
+      "cost_ms": 0.9,
       "kind": "功能"
     },
     {
@@ -1389,7 +1389,7 @@
       "expected": "接口不报错但记录仍在（按 user_id 过滤）",
       "actual": "越权删除无效，记录仍在",
       "status": "passed",
-      "cost_ms": 152.7,
+      "cost_ms": 225.8,
       "kind": "功能"
     },
     {
@@ -1400,7 +1400,7 @@
       "expected": "提示举报记录不存在",
       "actual": "提示记录不存在",
       "status": "passed",
-      "cost_ms": 60.7,
+      "cost_ms": 94.4,
       "kind": "功能"
     },
     {
@@ -1411,7 +1411,7 @@
       "expected": "提示用户名长度不合法",
       "actual": "被拒绝",
       "status": "passed",
-      "cost_ms": 1.4,
+      "cost_ms": 1.5,
       "kind": "功能"
     },
     {
@@ -1422,7 +1422,7 @@
       "expected": "401 且提示请先登录",
       "actual": "401",
       "status": "passed",
-      "cost_ms": 0.6,
+      "cost_ms": 0.7,
       "kind": "功能"
     },
     {
@@ -1433,7 +1433,7 @@
       "expected": "302 或 404，不抛 500",
       "actual": "302",
       "status": "passed",
-      "cost_ms": 46.2,
+      "cost_ms": 43.6,
       "kind": "功能"
     },
     {
@@ -1444,7 +1444,7 @@
       "expected": "302 且提示收件人不存在",
       "actual": "友好提示",
       "status": "passed",
-      "cost_ms": 68.2,
+      "cost_ms": 78.0,
       "kind": "功能"
     },
     {
@@ -1453,9 +1453,9 @@
       "title": "首页响应时间",
       "steps": "连续请求 3 次取平均",
       "expected": "平均 < 800ms",
-      "actual": "平均 22ms",
+      "actual": "平均 31ms",
       "status": "passed",
-      "cost_ms": 66.9,
+      "cost_ms": 94.8,
       "kind": "性能"
     },
     {
@@ -1464,9 +1464,9 @@
       "title": "推荐页响应时间",
       "steps": "连续请求 2 次取平均",
       "expected": "平均 < 1500ms（含 CF 计算）",
-      "actual": "平均 174ms",
+      "actual": "平均 192ms",
       "status": "passed",
-      "cost_ms": 348.1,
+      "cost_ms": 384.6,
       "kind": "性能"
     },
     {
@@ -1475,9 +1475,9 @@
       "title": "详情页响应时间",
       "steps": "连续请求 3 次取平均",
       "expected": "平均 < 500ms",
-      "actual": "平均 62ms",
+      "actual": "平均 74ms",
       "status": "passed",
-      "cost_ms": 185.1,
+      "cost_ms": 222.9,
       "kind": "性能"
     },
     {
@@ -1488,7 +1488,7 @@
       "expected": "全部 200",
       "actual": "10 次请求全部 200",
       "status": "passed",
-      "cost_ms": 438.6,
+      "cost_ms": 421.7,
       "kind": "性能"
     },
     {
@@ -1499,7 +1499,7 @@
       "expected": "200",
       "actual": "964 KB",
       "status": "passed",
-      "cost_ms": 3.1,
+      "cost_ms": 2.9,
       "kind": "性能"
     }
   ]
