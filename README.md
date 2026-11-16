@@ -69,6 +69,7 @@ gd_food_recommend/
 ├── seed_catalog.py         # 同步分类、商家、菜品到数据库（幂等）
 ├── seed_food_views.py      # 生成演示用浏览记录（长尾分布，支撑每日热榜）
 ├── generate_mock_data.py   # 生成模拟用户与评分（可复现，支持 --purge 清除）
+├── seed_comments.py        # 按菜品分类重新生成模拟评论（评论与菜对得上）
 ├── insert_data.py          # 早期测试数据脚本（保留，可选）
 ├── models/
 │   └── user.py             # 用户数据操作
@@ -214,6 +215,7 @@ python insert_data.py          # 可选：插入早期 10 道菜与演示账号
 python seed_catalog.py         # 同步 12 个分类 / 15 个商家 / 74 道菜（幂等）
 python generate_mock_data.py   # 生成 200 用户 + 5000 条评分（可复现）
 python seed_food_views.py      # 生成近两周浏览记录（首页每日热榜要用；--reset 可清掉）
+python seed_comments.py        # 按菜品重新生成模拟评论（评论按分类/菜名匹配，--seed 换一批）
 ```
 
 > **说明**：`generate_mock_data.py` 会先清空上一次生成的模拟数据再重新生成，保证结果可复现；
