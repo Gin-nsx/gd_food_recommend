@@ -1,6 +1,6 @@
 # routes/recommend.py
 # 推荐系统路由：协同过滤 + 安全过滤 + 冷启动兜底 + 推荐理由
-from flask import Blueprint, render_template, session, redirect, url_for, request
+from flask import Blueprint, render_template, session, redirect, url_for, request, abort
 from utils.db import get_db_connection
 from utils.cf import MIN_RELEVANT, explain_candidates, similarity_label
 
@@ -428,7 +428,7 @@ def evaluate_page():
 
     # 只有管理员能看评估报告
     if session.get('role') != 'admin':
-        return "无权访问，仅管理员可查看推荐效果评估", 403
+        abort(403)
 
     from utils.cf import evaluate_all, evaluate_mae_rmse
 

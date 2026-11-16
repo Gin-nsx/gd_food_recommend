@@ -67,6 +67,54 @@ def csrf_protect():
     return redirect(url_for('index'))
 
 
+# ========== 统一错误页 ==========
+# 不注册这些处理器的话，出错会看到 Flask 默认的英文页（生产环境只有一句
+# "Internal Server Error"），对普通用户既看不懂也不知道下一步该干什么。
+ERROR_PAGES = {
+    403: ('没有访问权限',
+          '这个页面需要更高的权限才能打开。如果你是商家或管理员，请确认登录的账号是否正确。',
+          ''),
+    404: ('这个页面不存在',
+          '链接可能已经失效，或者美食已经被下架删除了。',
+          ''),
+    405: ('请求方式不被允许',
+          '这个地址不支持当前操作，通常是从收藏夹或旧链接直接打开导致的。',
+          ''),
+    500: ('服务器出了点小状况',
+          '已经记录下这次异常，稍后再试一次通常就好了。',
+          '如果反复出现，可以把当前时间和操作步骤反馈给管理员。'),
+}
+
+
+def _render_error(code):
+    title, message, hint = ERROR_PAGES.get(
+        code, ('出错了', '请求没有正常完成，请稍后重试。', ''))
+    return render_template('error.html', code=code, title=title,
+                           message=message, hint=hint), code
+
+
+@app.errorhandler(403)
+def handle_403(e):
+    return _render_error(403)
+
+
+@app.errorhandler(404)
+def handle_404(e):
+    return _render_error(404)
+
+
+@app.errorhandler(405)
+def handle_405(e):
+    return _render_error(405)
+
+
+@app.errorhandler(500)
+def handle_500(e):
+    # 异常信息进日志，不回显给用户（避免泄露表名、路径等内部信息）
+    app.logger.error('未捕获的服务器异常: %s', getattr(e, 'original_exception', e))
+    return _render_error(500)
+
+
 @app.context_processor
 def inject_csrf_token():
     """让所有模板都能直接调用 csrf_token()，并拿到导航栏的未读消息数"""

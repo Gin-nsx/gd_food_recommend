@@ -81,7 +81,12 @@ gd_food_recommend/
 │   ├── search.py           # 搜索同义词扩展词表
 │   ├── security.py         # CSRF 令牌 + 登录失败限流
 │   └── images.py           # 上传图片校验 / 裁剪压缩 / 清理
-├── templates/              # Jinja2 模板
+├── templates/              # Jinja2 模板（error.html 为 403/404/405/500 统一错误页）
+├── tests/
+│   ├── test_system.py      # 系统级自动化测试（130 条用例，自带数据准备与清理）
+│   ├── make_report.py      # 把测试结果渲染成 Excel 用例表
+│   ├── report.json         # 最近一次执行结果（机器可读）
+│   └── 系统测试用例表.xlsx  # 交付用测试报告（概览 / 用例明细 / 缺陷记录）
 └── static/
     ├── js/
     │   └── echarts.min.js  # ECharts 本地引入
@@ -122,6 +127,22 @@ gd_food_recommend/
 | 强制下线 | `退出登录` 改 POST，避免 ` <img src="/logout"> ` 式攻击 |
 | 信息泄露 | 数据库异常不再回显到页面/AJAX，统一提示「操作失败，请稍后重试」 |
 | XSS | Jinja2 默认自动转义；管理端不再把菜名拼进 `onclick`，改用 `data-*` 属性 |
+
+## 测试
+
+系统级自动化测试不依赖浏览器，直接用 Flask `test_client` 打真实数据库：
+
+```bash
+./.venv/Scripts/python.exe tests/test_system.py    # 跑 130 条用例
+./.venv/Scripts/python.exe tests/make_report.py    # 生成 Excel 用例表
+```
+
+覆盖 10 个维度：认证与账号、页面与权限、安全防护（CSRF / 注入 / 越权 / 开放重定向）、
+美食业务（评分 / 点赞 / 收藏 / 评论 / 举报 / 足迹）、推荐算法（个性化 / 冷启动 /
+过敏与黑名单过滤 / 离线指标）、搜索、商家端、管理端、站内消息、异常与性能。
+
+测试数据由脚本自动创建（`__t_` 前缀账号），结束后统一清理，并把被执行改写的
+菜品平均分、点赞数、上下架状态还原，因此可以反复执行而不污染演示数据。
 
 ## 运行方式
 

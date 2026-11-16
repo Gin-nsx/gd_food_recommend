@@ -162,6 +162,29 @@
         /* ===== 通用 ===== */
         .text-center { text-align: center; }
         .mt-20 { margin-top: 20px; }
+
+        /* ===== 窄屏适配（手机/小笔记本） ===== */
+        /* 导航条本来就允许换行，但 40px 内边距和 24px 的 logo 在手机上会把
+           链接挤成两行还溢出，这里统一收紧一档 */
+        @media (max-width: 768px) {
+            .navbar { padding: 10px 14px; gap: 8px; }
+            .navbar .logo { font-size: 19px; letter-spacing: 1px; }
+            .navbar .nav-left { gap: 10px; }
+            .navbar .nav-links { gap: 6px 10px; }
+            .navbar .nav-links a,
+            .navbar .nav-links button.btn-outline {
+                font-size: 13.5px;
+                padding: 5px 9px;
+            }
+            .navbar .nav-links .welcome { font-size: 13px; }
+            .container { padding: 20px 14px; }
+            .flash-container { padding: 0 14px; }
+        }
+
+        @media (max-width: 480px) {
+            /* 一个屏幕放不下时，先把"欢迎，xxx"收起来，优先保留功能入口 */
+            .navbar .nav-links .welcome { display: none; }
+        }
     </style>
 </head>
 <body>
