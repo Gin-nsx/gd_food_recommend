@@ -1,19 +1,21 @@
 # seed_comments.py
-# 重新生成模拟评论：按「菜品分类 + 菜名关键词」匹配评论池，保证评论与菜对得上。
+# 重新生成模拟评论：按「菜品分类 + 菜名关键词」匹配文本，并让评论作者、情绪与评分一致。
 #
 # 背景：
-#   旧模拟评论来自一个约 10 句的通用模板池，随机分配给所有菜品，
-#   导致「鲜虾腐皮卷」下面出现「粥底绵密」「糖水甜度适中」这种张冠李戴的评论。
+#   最早的模拟评论来自一个约 10 句的通用模板池，随机分配给所有菜品，
+#   导致「鲜虾腐皮卷」下面出现「粥底绵密」「糖水甜度适中」这种张冠李戴的评论；
+#   后来虽然按菜名匹配了文本，但作者仍是随机挑的，会出现「打了 2 分却在评论里夸」。
 #
 # 生成规则：
-#   1. 先删掉所有 mock 用户的旧评论（真实用户的评论保留）；
-#   2. 每道菜抽 2~4 条评论，来源优先级：菜名关键词专属池 > 分类池 > 通用池；
-#   3. 同一道菜内评论不重复、同一用户不在同一道菜下重复发言；
-#   4. 评论时间散布在近 300 天内，可复现（固定随机种子）。
+#   1. 作者只能从「给这道菜打过分」的用户里挑，权重随分数升高（好评更常见）；
+#   2. 文本按作者分数分层：4~5★ 用推荐语，3★ 用中评，1~2★ 用吐槽；
+#   3. 文本来源优先级：菜名关键词专属池 > 分类池 > 通用池，同菜不重复；
+#   4. 评论时间 = 该用户的评分时间 + 2~72 小时，保证「先评分后评论」；
+#   5. 只删 mock 用户的旧评论，真实用户评论保留。
 #
 # 用法:
-#   python seed_comments.py             # 重新生成（默认 200 个 mock 用户池）
-#   python seed_comments.py --seed 7    # 换一批评论
+#   python seed_comments.py             # 重新生成
+#   python seed_comments.py --seed 7    # 换一批
 import argparse
 import random
 import sys
@@ -23,7 +25,7 @@ from utils.db import get_db_connection
 
 MOCK_PREFIX = 'mock_'
 
-# ========== 1. 菜名关键词专属池（命中菜名即优先使用） ==========
+# ========== 1. 菜名关键词专属池（命中菜名即优先使用，均为好评） ==========
 DISH_LINES = {
     '烧鹅':   ['烧鹅皮脆肉嫩，配酸梅酱刚刚好。', '斩件利落，皮下的油不多，烧得透。', '例牌烧鹅够热气，蘸酱不抢味。'],
     '叉烧':   ['叉烧半肥瘦，蜜香渗进肉里。', '边缘带一点焦香，甜咸平衡。', '蜜汁叉烧够入味，配白饭一绝。'],
@@ -82,7 +84,7 @@ DISH_LINES = {
     '蔗汁':   ['鲜榨蔗汁清甜无渣，冰过更爽。', '不加水的甜，解腻神器。'],
 }
 
-# ========== 2. 分类通用池 ==========
+# ========== 2. 分类好评池 ==========
 CATEGORY_LINES = {
     '肠粉':     ['粉皮滑嫩，酱油是灵魂。', '茶楼水平，米香足不粘腻。'],
     '粥品':     ['粥够绵，暖胃舒服。', '一碗热粥落肚，整个人都舒展了。'],
@@ -98,26 +100,46 @@ CATEGORY_LINES = {
     '饮品':     ['解腻解辣，饭后来一杯正好。', '老广的味道，从小喝到大。'],
 }
 
-# ========== 3. 全菜通用的中性评价（兜底） ==========
-GENERIC_LINES = [
+# ========== 3. 分类中评池（3★ 用） ==========
+CATEGORY_NEUTRAL = {
+    '肠粉':     ['味道中规中矩，当早餐还行。', '粉皮略厚，酱油偏咸。'],
+    '粥品':     ['粥底还行，就是料比想象中少。', '味道偏淡，需要自己加胡椒。'],
+    '煲仔饭':   ['饭焦不错，就是出餐慢了点。', '味道可以，饭有点偏硬。'],
+    '烧腊':     ['味道过得去，就是斩件有点碎。', '烧得还行，皮不够脆。'],
+    '早茶点心': ['点心一般，胜在够热。', '出品稳定，谈不上惊喜。'],
+    '粉面':     ['汤头淡了点，面还行。', '分量一般，价格不算便宜。'],
+    '糖水甜品': ['甜度偏甜，胜在够冰。', '分量不大，味道还行。'],
+    '广府菜':   ['中规中矩的粤菜，环境加分。', '火候还行，调味偏淡。'],
+    '潮汕菜':   ['食材还行，调味偏咸。', '做法地道，分量略少。'],
+    '客家菜':   ['口味偏咸，胜在下饭。', '家常水平，没有特别惊喜。'],
+    '海鲜':     ['新鲜度一般，价格还行。', '处理得干净，个头偏小。'],
+    '饮品':     ['味道普通，解渴够用。', '偏甜，冰放得有点多。'],
+}
+
+# ========== 4. 通用池 ==========
+GENERIC_POSITIVE = [
     '出品稳定，价格对得起品质。',
     '带外地朋友来吃，都说比想象中好吃。',
-    '环境一般，但胜在味道正宗。',
     '会回购，已经推荐给同事了。',
     '价格实惠，出品稳定，隔几天就想吃。',
-    '份量有一点少，但味道确实地道。',
-    '排队有点久，味道对得起这个等待。',
     '比想象中好，下次还会来。',
     '老字号的味道，吃了很多年没变过。',
     '发到家庭群，爸妈都问是哪家。',
 ]
-
-# 低分向的吐槽（少量混入，避免全是彩虹屁）
+GENERIC_NEUTRAL = [
+    '环境一般，但胜在味道正宗。',
+    '份量有一点少，但味道确实地道。',
+    '排队有点久，味道算对得起这个等待。',
+    '整体中规中矩，适合路过随便吃。',
+]
 NEGATIVE_LINES = [
     '偏咸了一点，下次让师傅少放盐。',
     '等了挺久的，希望出餐能再快一点。',
     '今天出品比之前差一点，可能是高峰期。',
-    '希望份量能再大一点。',
+    '希望份量能再大一点，性价比一般。',
+    '不太新鲜，吃了一半就不想吃了。',
+    '和图片差得有点多，有点失望。',
+    '口味太重，盖住了食材本身的鲜味。',
 ]
 
 
@@ -136,43 +158,47 @@ def load_foods(cur):
     return cur.fetchall()
 
 
-def pick_lines(name, cat, rng, n):
-    """为一道菜挑 n 条互不重复的评论：专属池 > 分类池 > 通用池，混入少量吐槽"""
-    dish_pool = []
+def load_ratings_by_food(cur):
+    """{food_id: [(user_id, score, rated_at), ...]}，用于挑评论作者"""
+    cur.execute("""
+        SELECT r.user_id, r.food_id, r.score, r.created_at
+        FROM ratings r JOIN users u ON r.user_id = u.id
+        WHERE u.username LIKE %s
+    """, (MOCK_PREFIX + '%',))
+    out = {}
+    for uid, fid, score, ts in cur.fetchall():
+        out.setdefault(fid, []).append((uid, score, ts))
+    return out
+
+
+def dish_pool(name):
+    pool = []
     for key, lines in DISH_LINES.items():
         if key in name:
-            dish_pool.extend(lines)
-    cat_pool = CATEGORY_LINES.get(cat, [])
-    gen_pool = GENERIC_LINES
+            pool.extend(lines)
+    return pool
 
-    chosen, used = [], set()
 
-    def take(pool, k):
-        cand = [l for l in pool if l not in used]
-        rng.shuffle(cand)
-        for l in cand[:k]:
-            used.add(l)
-            chosen.append(l)
-
-    # 约 60% 概率带 1 条专属（有专属池时），其余从分类/通用池补
-    if dish_pool:
-        take(dish_pool, min(len(dish_pool), rng.randint(1, 2)))
-    take(cat_pool, rng.randint(1, 2))
-    take(gen_pool, max(0, n - len(chosen)))
-    if len(chosen) < n:
-        take(dish_pool, n - len(chosen))
-    if len(chosen) < n:
-        take(gen_pool, n - len(chosen))
-
-    # 10% 概率把最后一条换成吐槽
-    if chosen and rng.random() < 0.10:
-        chosen[-1] = rng.choice(NEGATIVE_LINES)
-
-    return chosen[:max(1, n)]
+def pick_text(name, cat, score, used, rng):
+    """按分数选文本：4~5★ 好评，3★ 中评，1~2★ 吐槽；同菜内不重复"""
+    if score <= 2:
+        cand = [l for l in NEGATIVE_LINES if l not in used]
+    elif score == 3:
+        cand = [l for l in (CATEGORY_NEUTRAL.get(cat, []) + GENERIC_NEUTRAL) if l not in used]
+    else:
+        cand = [l for l in (dish_pool(name) + CATEGORY_LINES.get(cat, []) + GENERIC_POSITIVE)
+                if l not in used]
+        # 好评池优先专属描述，避免整屏都是「出品稳定」
+        rare = [l for l in cand if l in dish_pool(name)]
+        if rare and rng.random() < 0.75:
+            cand = rare
+    if not cand:
+        cand = [l for l in NEGATIVE_LINES + GENERIC_NEUTRAL + GENERIC_POSITIVE if l not in used]
+    return rng.choice(cand) if cand else None
 
 
 def main():
-    parser = argparse.ArgumentParser(description='按菜品重新生成模拟评论')
+    parser = argparse.ArgumentParser(description='按菜品与评分重新生成模拟评论')
     parser.add_argument('--seed', type=int, default=2026, help='随机种子（可复现）')
     parser.add_argument('--min', type=int, default=2, help='每道菜最少评论数')
     parser.add_argument('--max', type=int, default=4, help='每道菜最多评论数')
@@ -188,24 +214,38 @@ def main():
             print('没有找到 mock 用户，请先运行 generate_mock_data.py')
             sys.exit(1)
 
-        # 只删 mock 用户的旧评论，真实用户评论保留
-        placeholders = ','.join(['%s'] * len(mock_ids))
-        cur.execute(f"DELETE FROM comments WHERE user_id IN ({placeholders})", mock_ids)
+        ph = ','.join(['%s'] * len(mock_ids))
+        cur.execute(f"DELETE FROM comments WHERE user_id IN ({ph})", mock_ids)
         deleted = cur.rowcount
 
-        foods = load_foods(cur)
+        ratings_by_food = load_ratings_by_food(cur)
         now = datetime.now()
-        rows = []
-        for fid, name, cat in foods:
-            n = rng.randint(args.min, args.max)
-            lines = pick_lines(name, cat or '', rng, n)
-            # 随机挑作者，同一用户不会在同道菜下出现两次
-            authors = rng.sample(mock_ids, min(len(mock_ids), len(lines)))
-            for uid, text in zip(authors, lines):
-                created = now - timedelta(days=rng.randint(0, 300),
-                                          hours=rng.randint(0, 23),
-                                          minutes=rng.randint(0, 59))
-                rows.append((uid, fid, text, created))
+        rows, skipped = [], 0
+
+        for fid, name, cat in load_foods(cur):
+            raters = ratings_by_food.get(fid) or []
+            if not raters:
+                skipped += 1
+                continue
+
+            n = min(len(raters), rng.randint(args.min, args.max))
+            # 作者按分数加权抽取：好评者更可能留下评论
+            pool = list(raters)
+            picked, used = [], set()
+            for _ in range(n):
+                weights = [max(1, s) ** 1.6 for _u, s, _t in pool]
+                idx = rng.choices(range(len(pool)), weights=weights, k=1)[0]
+                uid, score, rated_at = pool.pop(idx)
+                text = pick_text(name, cat or '', score, used, rng)
+                if not text:
+                    continue
+                used.add(text)
+                created = rated_at + timedelta(hours=rng.randint(2, 72),
+                                               minutes=rng.randint(0, 59))
+                if created > now:
+                    created = rated_at
+                picked.append((uid, fid, text, created))
+            rows.extend(picked)
 
         cur.executemany(
             "INSERT INTO comments (user_id, food_id, content, created_at) VALUES (%s, %s, %s, %s)",
@@ -217,7 +257,8 @@ def main():
         total = cur.fetchone()[0]
         print(f'已删除旧模拟评论 {deleted} 条')
         print(f'已生成新评论 {len(rows)} 条，表内共 {total} 条')
-        print(f'覆盖菜品 {len(foods)} 道')
+        if skipped:
+            print(f'跳过 {skipped} 道无人评分的菜品（无作者可挑）')
 
     except Exception as e:
         conn.rollback()

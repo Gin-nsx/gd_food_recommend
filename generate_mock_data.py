@@ -156,11 +156,13 @@ def recompute_avg(cur):
                ON f.id = r.food_id
         SET f.avg_rating = COALESCE(r.s, 0)
     """)
+    # 点赞数只认 likes 表：这里不能拿评分条数顶替，
+    # 否则「X 人点赞」会等于评分数，而用户的点赞状态又是未点赞，前后矛盾。
     cur.execute("""
         UPDATE foods f
-        LEFT JOIN (SELECT food_id, COUNT(*) AS c FROM ratings GROUP BY food_id) r
-               ON f.id = r.food_id
-        SET f.like_count = COALESCE(r.c, 0)
+        LEFT JOIN (SELECT food_id, COUNT(*) AS c FROM likes GROUP BY food_id) l
+               ON f.id = l.food_id
+        SET f.like_count = COALESCE(l.c, 0)
     """)
 
 
@@ -209,6 +211,8 @@ def main():
         print(f'评分条数: {n_ratings} 条（矩阵密度 {density:.1f}%）')
         print(f'评分均值: {float(avg):.2f}')
         print(f'菜品数量: {len(items)} 道')
+        print('提示：再执行 seed_behavior.py（点赞/收藏/浏览）与 seed_comments.py（评论），'
+              '行为数据才会与评分自洽')
 
     except Exception as e:
         conn.rollback()

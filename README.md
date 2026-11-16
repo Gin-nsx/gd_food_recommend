@@ -69,7 +69,8 @@ gd_food_recommend/
 ├── seed_catalog.py         # 同步分类、商家、菜品到数据库（幂等）
 ├── seed_food_views.py      # 生成演示用浏览记录（长尾分布，支撑每日热榜）
 ├── generate_mock_data.py   # 生成模拟用户与评分（可复现，支持 --purge 清除）
-├── seed_comments.py        # 按菜品分类重新生成模拟评论（评论与菜对得上）
+├── seed_comments.py        # 按菜品与评分重新生成模拟评论（评论与菜对得上、情绪与分数一致）
+├── seed_behavior.py        # 由评分派生点赞 / 收藏 / 浏览，保证用户行为链自洽
 ├── insert_data.py          # 早期测试数据脚本（保留，可选）
 ├── models/
 │   └── user.py             # 用户数据操作
@@ -214,13 +215,20 @@ python migrate_v3.py           # 已有库升级：补 food_views 浏览明细�
 python insert_data.py          # 可选：插入早期 10 道菜与演示账号
 python seed_catalog.py         # 同步 12 个分类 / 15 个商家 / 74 道菜（幂等）
 python generate_mock_data.py   # 生成 200 用户 + 5000 条评分（可复现）
-python seed_food_views.py      # 生成近两周浏览记录（首页每日热榜要用；--reset 可清掉）
-python seed_comments.py        # 按菜品重新生成模拟评论（评论按分类/菜名匹配，--seed 换一批）
+python seed_behavior.py        # 由评分派生点赞 / 收藏 / 浏览（保证行为自洽，--seed 换一批）
+python seed_comments.py        # 按菜品与评分重新生成模拟评论（文本按分类/菜名匹配，作者须评过该菜）
+python seed_food_views.py      # 生成近两周浏览 PV 大盘（首页每日热榜要用；--reset 可清掉）
 ```
 
 > **说明**：`generate_mock_data.py` 会先清空上一次生成的模拟数据再重新生成，保证结果可复现；
 > 如需完全还原为真实小数据集，执行 `python generate_mock_data.py --purge`。
 > 论文中的实验结果即基于该数据集（204 用户 / 74 菜品 / 5075 条评分，矩阵密度 33.6%）。
+>
+> **行为数据口径**：`seed_behavior.py` 让点赞、收藏、浏览都从评分派生——先浏览、再评分，
+> 然后按分数概率决定是否点赞/收藏（5★ 点赞 75%、收藏 42%；4★ 55%/16%；3★ 22%/5%）。
+> `foods.like_count` 只由 `likes` 表统计，不再用评分条数顶替，因此「X 人点赞」与
+> 「我的点赞状态」始终一致。`seed_comments.py` 的评论作者只能从「给这道菜打过分」的用户里挑，
+> 且 4~5★ 写好评、3★ 写中评、1~2★ 写吐槽，评论时间晚于评分时间。
 
 ### 3. 配置数据库连接
 
