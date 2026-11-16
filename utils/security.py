@@ -52,6 +52,27 @@ def validate_csrf() -> bool:
 
 
 # ---------------------------------------------------------------------------
+# 站内跳转校验（防开放重定向）
+# ---------------------------------------------------------------------------
+def safe_internal_path(target):
+    """只接受本站相对路径，用于 next / from 这类回跳参数。
+
+    拒绝：空值、绝对 URL、协议相对 //evil.com、
+          反斜杠变体 /\\evil.com（浏览器会当成 //evil.com）、含换行的注入串。
+    """
+    if not target:
+        return None
+    target = str(target).strip()
+    if not target.startswith('/'):
+        return None
+    if target.startswith('//') or target.startswith('/\\'):
+        return None
+    if '\\' in target or '\n' in target or '\r' in target:
+        return None
+    return target
+
+
+# ---------------------------------------------------------------------------
 # 登录失败限流
 # ---------------------------------------------------------------------------
 MAX_FAILURES = 5           # 窗口内允许的失败次数

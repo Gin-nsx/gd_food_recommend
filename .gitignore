@@ -39,3 +39,4 @@ static/uploads/
 # 本地推送脚本与离线备份（仅本机使用）
 push-to-github.bat
 *.bundle
+accounts_export.csv

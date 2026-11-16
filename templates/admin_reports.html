@@ -270,7 +270,7 @@
                     <td>{{ r.reporter_name }}</td>
                     <td>
                         {% if r.food_id %}
-                            <a class="link-food" href="{{ url_for('food.food_detail', food_id=r.food_id) }}"
+                            <a class="link-food" href="{{ url_for('food.food_detail', food_id=r.food_id) }}?from=%2Fadmin%2Freports"
                                target="_blank" rel="noopener" title="在新标签页查看该美食">
                                 {{ r.food_name }} ↗
                             </a>
@@ -370,7 +370,7 @@
                         {% endif %}
                         {% if r.comment_food_id %}
                         <a class="comment-source" style="color:#3498db; text-decoration:none;"
-                           href="{{ url_for('food.food_detail', food_id=r.comment_food_id) }}#comment-{{ r.comment_id }}"
+                           href="{{ url_for('food.food_detail', food_id=r.comment_food_id) }}?from=%2Fadmin%2Freports#comment-{{ r.comment_id }}"
                            target="_blank" rel="noopener" title="在新标签页定位到这条评论">
                             🔗 查看原文（{{ r.comment_food_name or '所属美食' }}）↗
                         </a>
@@ -489,7 +489,8 @@
 </div>
 
 <script>
-    // 处理举报：可顺手把被举报的美食下架 / 把被举报的评论删掉，不用再单独操作一遍    var TARGET_OPTIONS = {
+    // 处理举报：可顺手把被举报的美食下架 / 把被举报的评论删掉，不用再单独操作一遍
+    var TARGET_OPTIONS = {
         food: [
             ['none', '仅记录处理结果'],
             ['offline_food', '同步下架被举报的美食']

@@ -1,7 +1,9 @@
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash, jsonify
+from urllib.parse import quote
 import pymysql
 from utils.db import get_db_connection
 from utils.cf import similar_foods, similarity_label
+from utils.security import safe_internal_path
 
 food_bp = Blueprint('food', __name__)
 
@@ -51,6 +53,23 @@ def food_detail(food_id):
         conn.close()
         flash('❌ 该美食不存在或未通过审核')
         return redirect(url_for('index'))
+
+    # 来源页：举报管理、商家中心等点进来时带 ?from=/xxx，返回按钮就回那一页。
+    # 只接受站内相对路径，防止被拼成跳去外站的链接。
+    from_arg = safe_internal_path(request.args.get('from'))
+    back_url = from_arg
+    back_label = '返回'
+    back_qs = ''
+    if back_url:
+        back_qs = '?from=' + quote(back_url, safe='')
+        if back_url.startswith('/admin/reports'):
+            back_label = '返回举报管理'
+        elif back_url.startswith('/admin'):
+            back_label = '返回管理后台'
+        elif back_url.startswith('/merchant'):
+            back_label = '返回商家中心'
+        else:
+            back_label = '返回上一页'
 
     cursor.execute("""
         SELECT id, name, avg_rating, price, image_url
@@ -158,7 +177,11 @@ def food_detail(food_id):
                            user_liked=user_liked,
                            user_favorited=user_favorited,
                            user_blacklisted=user_blacklisted,
-                           comments=comments)
+                           comments=comments,
+                           back_url=back_url,
+                           back_label=back_label,
+                           back_qs=back_qs,
+                           from_arg=request.args.get('from', ''))
 
 
 # ========== 处理评分 ==========

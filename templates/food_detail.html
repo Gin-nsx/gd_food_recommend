@@ -505,7 +505,7 @@
     <h3>🍽️ 本店其他美食</h3>
     <div class="other-grid">
         {% for of in other_foods %}
-        <div class="other-item" onclick="location.href='{{ url_for('food.food_detail', food_id=of.id) }}'">
+        <div class="other-item" onclick="location.href='{{ url_for('food.food_detail', food_id=of.id) }}{{ back_qs }}'">
             <div class="othumb">
                 {% if of.image_url %}
                 <img src="{{ url_for('static', filename=of.image_url) }}" alt="{{ of.name }}" loading="lazy" onerror="this.remove()">
@@ -530,7 +530,7 @@
     <p class="sub">吃过这道菜的人，也常常给下面这些菜打高分</p>
     <div class="similar-grid">
         {% for sf in similar_foods %}
-        <div class="similar-item" onclick="location.href='{{ url_for('food.food_detail', food_id=sf.id) }}'">
+        <div class="similar-item" onclick="location.href='{{ url_for('food.food_detail', food_id=sf.id) }}{{ back_qs }}'">
             <div class="sname">{{ sf.name }}</div>
             <div class="srating">⭐ {{ sf.avg_rating or '暂无' }}</div>
             <div class="sprice">¥{{ sf.price }}</div>

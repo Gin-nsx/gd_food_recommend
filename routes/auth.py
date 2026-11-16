@@ -7,6 +7,7 @@ from utils.security import (
     is_locked,
     lock_remaining,
     record_failure,
+    safe_internal_path,
 )
 
 auth_bp = Blueprint('auth', __name__)
@@ -17,11 +18,7 @@ ALLOWED_ROLES = ('user', 'merchant')
 
 def _safe_next(target):
     """只允许跳回本站路径，防止被拿去当开放重定向（钓鱼）"""
-    if not target:
-        return None
-    if target.startswith('/') and not target.startswith('//'):
-        return target
-    return None
+    return safe_internal_path(target)
 
 
 # ========== 注册页面 ==========

@@ -170,7 +170,14 @@
     <nav class="navbar">
         <div class="nav-left">
             {% if request.endpoint and request.endpoint != 'index' %}
-            <a href="{{ url_for('index') }}" class="nav-back" id="globalBack" title="返回上一页" aria-label="返回">←</a>
+            {# 返回目标：页面可以用 back_url 显式指定（例如从举报管理点进详情页，
+               返回就该回举报管理，而不是回首页）；没指定时才交给浏览器历史。 #}
+            {% set _has_back = back_url is defined and back_url %}
+            <a href="{{ back_url if _has_back else url_for('index') }}"
+               class="nav-back" id="globalBack"
+               data-explicit="{{ '1' if _has_back else '0' }}"
+               title="{{ (back_label if back_label is defined and back_label else '返回') }}"
+               aria-label="返回">←</a>
             {% endif %}
             <a href="{{ url_for('index') }}" class="logo">🍜 美食推荐</a>
         </div>
@@ -230,15 +237,19 @@
 
     <script>
         // 返回按钮：
-        //   1) 从站内其他页面过来的 → 用浏览器历史返回（保留筛选条件、滚动位置）
-        //   2) 从登录/注册页过来的 → 绝不 history.back()，否则一按就退回登录页，
+        //   1) 页面显式指定了 back_url（如举报管理 → 详情页）→ 直接去那个页面，
+        //      不做 history.back()：新标签页打开时历史里根本没有上一页。
+        //   2) 从站内其他页面过来的 → 用浏览器历史返回（保留筛选条件、滚动位置）
+        //   3) 从登录/注册页过来的 → 绝不 history.back()，否则一按就退回登录页，
         //      看起来像"被踢出去了"。这种情况直接去首页。
-        //   3) 直接打开链接/外链进来的 → 也去首页，避免点了没反应。
+        //   4) 直接打开链接/外链进来的 → 也去首页，避免点了没反应。
         (function () {
             var btn = document.getElementById('globalBack');
             if (!btn) return;
+            // 页面自己指定了返回目标，交给 href 就够了
+            if (btn.getAttribute('data-explicit') === '1') return;
+
             var ref = document.referrer || '';
-            var home = btn.getAttribute('href');
             var fromSameSite = ref && ref.indexOf(location.origin + '/') === 0;
             var fromAuthPage = /^\/(login|register)(\?|#|$)/.test(
                 ref.slice(location.origin.length)
