@@ -1144,7 +1144,8 @@ def _daily_block(body):
 
 
 def _daily_names(body):
-    return re.findall(r'<div class="nm">([^<]+)</div>', _daily_block(body))
+    # 热榜卡片把菜名放在 <h3> 里（缩略条只有图片，不会造成重复计数）
+    return re.findall(r'<h3>([^<]+)</h3>', _daily_block(body))
 
 
 def _daily_food_ids(body):
