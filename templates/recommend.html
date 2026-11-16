@@ -202,7 +202,7 @@
 <h2 class="page-title">✨ 猜你喜欢</h2>
 <p class="page-subtitle">
     {% if is_cold_start %}
-        新用户热门推荐 —— 给美食评分后，将解锁专属个性化推荐
+        新用户口碑推荐 —— 按加权评分挑出全站口碑最好的菜；给美食评分后，解锁专属个性化推荐
     {% else %}
         根据你评过分的菜推断口味，挑出你最可能喜欢的其他菜（算法：Item-CF）
     {% endif %}
@@ -255,7 +255,7 @@
                 <span class="why-chip"><span class="txt">{{ r.text }}</span><span class="sim">{{ r.short }}</span></span>
                 {% endfor %}
                 {% if food.support %}
-                <span class="why-chip support">🔥 {{ food.support }}</span>
+                <span class="why-chip support">{{ food.support }}</span>
                 {% endif %}
             </div>
             {% endif %}

@@ -2,7 +2,7 @@
 # 推荐系统路由：协同过滤 + 安全过滤 + 冷启动兜底 + 推荐理由
 from flask import Blueprint, render_template, session, redirect, url_for, request
 from utils.db import get_db_connection
-from utils.cf import explain_candidates, similarity_label
+from utils.cf import MIN_RELEVANT, explain_candidates, similarity_label
 
 recommend_bp = Blueprint('recommend', __name__)
 
@@ -14,9 +14,32 @@ METHOD_LABELS = {
 }
 
 
-def get_hot_foods(limit=10, exclude_ids=None):
-    """
-    冷启动兜底：按评分数量 + 平均评分推荐热门美食
+# ========== 冷启动参数 ==========
+# 新用户还没有评分，只能靠"全站口碑"推荐。不能简单按评分人数排序：
+# 那样 88 人打 2.8 分的菜会排在 30 人打 4.8 分的前面，等于把差评菜推给新用户。
+#
+# 打分公式与评估页「热门」基线（utils/cf.py: score_popular）完全一致：
+#     score = (Σ 好评分 + prior × 先验均值) / (票数 + prior)
+# 好评 = 4 分及以上（MIN_RELEVANT）；低分不进分子但计入分母，等于被稀释。
+COLD_PRIOR = 5.0          # 先验票数：票数越少，分数越接近先验均值，防少数票冲榜
+COLD_PRIOR_MEAN = 0.5     # 先验均值
+COLD_MIN_AVG = 3.5        # 口碑红线：评分人数够了还低于这个分，不推给新用户
+COLD_MIN_VOTES = 5        # 超过这个票数才算"口碑已形成"，红线才生效
+COLD_MIN_FOR_LIST = 3     # 进热门榜至少要有 3 条评分，0 评价的新菜不占位
+
+
+def _bayes_popularity(pos_sum, votes, prior=COLD_PRIOR, prior_mean=COLD_PRIOR_MEAN):
+    """贝叶斯加权好评分，与评估页的热门基线同源，保证线上线下口径一致"""
+    return (pos_sum + prior * prior_mean) / (votes + prior)
+
+
+def get_hot_foods(limit=12, exclude_ids=None):
+    """冷启动兜底：按「贝叶斯加权好评分」推荐，而不是单纯按评价人数
+
+    1. 打分：好评（≥4 分）总分向先验收缩，票少的高分菜不会虚高，
+       票多的差评菜也会被大量低分稀释；
+    2. 门槛：评价人数 ≥5 且平均分 <3.5 的菜直接剔除，不推给新用户；
+    3. 保底：达标菜不足时从剩余里补，但只补平均分 ≥3.5 的。
     """
     exclude_ids = exclude_ids or []
     conn = get_db_connection()
@@ -26,41 +49,69 @@ def get_hot_foods(limit=10, exclude_ids=None):
         SELECT f.id, f.name, f.price, f.avg_rating, f.like_count, f.image_url,
                COALESCE(u.merchant_name, u.username) AS merchant_name,
                c.name AS category_name,
-               COUNT(r.id) AS rating_count
+               COUNT(r.id) AS rating_count,
+               COALESCE(SUM(CASE WHEN r.score >= %s THEN r.score ELSE 0 END), 0) AS pos_sum
         FROM foods f
         LEFT JOIN users u ON f.merchant_id = u.id
         LEFT JOIN categories c ON f.category_id = c.id
         LEFT JOIN ratings r ON f.id = r.food_id
         WHERE f.status = 'approved'
     """
-    params = []
+    from utils.cf import MIN_RELEVANT
+    params = [MIN_RELEVANT]
     if exclude_ids:
         placeholders = ','.join(['%s'] * len(exclude_ids))
         sql += f" AND f.id NOT IN ({placeholders})"
         params.extend(exclude_ids)
 
+    # 先按票数粗筛候选（菜品量级在千以内，前 500 足够），精确排序在 Python 里做
     sql += """
         GROUP BY f.id
-        ORDER BY rating_count DESC, f.avg_rating DESC
-        LIMIT %s
+        ORDER BY rating_count DESC
+        LIMIT 500
     """
-    params.append(limit)
 
     cursor.execute(sql, params)
     rows = cursor.fetchall()
     cursor.close()
     conn.close()
 
-    return [
-        {
+    candidates = []
+    for row in rows:
+        votes = int(row[8] or 0)
+        pos_sum = float(row[9] or 0)
+        candidates.append({
             'id': row[0], 'name': row[1], 'price': float(row[2]),
-            'avg_rating': float(row[3]) if row[3] else 0,
+            'avg_rating': float(row[3]) if row[3] else 0.0,
             'like_count': row[4], 'image_url': row[5],
             'merchant_name': row[6], 'category_name': row[7],
-            'rating_count': row[8]
-        }
-        for row in rows
-    ]
+            'rating_count': votes,
+            'cold_score': round(_bayes_popularity(pos_sum, votes), 4),
+        })
+
+    def _is_bad(c):
+        """票数够多、分数却明显偏低 —— 说明是真的不受欢迎，不进榜"""
+        return (c['rating_count'] >= COLD_MIN_VOTES
+                and c['avg_rating'] and c['avg_rating'] < COLD_MIN_AVG)
+
+    sort_key = lambda c: (-c['cold_score'], -c['rating_count'], c['id'])
+
+    good = [c for c in candidates
+            if c['rating_count'] >= COLD_MIN_FOR_LIST and not _is_bad(c)]
+    good.sort(key=sort_key)
+    picked = good[:limit]
+
+    # 达标菜不够时，从剩余里挑平均分及格的补位（不补差评菜）
+    if len(picked) < limit:
+        picked_ids = {c['id'] for c in picked}
+        spare = [c for c in candidates
+                 if c['id'] not in picked_ids
+                 and not _is_bad(c)
+                 and (c['avg_rating'] or 0) >= COLD_MIN_AVG]
+        spare.sort(key=sort_key)
+        picked.extend(spare[:limit - len(picked)])
+
+    return picked
 
 
 def get_user_safety_info(user_id):
@@ -301,7 +352,7 @@ def attach_reasons(foods, items, names):
         food['reasons'] = reasons[:2]
         # 平台口碑：评分人数够多才拿出来说，避免「3 个人评 5 分」这种噪声
         if info.get('rating_count', 0) >= 5 and info.get('avg'):
-            food['support'] = f"{info['rating_count']} 人平均 {info['avg']:.1f} 分"
+            food['support'] = f"🔥 {info['rating_count']} 人平均 {info['avg']:.1f} 分"
         else:
             food['support'] = None
 
@@ -333,15 +384,19 @@ def recommend_page():
         names = get_food_names(set(food_ids) | ref_ids)
         foods = attach_reasons(foods, items, names)
     else:
-        foods = get_hot_foods(limit=12)
+        # 多取一些再过滤：过敏/黑名单可能剔掉几条，避免过滤后只剩一小撮
+        foods = get_hot_foods(limit=24)
         hot_ids = [f['id'] for f in foods]
         safe_ids, taboo_tagged = apply_safety_filter(hot_ids, safety_info)
-        foods = [f for f in foods if f['id'] in safe_ids]
+        foods = [f for f in foods if f['id'] in safe_ids][:12]
         for f in foods:
             f['is_taboo'] = f['id'] in taboo_tagged
             f['reasons'] = []
             f['pred_score'] = None
-            f['support'] = (f"{f['rating_count']} 人评过" if f.get('rating_count') else None)
+            if f.get('rating_count'):
+                f['support'] = f"🔥 {f['avg_rating']:.1f} 分 · {f['rating_count']} 人评价"
+            else:
+                f['support'] = '🌱 新上架，暂无评价'
 
     return render_template(
         'recommend.html',
