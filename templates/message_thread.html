@@ -1,0 +1,356 @@
+{% extends "base.html" %}
+
+{% block title %}与 {{ peer.username }} 的对话 - 广东美食推荐{% endblock %}
+
+{% block content %}
+
+<style>
+    .thread-page {
+        max-width: 820px;
+        margin: 0 auto;
+    }
+
+    /* ===== 对方信息条 ===== */
+    .peer-bar {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        background: #fff;
+        border-radius: 14px;
+        padding: 14px 20px;
+        margin-bottom: 14px;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+    }
+    .peer-avatar {
+        width: 46px;
+        height: 46px;
+        flex: 0 0 auto;
+        border-radius: 50%;
+        background: #fdeceb;
+        color: #c0392b;
+        font-weight: 700;
+        font-size: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .peer-avatar.merchant { background: #fdf6e3; color: #b7950b; }
+    .peer-avatar.user { background: #eef3f8; color: #5b7c99; }
+    .peer-name {
+        font-size: 16px;
+        font-weight: 700;
+        color: #2c3e50;
+    }
+    .role-tag {
+        font-size: 11px;
+        padding: 1px 8px;
+        border-radius: 10px;
+        margin-left: 8px;
+        background: #eef3f8;
+        color: #5b7c99;
+        vertical-align: 1px;
+    }
+    .role-tag.admin { background: #fdeceb; color: #c0392b; }
+    .role-tag.merchant { background: #fdf6e3; color: #b7950b; }
+    .peer-sub {
+        font-size: 12.5px;
+        color: #a99f96;
+        margin-top: 3px;
+    }
+    .rel-chips {
+        margin-left: auto;
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+    }
+    .rel-chip {
+        font-size: 11.5px;
+        color: #8a7c70;
+        background: #f8f4f0;
+        border-radius: 10px;
+        padding: 2px 9px;
+        text-decoration: none;
+        white-space: nowrap;
+    }
+    .rel-chip:hover { background: #f0e8e0; color: #c0392b; }
+
+    /* ===== 聊天区 ===== */
+    .chat-box {
+        background: #fff;
+        border-radius: 14px;
+        padding: 22px 22px 8px;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+        margin-bottom: 14px;
+    }
+    .day-divider {
+        text-align: center;
+        margin: 18px 0 16px;
+    }
+    .day-divider span {
+        font-size: 12px;
+        color: #b0a49b;
+        background: #f6f1ec;
+        border-radius: 10px;
+        padding: 2px 12px;
+    }
+    .day-divider:first-child { margin-top: 4px; }
+
+    .bubble-row {
+        display: flex;
+        margin-bottom: 14px;
+        align-items: flex-start;
+        gap: 9px;
+    }
+    .bubble-row.mine {
+        flex-direction: row-reverse;
+        justify-content: flex-start;
+    }
+
+    .b-avatar {
+        width: 32px;
+        height: 32px;
+        flex: 0 0 auto;
+        border-radius: 50%;
+        background: #fdeceb;
+        color: #c0392b;
+        font-size: 13px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-top: 2px;
+    }
+    .b-avatar.merchant { background: #fdf6e3; color: #b7950b; }
+    .b-avatar.user { background: #eef3f8; color: #5b7c99; }
+
+    .b-main { max-width: 74%; min-width: 0; }
+    .bubble-row.mine .b-main { display: flex; flex-direction: column; align-items: flex-end; }
+
+    .bubble {
+        display: inline-block;
+        padding: 10px 15px;
+        border-radius: 14px;
+        font-size: 14.5px;
+        line-height: 1.72;
+        white-space: pre-wrap;
+        word-break: break-word;
+        background: #f7f4f1;
+        color: #3d3d3d;
+        border-top-left-radius: 4px;
+    }
+    .bubble-row.mine .bubble {
+        background: #c0392b;
+        color: #fff;
+        border-top-left-radius: 14px;
+        border-top-right-radius: 4px;
+    }
+    .b-meta {
+        font-size: 11.5px;
+        color: #b8ada4;
+        margin-top: 5px;
+        display: flex;
+        gap: 8px;
+        align-items: center;
+    }
+    .b-rel {
+        color: #b0a49b;
+        background: #f8f4f0;
+        border-radius: 8px;
+        padding: 0 7px;
+        font-size: 11px;
+    }
+    .bubble-row.mine .b-rel {
+        background: #fdeceb;
+        color: #c0392b;
+    }
+
+    /* ===== 输入区 ===== */
+    .composer {
+        position: sticky;
+        bottom: 0;
+        background: #fff;
+        border-radius: 14px;
+        padding: 14px 18px 16px;
+        box-shadow: 0 -2px 16px rgba(0,0,0,0.06);
+    }
+    .composer textarea {
+        width: 100%;
+        min-height: 76px;
+        max-height: 200px;
+        padding: 12px 14px;
+        border: 1px solid #ece2d9;
+        border-radius: 10px;
+        font-family: inherit;
+        font-size: 14.5px;
+        line-height: 1.6;
+        resize: vertical;
+        outline: none;
+        box-sizing: border-box;
+        transition: border-color 0.2s;
+    }
+    .composer textarea:focus { border-color: #c0392b; }
+    .composer-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 10px;
+        gap: 10px;
+    }
+    .composer-hint {
+        font-size: 12px;
+        color: #b0a49b;
+    }
+    .btn-send {
+        padding: 9px 26px;
+        border: none;
+        border-radius: 9px;
+        background: #c0392b;
+        color: #fff;
+        font-size: 14.5px;
+        font-family: inherit;
+        cursor: pointer;
+        transition: 0.2s;
+    }
+    .btn-send:hover { background: #a93226; }
+    .btn-send:disabled { background: #d8cfc8; cursor: not-allowed; }
+
+    .chat-empty {
+        text-align: center;
+        color: #b0a49b;
+        font-size: 13.5px;
+        padding: 30px 0 34px;
+        line-height: 1.9;
+    }
+
+    @media (max-width: 640px) {
+        .b-main { max-width: 84%; }
+        .chat-box { padding: 16px 14px 4px; }
+        .peer-bar { padding: 12px 14px; }
+        .rel-chips { display: none; }
+    }
+</style>
+
+<div class="thread-page">
+
+    <div class="peer-bar">
+        <div class="peer-avatar {{ peer.role }}">{{ peer.username[0] }}</div>
+        <div>
+            <div class="peer-name">
+                {{ peer.username }}
+                <span class="role-tag {{ peer.role }}">
+                    {% if peer.role == 'admin' %}管理员
+                    {% elif peer.role == 'merchant' %}商家
+                    {% else %}用户{% endif %}
+                </span>
+            </div>
+            <div class="peer-sub">
+                {% if peer.role == 'admin' %}
+                平台管理员 · 有举报核实等事宜会通过这里与你沟通
+                {% else %}
+                共 {{ thread_messages|length }} 条消息记录
+                {% endif %}
+            </div>
+        </div>
+        {% if report_ids %}
+        <div class="rel-chips">
+            {% for rid in report_ids[:3] %}
+                {% if session.get('role') == 'admin' %}
+                <a class="rel-chip" href="{{ url_for('admin.admin_reports') }}#report-{{ rid }}"
+                   title="跳到举报管理里的这一条">相关举报 #{{ rid }}</a>
+                {% else %}
+                <span class="rel-chip" title="这次沟通关联的举报单号">相关举报 #{{ rid }}</span>
+                {% endif %}
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="chat-box" id="chatBox">
+        {% if thread_messages %}
+            {% set ns = namespace(day='') %}
+            {% for m in thread_messages %}
+                {% set d = m.created_at.strftime('%Y-%m-%d') %}
+                {% if d != ns.day %}
+                <div class="day-divider"><span>{{ m.created_at.strftime('%Y年%m月%d日') }}</span></div>
+                {% set ns.day = d %}
+                {% endif %}
+
+                {% set mine = (m.sender_id == session.get('user_id')) %}
+                <div class="bubble-row{% if mine %} mine{% endif %}" id="msg-{{ m.id }}">
+                    {% if not mine %}
+                    <div class="b-avatar {{ peer.role }}">{{ peer.username[0] }}</div>
+                    {% endif %}
+                    <div class="b-main">
+                        <div class="bubble">{{ m.content }}</div>
+                        <div class="b-meta">
+                            <span>{{ m.created_at.strftime('%H:%M') }}</span>
+                            {% if m.related_report_id %}
+                            <span class="b-rel">举报 #{{ m.related_report_id }}</span>
+                            {% endif %}
+                            {% if mine %}
+                            <span>{{ '已读' if m.is_read else '未读' }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="chat-empty">
+                💬 你们之间还没有消息记录<br>
+                <span style="font-size:12.5px;">在下面写一条，开始这次沟通</span>
+            </div>
+        {% endif %}
+    </div>
+
+    <form class="composer" method="post" action="{{ url_for('message.send') }}" id="composerForm">
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="receiver_id" value="{{ peer.id }}">
+        <input type="hidden" name="next" value="{{ url_for('message.thread', peer_id=peer.id) }}">
+        <textarea name="content" id="composerInput" maxlength="500" required
+                  placeholder="和 {{ peer.username }} 说点什么…（Enter 发送，Shift+Enter 换行）"></textarea>
+        <div class="composer-bar">
+            <span class="composer-hint"><span id="charCount">0</span>/500</span>
+            <button type="submit" class="btn-send" id="sendBtn">发送</button>
+        </div>
+    </form>
+
+</div>
+
+<script>
+    (function () {
+        var box = document.getElementById('chatBox');
+        var input = document.getElementById('composerInput');
+        var form = document.getElementById('composerForm');
+        var btn = document.getElementById('sendBtn');
+        var counter = document.getElementById('charCount');
+
+        // 打开就停在最新一条消息
+        window.scrollTo(0, document.body.scrollHeight);
+
+        // 字数统计
+        function refreshCount() {
+            counter.textContent = input.value.length;
+        }
+        input.addEventListener('input', refreshCount);
+        refreshCount();
+
+        // Enter 发送，Shift + Enter 换行；输入框为空时不提交
+        input.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) {
+                e.preventDefault();
+                if (input.value.trim()) form.submit();
+            }
+        });
+
+        // 防连点重复提交
+        form.addEventListener('submit', function () {
+            if (!input.value.trim()) {
+                btn.disabled = true;
+                setTimeout(function () { btn.disabled = false; }, 800);
+            }
+        });
+    })();
+</script>
+
+{% endblock %}

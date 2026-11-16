@@ -22,164 +22,113 @@
         font-size: 13px;
         margin-top: 4px;
     }
-    .msg-tabs {
-        display: flex;
-        gap: 8px;
-        background: #f0ece8;
-        padding: 4px;
-        border-radius: 10px;
-    }
-    .msg-tabs a {
-        padding: 7px 18px;
-        border-radius: 8px;
-        text-decoration: none;
-        color: #7f8c8d;
-        font-size: 14px;
-        transition: 0.2s;
-    }
-    .msg-tabs a.active {
-        background: #fff;
-        color: #c0392b;
-        font-weight: 600;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.08);
-    }
-    .msg-tabs .dot {
-        display: inline-block;
-        min-width: 18px;
-        padding: 0 5px;
-        margin-left: 4px;
-        background: #c0392b;
-        color: #fff;
-        border-radius: 9px;
-        font-size: 11px;
-        line-height: 18px;
-        text-align: center;
-    }
 
-    .msg-card {
+    /* ===== 会话列表 ===== */
+    .conv-list {
         background: #fff;
-        border: 1px solid #f0e6e0;
         border-radius: 14px;
-        padding: 16px 20px;
-        margin-bottom: 12px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+        box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+        overflow: hidden;
     }
-    .msg-card.unread {
-        border-left: 4px solid #c0392b;
-        background: #fffaf9;
-    }
-    .msg-top {
+    .conv-item {
         display: flex;
         align-items: center;
-        gap: 12px;
+        gap: 14px;
+        padding: 16px 20px;
+        text-decoration: none;
+        color: inherit;
+        border-bottom: 1px solid #f6f1ec;
+        transition: background 0.16s;
     }
-    .msg-avatar {
-        width: 38px;
-        height: 38px;
+    .conv-item:last-child { border-bottom: none; }
+    .conv-item:hover { background: #fffaf9; }
+    .conv-item.has-unread { background: #fffaf9; }
+    .conv-item.has-unread:hover { background: #fff4f2; }
+
+    .conv-avatar {
+        position: relative;
+        width: 46px;
+        height: 46px;
         flex: 0 0 auto;
         border-radius: 50%;
         background: #fdeceb;
         color: #c0392b;
         font-weight: 700;
-        font-size: 16px;
+        font-size: 18px;
         display: flex;
         align-items: center;
         justify-content: center;
     }
-    .msg-who {
+    .conv-avatar.admin { background: #fdeceb; color: #c0392b; }
+    .conv-avatar.merchant { background: #fdf6e3; color: #b7950b; }
+    .conv-avatar.user { background: #eef3f8; color: #5b7c99; }
+    .conv-dot {
+        position: absolute;
+        top: -2px;
+        right: -2px;
+        min-width: 18px;
+        height: 18px;
+        padding: 0 5px;
+        border-radius: 9px;
+        background: #c0392b;
+        color: #fff;
+        font-size: 11px;
+        font-weight: 600;
+        line-height: 18px;
+        text-align: center;
+        box-shadow: 0 0 0 2px #fff;
+    }
+
+    .conv-main {
         flex: 1;
         min-width: 0;
     }
-    .msg-who .name {
+    .conv-name-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 4px;
+    }
+    .conv-name {
+        font-size: 15.5px;
         font-weight: 700;
         color: #2c3e50;
-        font-size: 15px;
     }
     .role-tag {
         font-size: 11px;
         padding: 1px 8px;
         border-radius: 10px;
-        margin-left: 6px;
         background: #eef3f8;
         color: #5b7c99;
-        vertical-align: 1px;
+        flex: 0 0 auto;
     }
     .role-tag.admin { background: #fdeceb; color: #c0392b; }
     .role-tag.merchant { background: #fdf6e3; color: #b7950b; }
-    .msg-time {
-        color: #b0a49b;
+    .conv-preview {
+        font-size: 13.5px;
+        color: #98a0a6;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .conv-preview .me {
+        color: #c0b6ae;
+    }
+    .conv-item.has-unread .conv-preview {
+        color: #6b6159;
+        font-weight: 500;
+    }
+    .conv-side {
+        flex: 0 0 auto;
+        text-align: right;
+        align-self: flex-start;
+        padding-top: 2px;
+    }
+    .conv-time {
         font-size: 12px;
-        margin-top: 2px;
-    }
-    .rel-tag {
-        font-size: 11px;
         color: #b0a49b;
-        background: #f8f4f0;
-        border-radius: 10px;
-        padding: 1px 8px;
-        margin-left: 6px;
+        white-space: nowrap;
     }
-    .msg-body {
-        margin: 12px 0 0 50px;
-        color: #4a4a4a;
-        font-size: 14.5px;
-        line-height: 1.7;
-        white-space: pre-wrap;
-        word-break: break-word;
-    }
-    .msg-actions {
-        margin: 10px 0 0 50px;
-    }
-    .reply-toggle {
-        background: none;
-        border: 1px solid #e8ddd4;
-        color: #8a7c70;
-        border-radius: 8px;
-        padding: 5px 16px;
-        font-size: 13px;
-        cursor: pointer;
-        font-family: inherit;
-        transition: 0.2s;
-    }
-    .reply-toggle:hover {
-        border-color: #c0392b;
-        color: #c0392b;
-    }
-    .reply-form {
-        margin: 12px 0 0 50px;
-        display: none;
-    }
-    .reply-form.show { display: block; }
-    .reply-form textarea {
-        width: 100%;
-        min-height: 74px;
-        padding: 10px 14px;
-        border: 1px solid #e8ddd4;
-        border-radius: 10px;
-        font-family: inherit;
-        font-size: 14px;
-        resize: vertical;
-        outline: none;
-        box-sizing: border-box;
-    }
-    .reply-form textarea:focus { border-color: #c0392b; }
-    .reply-form .row {
-        display: flex;
-        justify-content: flex-end;
-        gap: 10px;
-        margin-top: 8px;
-    }
-    .reply-form button {
-        padding: 7px 20px;
-        border: none;
-        border-radius: 8px;
-        font-size: 14px;
-        cursor: pointer;
-        font-family: inherit;
-    }
-    .btn-send { background: #c0392b; color: #fff; }
-    .btn-send:hover { background: #a93226; }
-    .btn-cancel { background: #f0ece8; color: #7f8c8d; }
 
     .empty-box {
         background: #fff;
@@ -188,91 +137,62 @@
         text-align: center;
         color: #b0a49b;
         box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+        line-height: 1.9;
     }
     @media (max-width: 640px) {
-        .msg-body, .msg-actions, .reply-form { margin-left: 0; }
+        .conv-item { padding: 14px; }
+        .conv-avatar { width: 40px; height: 40px; font-size: 16px; }
     }
 </style>
 
 <div class="msg-head">
     <div>
         <h2>✉️ 我的消息</h2>
-        <p class="sub">管理员会通过这里与你就举报事项沟通</p>
-    </div>
-    <div class="msg-tabs">
-        <a href="{{ url_for('message.inbox', tab='in') }}" class="{{ 'active' if tab == 'in' }}">收到的{% if unread %}<span class="dot">{{ unread }}</span>{% endif %}</a>
-        <a href="{{ url_for('message.inbox', tab='out') }}" class="{{ 'active' if tab == 'out' }}">已发出</a>
+        <p class="sub">
+            {% if conversations %}
+            共 {{ conversations|length }} 个对话{% if unread %}，{{ unread }} 条未读{% endif %} · 点进去可以看到完整聊天记录
+            {% else %}
+            管理员会通过这里与你就举报事项沟通
+            {% endif %}
+        </p>
     </div>
 </div>
 
-{% if messages %}
-    {% for m in messages %}
-    <div class="msg-card{% if tab == 'in' and not m.is_read %} unread{% endif %}">
-        <div class="msg-top">
-            <div class="msg-avatar">{{ m.peer_name[0] }}</div>
-            <div class="msg-who">
-                <div>
-                    <span class="name">{{ m.peer_name }}</span>
-                    <span class="role-tag {{ m.peer_role }}">
-                        {% if m.peer_role == 'admin' %}管理员
-                        {% elif m.peer_role == 'merchant' %}商家
-                        {% else %}用户{% endif %}
-                    </span>
-                    {% if m.related_report_id %}
-                    <span class="rel-tag">举报 #{{ m.related_report_id }}</span>
-                    {% endif %}
-                </div>
-                <div class="msg-time">{{ m.created_at }}</div>
+{% if conversations %}
+<div class="conv-list">
+    {% for c in conversations %}
+    <a class="conv-item{% if c.unread %} has-unread{% endif %}"
+       href="{{ url_for('message.thread', peer_id=c.peer_id) }}">
+        <div class="conv-avatar {{ c.peer_role }}">
+            {{ c.peer_name[0] }}
+            {% if c.unread %}<span class="conv-dot">{{ c.unread }}</span>{% endif %}
+        </div>
+        <div class="conv-main">
+            <div class="conv-name-row">
+                <span class="conv-name">{{ c.peer_name }}</span>
+                <span class="role-tag {{ c.peer_role }}">
+                    {% if c.peer_role == 'admin' %}管理员
+                    {% elif c.peer_role == 'merchant' %}商家
+                    {% else %}用户{% endif %}
+                </span>
+            </div>
+            <div class="conv-preview">
+                {% if c.last_sender == session.get('user_id') %}<span class="me">我：</span>{% endif %}{{ c.last_content }}
             </div>
         </div>
-        <p class="msg-body">{{ m.content }}</p>
-
-        {% if tab == 'in' %}
-        <div class="msg-actions">
-            <button type="button" class="reply-toggle"
-                    data-peer="{{ m.sender_id }}" data-name="{{ m.peer_name }}">回复</button>
-        </div>
-        <form class="reply-form" method="post" action="{{ url_for('message.send') }}">
-            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-            <input type="hidden" name="receiver_id" value="{{ m.sender_id }}">
-            <input type="hidden" name="next" value="{{ url_for('message.inbox', tab='in') }}">
-            <textarea name="content" maxlength="500" required
-                      placeholder="回复 {{ m.peer_name }}…"></textarea>
-            <div class="row">
-                <button type="button" class="btn-cancel">取消</button>
-                <button type="submit" class="btn-send">发送</button>
+        <div class="conv-side">
+            <div class="conv-time">
+                {% if c.last_time %}{{ c.last_time.strftime('%m-%d %H:%M') }}{% endif %}
             </div>
-        </form>
-        {% endif %}
-    </div>
+        </div>
+    </a>
     {% endfor %}
+</div>
 {% else %}
-    <div class="empty-box">
-        {% if tab == 'in' %}
-        📭 暂无新消息<br>
-        <span style="font-size:13px;">有举报需要核实时，管理员会在这里联系你</span>
-        {% else %}
-        📤 你还没有发出过消息
-        {% endif %}
-    </div>
+<div class="empty-box">
+    📭 还没有任何消息<br>
+    <span style="font-size:13px;">有举报需要核实时，管理员会在这里联系你</span>
+</div>
 {% endif %}
-
-<script>
-    document.querySelectorAll('.reply-toggle').forEach(function (btn) {
-        btn.addEventListener('click', function () {
-            var form = btn.closest('.msg-card').querySelector('.reply-form');
-            if (!form) return;
-            form.classList.toggle('show');
-            if (form.classList.contains('show')) {
-                form.querySelector('textarea').focus();
-            }
-        });
-    });
-    document.querySelectorAll('.reply-form .btn-cancel').forEach(function (btn) {
-        btn.addEventListener('click', function () {
-            btn.closest('.reply-form').classList.remove('show');
-        });
-    });
-</script>
 
 {% endblock %}

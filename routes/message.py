@@ -9,6 +9,7 @@ from flask import (
 import pymysql
 
 from utils.db import get_db_connection
+from utils.security import safe_internal_path
 
 message_bp = Blueprint('message', __name__)
 
@@ -24,9 +25,7 @@ def _need_login():
 
 def _safe_next(target, fallback):
     """只允许跳回站内路径，避免被当成开放重定向"""
-    if target and target.startswith('/') and not target.startswith('//'):
-        return target
-    return fallback
+    return safe_internal_path(target) or fallback
 
 
 def _has_conversation(cursor, a, b):
@@ -40,64 +39,113 @@ def _has_conversation(cursor, a, b):
     return cursor.fetchone() is not None
 
 
-# ========== 消息中心 ==========
+# ========== 消息中心：会话列表 ==========
 @message_bp.route('/messages')
 def inbox():
-    """收件箱 / 已发出"""
+    """会话列表：按对话对象聚合，每个对象只显示最后一条消息
+
+    之前是「收到的 / 已发出」两个 tab，同一件事的来回被拆成两堆，
+    看不到上下文。改成按人聚合，点进去看完整往来。
+    """
     resp = _need_login()
     if resp:
         return resp
 
     user_id = session['user_id']
-    tab = request.args.get('tab', 'in')
-    if tab not in ('in', 'out'):
-        tab = 'in'
 
     conn = get_db_connection()
     cursor = conn.cursor(pymysql.cursors.DictCursor)
 
-    if tab == 'in':
-        cursor.execute("""
-            SELECT m.*, u.username AS peer_name, u.role AS peer_role
-            FROM messages m
-            JOIN users u ON m.sender_id = u.id
-            WHERE m.receiver_id = %s
-            ORDER BY m.created_at DESC
-            LIMIT 100
-        """, (user_id,))
-    else:
-        cursor.execute("""
-            SELECT m.*, u.username AS peer_name, u.role AS peer_role
-            FROM messages m
-            JOIN users u ON m.receiver_id = u.id
-            WHERE m.sender_id = %s
-            ORDER BY m.created_at DESC
-            LIMIT 100
-        """, (user_id,))
+    cursor.execute("""
+        SELECT t.peer_id,
+               u.username AS peer_name,
+               u.role     AS peer_role,
+               lm.content AS last_content,
+               lm.created_at AS last_time,
+               lm.sender_id AS last_sender,
+               (SELECT COUNT(*) FROM messages mm
+                 WHERE mm.receiver_id = %s
+                   AND mm.sender_id = t.peer_id
+                   AND mm.is_read = 0) AS unread
+        FROM (
+            SELECT CASE WHEN sender_id = %s THEN receiver_id ELSE sender_id END AS peer_id,
+                   MAX(id) AS last_id
+            FROM messages
+            WHERE sender_id = %s OR receiver_id = %s
+            GROUP BY CASE WHEN sender_id = %s THEN receiver_id ELSE sender_id END
+        ) t
+        JOIN messages lm ON lm.id = t.last_id
+        JOIN users u ON u.id = t.peer_id
+        ORDER BY lm.created_at DESC, lm.id DESC
+    """, (user_id, user_id, user_id, user_id, user_id))
+    conversations = cursor.fetchall()
 
-    messages = cursor.fetchall()
-
-    cursor.execute(
-        "SELECT COUNT(*) AS c FROM messages WHERE receiver_id = %s AND is_read = 0",
-        (user_id,)
-    )
-    unread = cursor.fetchone()['c']
-
-    # 打开收件箱即视为已读（和邮件客户端一致）
-    if tab == 'in' and unread:
-        cursor.execute(
-            "UPDATE messages SET is_read = 1 WHERE receiver_id = %s AND is_read = 0",
-            (user_id,)
-        )
-        conn.commit()
+    unread = sum(c['unread'] for c in conversations)
 
     cursor.close()
     conn.close()
 
     return render_template('messages.html',
-                           messages=messages,
-                           tab=tab,
+                           conversations=conversations,
                            unread=unread)
+
+
+# ========== 与某人的完整对话 ==========
+@message_bp.route('/messages/<int:peer_id>')
+def thread(peer_id):
+    """完整聊天记录：两个人之间所有消息，按时间正序，像聊天窗口一样"""
+    resp = _need_login()
+    if resp:
+        return resp
+
+    user_id = session['user_id']
+    if peer_id == user_id:
+        flash('❌ 不能和自己对话')
+        return redirect(url_for('message.inbox'))
+
+    conn = get_db_connection()
+    cursor = conn.cursor(pymysql.cursors.DictCursor)
+
+    cursor.execute("SELECT id, username, role, is_active FROM users WHERE id = %s",
+                   (peer_id,))
+    peer = cursor.fetchone()
+    if not peer:
+        cursor.close()
+        conn.close()
+        flash('❌ 该用户不存在')
+        return redirect(url_for('message.inbox'))
+
+    # 两个人之间的全部消息（双向）
+    cursor.execute("""
+        SELECT m.id, m.sender_id, m.receiver_id, m.content,
+               m.related_report_id, m.is_read, m.created_at
+        FROM messages m
+        WHERE (m.sender_id = %s AND m.receiver_id = %s)
+           OR (m.sender_id = %s AND m.receiver_id = %s)
+        ORDER BY m.created_at ASC, m.id ASC
+    """, (user_id, peer_id, peer_id, user_id))
+    thread_messages = cursor.fetchall()
+
+    # 涉及到的举报编号，气泡上标出来，方便对着举报单看
+    report_ids = sorted({m['related_report_id'] for m in thread_messages
+                         if m['related_report_id']})
+
+    # 打开对话即把对方发来的消息标记为已读
+    cursor.execute("""
+        UPDATE messages SET is_read = 1
+        WHERE receiver_id = %s AND sender_id = %s AND is_read = 0
+    """, (user_id, peer_id))
+    conn.commit()
+
+    cursor.close()
+    conn.close()
+
+    return render_template('message_thread.html',
+                           peer=peer,
+                           thread_messages=thread_messages,
+                           report_ids=report_ids,
+                           back_url=url_for('message.inbox'),
+                           back_label='返回消息列表')
 
 
 # ========== 发送消息 ==========
@@ -160,7 +208,7 @@ def send():
             VALUES (%s, %s, %s, %s)
         """, (sender_id, receiver_id, content, report_id))
         conn.commit()
-        flash('✅ 消息已发送')
+        flash('✅ 消息已发送，可在「我的消息」里查看完整对话')
     except Exception:
         conn.rollback()
         flash('❌ 发送失败，请稍后重试')

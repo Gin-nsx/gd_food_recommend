@@ -41,6 +41,12 @@
         vertical-align: middle;
     }
     .report-table td.nowrap { white-space: nowrap; }
+    /* 从消息页点「相关举报 #x」跳过来时，把对应行highlight一下 */
+    .report-table tr:target {
+        background: #fff6f4;
+        box-shadow: inset 3px 0 0 #c0392b;
+        scroll-margin-top: 90px;
+    }
     .report-table td.nowrap.time { color: #7f8c8d; font-size: 12.5px; }
     .report-table td.col-ops { width: 168px; }
     .status-pending { color: #f39c12; font-weight: 600; }
@@ -266,7 +272,7 @@
             </thead>
             <tbody>
                 {% for r in food_reports %}
-                <tr>
+                <tr id="report-{{ r.id }}">
                     <td>{{ r.reporter_name }}</td>
                     <td>
                         {% if r.food_id %}
@@ -357,7 +363,7 @@
             </thead>
             <tbody>
                 {% for r in comment_reports %}
-                <tr>
+                <tr id="report-{{ r.id }}">
                     <td>{{ r.reporter_name }}</td>
                     <td>
                         {% if r.comment_content %}
