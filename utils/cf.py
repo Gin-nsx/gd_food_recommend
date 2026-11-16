@@ -367,6 +367,10 @@ def explain_candidates(target_user_id, top_n=20, k_neighbors=5,
     for i in order:
         if not np.isfinite(scores[i]):
             continue
+        # 打分为 0 说明这道菜和用户评过的菜没有任何相似度支撑（典型是刚上架、
+        # 还没人评分的新菜），硬推上去只会显示"预测 1 分"，不如不推。
+        if scores[i] <= 0:
+            continue
 
         # 该候选菜与本用户已评分菜品的相似度，只保留正相关；
         # 排序时优先「喜欢过的菜」（4 分以上），同类里再按相似度排

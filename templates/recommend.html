@@ -197,6 +197,43 @@
         background: #eefaf3;
         border-left-color: #6ec29a;
     }
+
+    /* 分批展示：超出首屏的卡片先藏起来，点「加载更多」再放出 */
+    .food-card.is-hidden { display: none; }
+
+    .load-more-wrap {
+        text-align: center;
+        margin: 30px 0 14px;
+    }
+    .load-more-info {
+        color: #a2938a;
+        font-size: 13px;
+        margin-bottom: 12px;
+    }
+    .load-more-info b { color: #c0392b; }
+    .load-more-btn {
+        min-width: 220px;
+        padding: 11px 30px;
+        border: none;
+        border-radius: 999px;
+        background: linear-gradient(135deg, #e74c3c, #c0392b);
+        color: #fff;
+        font-size: 15px;
+        font-weight: 600;
+        cursor: pointer;
+        box-shadow: 0 6px 16px rgba(192, 57, 43, .24);
+        transition: transform .2s, box-shadow .2s, opacity .2s;
+    }
+    .load-more-btn:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 22px rgba(192, 57, 43, .3);
+    }
+    .load-more-btn:disabled {
+        background: #dcd3cc;
+        color: #fff;
+        cursor: default;
+        box-shadow: none;
+    }
 </style>
 
 <h2 class="page-title">✨ 猜你喜欢</h2>
@@ -222,7 +259,8 @@
 <div class="food-grid">
     {% if foods %}
         {% for food in foods %}
-        <div class="food-card"
+        <div class="food-card{% if loop.index0 >= page_size %} is-hidden{% endif %}"
+             data-rec-idx="{{ loop.index0 }}"
              onclick="location.href='{{ url_for('food.food_detail', food_id=food.id) }}'">
             <div class="food-image">
                 {% if food.image_url %}
@@ -275,5 +313,52 @@
         </div>
     {% endif %}
 </div>
+
+{% if foods and foods|length > page_size %}
+{% set tail_note = '口碑分' if is_cold_start else '口味匹配度' %}
+<div class="load-more-wrap">
+    <div class="load-more-info" id="lmInfo">
+        已为你推荐 <b>{{ page_size }}</b> / <b>{{ foods|length }}</b> 道，越往后{{ tail_note }}越低
+    </div>
+    <button class="load-more-btn" id="loadMoreBtn" type="button">
+        加载更多（还有 {{ foods|length - page_size }} 道）
+    </button>
+</div>
+{% endif %}
+
+<script>
+    (function () {
+        var btn = document.getElementById('loadMoreBtn');
+        var info = document.getElementById('lmInfo');
+        if (!btn) return;
+
+        var cards = document.querySelectorAll('.food-card[data-rec-idx]');
+        var shown = document.querySelectorAll('.food-card:not(.is-hidden)').length;
+        var size = {{ page_size }};
+        var tailNote = '{{ "口碑分" if is_cold_start else "口味匹配度" }}';
+
+        btn.addEventListener('click', function () {
+            var next = 0;
+            for (var i = 0; i < cards.length && next < size; i++) {
+                if (cards[i].classList.contains('is-hidden')) {
+                    cards[i].classList.remove('is-hidden');
+                    next++;
+                }
+            }
+            shown += next;
+
+            if (info) {
+                info.innerHTML = '已为你推荐 <b>' + shown + '</b> / <b>' + cards.length +
+                                 '</b> 道，越往后' + tailNote + '越低';
+            }
+            if (shown >= cards.length) {
+                btn.disabled = true;
+                btn.textContent = '已经到底啦';
+            } else {
+                btn.textContent = '加载更多（还有 ' + (cards.length - shown) + ' 道）';
+            }
+        });
+    })();
+</script>
 
 {% endblock %}

@@ -6,6 +6,13 @@ from utils.cf import MIN_RELEVANT, explain_candidates, similarity_label
 
 recommend_bp = Blueprint('recommend', __name__)
 
+# 推荐列表规模：
+#   一次最多算 REC_MAX 条（再往后推，菜品之间的差异已经很弱，排序信噪比低，
+#   硬凑数量反而会推出「跟你口味没关系」的菜）；
+#   页面首屏显示 REC_PAGE_SIZE 条，剩下的点「加载更多」再展开。
+REC_PAGE_SIZE = 12
+REC_MAX = 48
+
 METHOD_LABELS = {
     'random': '随机推荐',
     'popular': '热门推荐',
@@ -372,7 +379,7 @@ def recommend_page():
     taste = get_taste_profile(user_id)
 
     # 带推荐理由的候选列表（内部仍是 Item-CF 打分，只是把「谁把它顶上来」一并返回）
-    items, cf_profile = explain_candidates(user_id, top_n=20, k_neighbors=5)
+    items, cf_profile = explain_candidates(user_id, top_n=REC_MAX, k_neighbors=5)
 
     is_cold_start = not items
     if items:
@@ -383,12 +390,13 @@ def recommend_page():
         ref_ids = {r['ref_food_id'] for it in items for r in it['reasons']}
         names = get_food_names(set(food_ids) | ref_ids)
         foods = attach_reasons(foods, items, names)
+        foods = foods[:REC_MAX]
     else:
         # 多取一些再过滤：过敏/黑名单可能剔掉几条，避免过滤后只剩一小撮
-        foods = get_hot_foods(limit=24)
+        foods = get_hot_foods(limit=REC_MAX + 12)
         hot_ids = [f['id'] for f in foods]
         safe_ids, taboo_tagged = apply_safety_filter(hot_ids, safety_info)
-        foods = [f for f in foods if f['id'] in safe_ids][:12]
+        foods = [f for f in foods if f['id'] in safe_ids][:REC_MAX]
         for f in foods:
             f['is_taboo'] = f['id'] in taboo_tagged
             f['reasons'] = []
@@ -404,6 +412,7 @@ def recommend_page():
         is_cold_start=is_cold_start,
         taste=taste,
         cf_profile=cf_profile,
+        page_size=REC_PAGE_SIZE,
     )
 
 @recommend_bp.route('/recommend/evaluate')
