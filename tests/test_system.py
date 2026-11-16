@@ -58,6 +58,7 @@ U_ID = M_ID = M2_ID = A_ID = U2_ID = None
 FOOD_A = FOOD_B = None          # A=未评分菜（可评分/收藏/举报）, B=已评分菜（改评分用）
 TEST_FOOD_ID = None             # 商家用例创建的菜
 ORIG_STATE = {}   # {food_id: (avg_rating, like_count, status)}，清理时原样还原
+VIEW_FLOOR = None  # 测试开始前 food_views 的最大 id，跑完把新增的浏览记录删掉
 REPORT_FOOD_ID = None
 REPORT_COMMENT_ID = None
 MSG_ID = None
@@ -213,7 +214,7 @@ def _recalc_foods(ids):
 
 def cleanup(residual=False):
     """删除本脚本造的数据；residual=True 时顺带清历史残留的 __t_ 账号"""
-    global CREATED_FOODS
+    global CREATED_FOODS, VIEW_FLOOR
     ids = []
     for name in CREATED_USERS:
         row = sql_one("SELECT id FROM users WHERE username=%s", (name,))
@@ -240,12 +241,16 @@ def cleanup(residual=False):
             if status:
                 sql_exec("UPDATE foods SET status=%s WHERE id=%s", (status, fid))
         _recalc_foods(list(ORIG_STATE.keys()))
+    # 测试访问详情页会写 food_views，删掉本次新增的，别让测试把每日热榜的口径测歪
+    if VIEW_FLOOR is not None:
+        sql_exec("DELETE FROM food_views WHERE id > %s", (VIEW_FLOOR,))
     CREATED_FOODS = []
 
 
 def prepare():
-    global U_ID, M_ID, M2_ID, A_ID, U2_ID, FOOD_A, FOOD_B
+    global U_ID, M_ID, M2_ID, A_ID, U2_ID, FOOD_A, FOOD_B, VIEW_FLOOR
 
+    VIEW_FLOOR = sql_one("SELECT COALESCE(MAX(id), 0) FROM food_views")[0]
     cleanup(residual=True)
 
     create_user(U_NAME, PWD, 'user')
@@ -1126,6 +1131,99 @@ def rc13():
     cf = rows.get('item_cf', {}).get('precision', 0)
     assert cf > rnd, f'Item-CF {cf} 未超过随机 {rnd}'
     return True, f'随机 {rnd:.4f} vs Item-CF {cf:.4f}（提升 {(cf/max(rnd,1e-9)-1)*100:.0f}%）'
+
+
+# ---------------------------------------------------------------------------
+# E2. 每日热榜（首页非个性化轮播）
+# ---------------------------------------------------------------------------
+def _daily_block(body):
+    """从首页 HTML 截出热榜区块，避免和下方的普通卡片混淆"""
+    start = body.find('id="dailyStage"')
+    end = body.find('</section>', start)
+    return body[start:end] if start != -1 and end != -1 else ''
+
+
+def _daily_names(body):
+    return re.findall(r'<div class="nm">([^<]+)</div>', _daily_block(body))
+
+
+def _daily_food_ids(body):
+    return [int(x) for x in re.findall(r'href="/food/(\d+)"', _daily_block(body))]
+
+
+@case('DP-01', '每日热榜', '首页展示每日热榜轮播',
+      'GET /（不带任何筛选）', '出现热榜区块，候选不少于 3 条')
+def dp01():
+    body = html_of(mk().get('/'))
+    assert 'id="dailyStage"' in body, '首页没有渲染热榜区块'
+    names = _daily_names(body)
+    assert len(names) >= 3, f'榜单只有 {len(names)} 条'
+    return True, f'{len(names)} 条：{"、".join(names)}'
+
+
+@case('DP-02', '每日热榜', '榜上菜品均为已上架状态',
+      '取榜单菜品 ID 反查 foods.status', '全部为 approved，不含待审核/下架菜')
+def dp02():
+    body = html_of(mk().get('/'))
+    ids = _daily_food_ids(body)
+    assert ids, '没有解析到榜单菜品'
+    ph = ','.join(['%s'] * len(ids))
+    rows = sql_rows(f"SELECT id, status FROM foods WHERE id IN ({ph})", ids)
+    bad = [(i, s) for i, s in rows if s != 'approved']
+    assert not bad, f'存在非上架菜品：{bad}'
+    assert len(rows) == len(set(ids)), '榜单里有菜品不存在'
+    return True, f'{len(ids)} 道全部 approved'
+
+
+@case('DP-03', '每日热榜', '榜单不重复且分类不过度集中',
+      '检查菜名唯一性与分类分布', '无重复菜，同一分类最多 2 道')
+def dp03():
+    body = html_of(mk().get('/'))
+    names = _daily_names(body)
+    ids = _daily_food_ids(body)
+    assert names, '榜单为空'
+    assert len(names) == len(set(names)), '榜单出现重复菜品'
+    ph = ','.join(['%s'] * len(ids))
+    rows = sql_rows(f"SELECT category_id, COUNT(*) AS c FROM foods "
+                    f"WHERE id IN ({ph}) GROUP BY category_id", ids)
+    top = max((c for _, c in rows), default=0)
+    assert top <= 2, f'单一分类占了 {top} 道'
+    return True, f'{len(names)} 道跨越 {len(rows)} 个分类，单类最多 {top} 道'
+
+
+@case('DP-04', '每日热榜', '搜索与分类筛选时不展示热榜',
+      'GET /?q=肠粉 与 GET /?category=1', '两个页面均不渲染热榜区块')
+def dp04():
+    for url in ('/?q=肠粉', '/?category=1'):
+        body = html_of(mk().get(url))
+        assert 'id="dailyStage"' not in body, f'{url} 仍展示了热榜'
+    return True, '筛选结果页均未渲染'
+
+
+@case('DP-05', '每日热榜', '热榜对所有用户一致（非个性化）',
+      '游客与两个不同账号分别访问首页', '三份榜单完全相同')
+def dp05():
+    guest = _daily_names(html_of(mk().get('/')))
+    u1 = _daily_names(html_of(mk(U_ID, U_NAME, 'user').get('/')))
+    u2 = _daily_names(html_of(mk(U2_ID, U2_NAME, 'user').get('/')))
+    assert guest, '榜单为空'
+    assert guest == u1 == u2, f'不同用户看到不同榜单：\n{guest}\n{u1}\n{u2}'
+    return True, f'三方一致，{len(guest)} 条'
+
+
+@case('DP-06', '每日热榜', '浏览详情页计入浏览量且同会话去重',
+      '同一客户端连续访问同一道菜 3 次', 'food_views 只增加 1 条')
+def dp06():
+    row = sql_one("SELECT id FROM foods WHERE status='approved' ORDER BY id DESC LIMIT 1")
+    assert row, '没有已上架的菜品可用'
+    fid = row[0]
+    before = sql_one("SELECT COUNT(*) FROM food_views WHERE food_id=%s", (fid,))[0]
+    c = mk()
+    for _ in range(3):
+        c.get(f'/food/{fid}')
+    after = sql_one("SELECT COUNT(*) FROM food_views WHERE food_id=%s", (fid,))[0]
+    assert after - before == 1, f'实际增加 {after - before} 条'
+    return True, '连续 3 次访问只记 1 条 PV'
 
 
 # ---------------------------------------------------------------------------

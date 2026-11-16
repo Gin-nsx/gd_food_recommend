@@ -1,6 +1,6 @@
 # 建表脚本：与线上 food_db（MySQL 8.0）结构保持一致
 # 用法：python create_tables.py
-# 说明：会自动创建数据库（若不存在），再建 11 张表；可重复执行，不会清空数据。
+# 说明：会自动创建数据库（若不存在），再建 12 张表；可重复执行，不会清空数据。
 import pymysql
 
 from config import DB_CONFIG
@@ -176,6 +176,19 @@ CREATE TABLE IF NOT EXISTS messages (
     FOREIGN KEY (receiver_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (related_report_id) REFERENCES reports(id) ON DELETE SET NULL
 ) COMMENT='站内消息表';
+
+-- 12. 浏览明细表（PV 口径，供首页每日热榜统计）
+CREATE TABLE IF NOT EXISTS food_views (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '浏览记录ID',
+    food_id INT NOT NULL COMMENT '美食ID',
+    user_id INT COMMENT '用户ID（未登录为空）',
+    visitor_key VARCHAR(64) COMMENT '匿名访客标识（session 摘要，仅用于去重）',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '浏览时间',
+    KEY idx_food_views_time (created_at),
+    KEY idx_food_views_food_time (food_id, created_at),
+    FOREIGN KEY (food_id) REFERENCES foods(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+) COMMENT='美食浏览明细表（PV 口径）';
 """
 
 

@@ -1,8 +1,10 @@
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash, jsonify
 from urllib.parse import quote
+import secrets
 import pymysql
 from utils.db import get_db_connection
 from utils.cf import similar_foods, similarity_label
+from utils.daily_pick import record_view
 from utils.security import safe_internal_path
 
 food_bp = Blueprint('food', __name__)
@@ -167,6 +169,15 @@ def food_detail(food_id):
 
     cursor.close()
     conn.close()
+
+    # 记录一次浏览，作为首页每日热榜的 PV 来源。
+    # 管理员预览、下架菜不计入；同一访客 30 分钟内反复刷同一道菜只算一次。
+    if food['status'] == 'approved' and not is_admin:
+        visitor_key = session.get('visitor_key')
+        if not visitor_key:
+            visitor_key = secrets.token_hex(8)
+            session['visitor_key'] = visitor_key
+        record_view(food['id'], user_id=session.get('user_id'), visitor_key=visitor_key)
 
     return render_template('food_detail.html',
                            food=food,

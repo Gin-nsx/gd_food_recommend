@@ -1,4 +1,5 @@
 from flask import Flask, render_template, request, session, flash, redirect, url_for, jsonify, g
+from datetime import datetime
 import pymysql
 
 from config import (
@@ -18,6 +19,7 @@ from routes.message import message_bp, unread_count
 from routes.recommend import recommend_bp
 from routes.user import user_bp
 from utils.db import get_db_connection
+from utils.daily_pick import get_daily_picks
 from utils.search import expand_terms, expand_note
 from utils.security import get_csrf_token, validate_csrf
 
@@ -182,6 +184,7 @@ def index():
     user_allergy = ''
     user_taboo = ''
     hide_risk = False
+    black_food_ids = []
     if session.get('user_id'):
         cursor.execute(
             "SELECT allergy, taboo, hide_risk FROM users WHERE id = %s",
@@ -193,8 +196,21 @@ def index():
             user_taboo = pref['taboo'] or ''
             hide_risk = bool(pref['hide_risk'])
 
+        # 拉黑的菜不出现在热榜里（只是尊重黑名单，不改变榜单的全局口径）
+        cursor.execute(
+            "SELECT food_id FROM blacklists WHERE user_id = %s AND food_id IS NOT NULL",
+            (session['user_id'],)
+        )
+        black_food_ids = [row['food_id'] for row in cursor.fetchall()]
+
     cursor.close()
     conn.close()
+
+    # 每日热榜：全站同一份，与「猜你喜欢」的个性化推荐是两条独立链路。
+    # 只有在首页默认视图（没有搜索词、没有选分类）时才需要，避免干扰筛选结果。
+    daily_picks = []
+    if not keyword and not category_id:
+        daily_picks = get_daily_picks(limit=5, exclude_ids=black_food_ids)['items']
 
     return render_template('index.html',
                            foods=foods,
@@ -204,7 +220,9 @@ def index():
                            selected_category=category_id,
                            user_allergy=user_allergy,
                            user_taboo=user_taboo,
-                           hide_risk=hide_risk)
+                           hide_risk=hide_risk,
+                           daily_picks=daily_picks,
+                           today_str=f"{datetime.now().month} 月 {datetime.now().day} 日")
 
 
 if __name__ == '__main__':

@@ -274,6 +274,349 @@
         .pref-controls { gap: 10px 14px; padding: 11px 13px; }
         .pref-controls .pref-tags { margin-left: 0; width: 100%; }
     }
+
+    /* ===== 今日热榜 ===== */
+    .daily { margin-bottom: 30px; }
+    .daily-head {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 16px;
+        flex-wrap: wrap;
+        margin-bottom: 16px;
+    }
+    .daily-head .eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 9px;
+        font-size: 10.5px;
+        font-weight: 600;
+        letter-spacing: .22em;
+        text-transform: uppercase;
+        color: var(--gold);
+        margin-bottom: 9px;
+    }
+    .daily-head .eyebrow::before {
+        content: "";
+        width: 22px; height: 1px;
+        background: var(--gold);
+        opacity: .6;
+    }
+    .daily-head h2 {
+        font-family: var(--font-serif);
+        font-size: 28px;
+        font-weight: 700;
+        letter-spacing: .05em;
+        color: var(--ink);
+        line-height: 1.2;
+    }
+    .daily-head .sub {
+        margin-top: 7px;
+        font-size: 12.5px;
+        color: var(--ink-3);
+        letter-spacing: .01em;
+    }
+    .daily-head .sub b {
+        color: var(--brand);
+        font-weight: 600;
+        font-family: var(--font-num);
+        margin: 0 2px;
+    }
+    .daily-arrows { display: flex; gap: 8px; }
+    .daily-arrows button {
+        width: 38px; height: 38px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        border: 1px solid var(--line-2);
+        background: var(--surface);
+        color: var(--ink-2);
+        cursor: pointer;
+        transition: all .22s var(--ease);
+    }
+    .daily-arrows button:hover {
+        border-color: rgba(162, 58, 37, .38);
+        background: var(--brand-soft);
+        color: var(--brand);
+    }
+    .daily-arrows button:active { transform: scale(.94); }
+
+    .daily-body {
+        display: grid;
+        grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr);
+        gap: 14px;
+        align-items: stretch;
+    }
+
+    /* 轮播舞台 */
+    .daily-stage {
+        position: relative;
+        aspect-ratio: 16 / 10;
+        border-radius: var(--r-lg);
+        overflow: hidden;
+        background: #241408;
+        box-shadow: var(--sh-2);
+        isolation: isolate;
+    }
+    .daily-stage .slide {
+        position: absolute;
+        inset: 0;
+        opacity: 0;
+        visibility: hidden;
+        transform: scale(1.03);
+        transition: opacity .68s var(--ease), transform 1.3s var(--ease), visibility .68s;
+        text-decoration: none;
+        display: block;
+    }
+    .daily-stage .slide.is-active {
+        opacity: 1;
+        visibility: visible;
+        transform: scale(1);
+        z-index: 1;
+    }
+    .daily-stage .slide img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+        filter: saturate(1.06) contrast(1.03) brightness(1.03);
+    }
+    .daily-stage .slide::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background:
+            linear-gradient(180deg, rgba(22, 11, 4, .02) 0%, rgba(20, 10, 4, .14) 44%, rgba(14, 7, 3, .80) 100%),
+            linear-gradient(76deg, rgba(14, 7, 3, .58) 0%, rgba(14, 7, 3, .10) 48%, transparent 72%);
+    }
+    .slide-body {
+        position: absolute;
+        left: 0; right: 0; bottom: 0;
+        z-index: 2;
+        padding: 30px 34px 26px;
+        color: #FFF6EA;
+    }
+    .slide-no {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-family: var(--font-num);
+        font-size: 11px;
+        letter-spacing: .26em;
+        color: rgba(240, 211, 168, .86);
+        margin-bottom: 9px;
+    }
+    .slide-no::after {
+        content: "";
+        flex: 1;
+        max-width: 60px;
+        height: 1px;
+        background: linear-gradient(90deg, rgba(240, 211, 168, .45), transparent);
+    }
+    .slide-body h3 {
+        font-family: var(--font-serif);
+        font-size: 34px;
+        font-weight: 700;
+        letter-spacing: .05em;
+        line-height: 1.22;
+        margin: 0 0 10px;
+        color: #FFF8EF;
+        text-shadow: 0 2px 20px rgba(0, 0, 0, .4);
+    }
+    .slide-meta {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        font-size: 13px;
+        color: rgba(255, 244, 231, .76);
+        margin-bottom: 11px;
+    }
+    .slide-meta .rate {
+        font-family: var(--font-num);
+        font-weight: 700;
+        color: #F0C98A;
+    }
+    .slide-meta .rate i { font-style: normal; font-size: 11px; margin-right: 2px; }
+    .slide-meta .price {
+        font-family: var(--font-num);
+        font-weight: 700;
+        color: #FFE2BC;
+    }
+    .slide-meta .sep {
+        width: 3px; height: 3px;
+        border-radius: 50%;
+        background: rgba(255, 244, 231, .32);
+    }
+    .slide-reason {
+        font-size: 12.5px;
+        line-height: 1.7;
+        color: rgba(255, 244, 231, .58);
+        margin: 0 0 18px;
+        letter-spacing: .02em;
+    }
+    .slide-cta {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 9px 20px;
+        border-radius: 99px;
+        background: rgba(255, 246, 234, .94);
+        color: #5A2110;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: .04em;
+        transition: all .24s var(--ease);
+    }
+    .daily-stage .slide:hover .slide-cta { background: #fff; gap: 12px; }
+
+    .slide-dots {
+        position: absolute;
+        right: 26px;
+        bottom: 26px;
+        z-index: 3;
+        display: flex;
+        gap: 7px;
+    }
+    .slide-dots button {
+        width: 20px; height: 3px;
+        padding: 0;
+        border: 0;
+        border-radius: 2px;
+        background: rgba(255, 246, 234, .26);
+        cursor: pointer;
+        transition: all .32s var(--ease);
+    }
+    .slide-dots button.on {
+        width: 36px;
+        background: #E8C48C;
+    }
+
+    /* 右侧榜单 */
+    .daily-rank {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        margin: 0;
+        padding: 9px;
+        list-style: none;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--r-lg);
+        box-shadow: var(--sh-1);
+    }
+    .daily-rank li {
+        position: relative;
+        flex: 1 1 0;
+        display: flex;
+        align-items: center;
+        gap: 13px;
+        min-height: 0;
+        padding: 10px 15px;
+        border-radius: var(--r);
+        cursor: pointer;
+        transition: background .22s var(--ease);
+    }
+    .daily-rank li + li::after {
+        content: "";
+        position: absolute;
+        left: 15px;
+        right: 15px;
+        top: 0;
+        height: 1px;
+        background: var(--line);
+    }
+    .daily-rank li:hover { background: #FBF5EC; }
+    .daily-rank li.is-active { background: var(--brand-soft); }
+    .daily-rank li.is-active + li::after,
+    .daily-rank li.is-active::after { opacity: 0; }
+    .daily-rank li.is-active .nm { color: var(--brand); }
+    .daily-rank .no {
+        flex: 0 0 20px;
+        font-family: var(--font-num);
+        font-size: 11.5px;
+        font-weight: 600;
+        letter-spacing: .02em;
+        color: var(--ink-4);
+        transition: color .22s var(--ease);
+    }
+    .daily-rank li.is-active .no { color: var(--brand); }
+    .daily-rank .info { min-width: 0; flex: 1; }
+    .daily-rank .nm {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--ink);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .daily-rank .sm {
+        margin-top: 3px;
+        font-size: 12px;
+        color: var(--ink-3);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    @media (max-width: 1080px) {
+        .daily-body { grid-template-columns: 1fr; }
+        .daily-stage { aspect-ratio: 16 / 10; }
+        .daily-rank {
+            flex-direction: row;
+            overflow-x: auto;
+            padding: 8px;
+            scrollbar-width: none;
+        }
+        .daily-rank::-webkit-scrollbar { display: none; }
+        .daily-rank li { flex: 0 0 auto; padding: 9px 15px; }
+        .daily-rank li + li::after { display: none; }
+        .daily-rank .sm { display: none; }
+    }
+    @media (max-width: 768px) {
+        .daily { margin-bottom: 24px; }
+        .daily-head h2 { font-size: 23px; }
+        .daily-head .eyebrow { margin-bottom: 7px; }
+        .daily-head .sub { font-size: 12px; }
+        .daily-arrows { display: none; }
+        .daily-stage { aspect-ratio: 4 / 3.55; border-radius: var(--r); }
+        /* 窄屏内容是上下叠的，去掉横向斜切渐变，否则照片被压得发灰 */
+        .daily-stage .slide::after {
+            background: linear-gradient(180deg, rgba(20, 10, 4, .04) 0%,
+                                                rgba(20, 10, 4, .16) 34%,
+                                                rgba(14, 7, 3, .86) 100%);
+        }
+        .slide-body { padding: 20px 20px 20px; }
+        .slide-no { font-size: 10px; margin-bottom: 7px; }
+        .slide-body h3 { font-size: 25px; margin-bottom: 8px; }
+        .slide-meta { font-size: 12px; margin-bottom: 9px; }
+        .slide-reason { font-size: 12px; margin-bottom: 14px; line-height: 1.65; }
+        .slide-cta { padding: 7px 16px; font-size: 12.5px; }
+        .slide-dots { right: 18px; bottom: 18px; }
+        .slide-dots button { width: 16px; }
+        .slide-dots button.on { width: 28px; }
+
+        /* 窄屏下拉成一格一格的，比横向滚动更好点按 */
+        .daily-rank {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+            overflow: visible;
+            padding: 7px;
+        }
+        .daily-rank li {
+            flex: none;
+            padding: 9px 11px;
+            border: 1px solid var(--line);
+        }
+        .daily-rank li.is-active {
+            border-color: rgba(162, 58, 37, .22);
+        }
+        .daily-rank li:last-child:nth-child(odd) { grid-column: span 2; }
+        .daily-rank .no { flex: 0 0 18px; font-size: 11px; }
+        .daily-rank .nm { font-size: 13.5px; }
+    }
 </style>
 
 <!-- ====== 封面 ====== -->
@@ -317,6 +660,81 @@
         </div>
     </div>
 </section>
+
+<!-- ====== 今日热榜 ====== -->
+{% if daily_picks %}
+<section class="daily">
+    <div class="daily-head">
+        <div>
+            <div class="eyebrow">Daily Picks · {{ today_str }}</div>
+            <h2>今日热榜</h2>
+            <p class="sub">
+                按今天浏览量和近 7 天口碑排序，每日更新
+            </p>
+        </div>
+        <div class="daily-arrows">
+            <button type="button" id="dailyPrev" aria-label="上一道">
+                <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                    <path d="M10 3 5.5 8 10 13" stroke="currentColor" stroke-width="1.6"
+                          stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </button>
+            <button type="button" id="dailyNext" aria-label="下一道">
+                <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                    <path d="M6 3 10.5 8 6 13" stroke="currentColor" stroke-width="1.6"
+                          stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <div class="daily-body">
+        <div class="daily-stage" id="dailyStage">
+            {% for p in daily_picks %}
+            <a class="slide {% if loop.first %}is-active{% endif %}"
+               href="{{ url_for('food.food_detail', food_id=p.id) }}"
+               data-i="{{ loop.index0 }}">
+                {% if p.image_url %}
+                <img src="{{ url_for('static', filename=p.image_url) }}" alt="{{ p.name }}">
+                {% endif %}
+                <div class="slide-body">
+                    <div class="slide-no">NO.{{ '%02d'|format(p.rank) }}</div>
+                    <h3>{{ p.name }}</h3>
+                    <div class="slide-meta">
+                        <span class="rate"><i>★</i>{{ p.avg_rating or '—' }}</span>
+                        <span class="sep"></span>
+                        <span class="price">¥{{ '%g'|format(p.price|float) }}</span>
+                        <span class="sep"></span>
+                        <span>{{ p.category_name }}{% if p.merchant_name %} · {{ p.merchant_name }}{% endif %}</span>
+                    </div>
+                    <p class="slide-reason">{{ p.reason }}</p>
+                    <span class="slide-cta">看看这道菜 →</span>
+                </div>
+            </a>
+            {% endfor %}
+
+            <div class="slide-dots" id="dailyDots">
+                {% for p in daily_picks %}
+                <button type="button" class="{% if loop.first %}on{% endif %}"
+                        aria-label="第 {{ loop.index }} 道"></button>
+                {% endfor %}
+            </div>
+        </div>
+
+        <ol class="daily-rank" id="dailyRank">
+            {% for p in daily_picks %}
+            <li class="{% if loop.first %}is-active{% endif %}" data-i="{{ loop.index0 }}">
+                <span class="no">{{ '%02d'|format(p.rank) }}</span>
+                <div class="info">
+                    <div class="nm">{{ p.name }}</div>
+                    <div class="sm">{{ p.reason }}</div>
+                </div>
+            </li>
+            {% endfor %}
+        </ol>
+    </div>
+</section>
+{% endif %}
 
 <!-- ====== 分类快筛 ====== -->
 {% if categories %}
@@ -460,6 +878,96 @@
 
         toggle.addEventListener('change', apply);
         apply();
+    })();
+</script>
+
+<script>
+    // ===== 今日热榜轮播 =====
+    // 图与右侧榜单共用一套索引：点榜单、点圆点、按方向键、左右滑动都会同步切换。
+    (function () {
+        var stage = document.getElementById('dailyStage');
+        if (!stage) return;
+
+        var slides = [].slice.call(stage.querySelectorAll('.slide'));
+        var ranks = [].slice.call(document.querySelectorAll('#dailyRank li'));
+        var dots = [].slice.call(document.querySelectorAll('#dailyDots button'));
+        if (slides.length < 2) return;
+
+        var total = slides.length;
+        var current = 0;
+        var timer = null;
+        var DURATION = 6000;
+        var calm = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+        function go(i) {
+            current = (i + total) % total;
+            slides.forEach(function (el, k) { el.classList.toggle('is-active', k === current); });
+            ranks.forEach(function (el, k) { el.classList.toggle('is-active', k === current); });
+            dots.forEach(function (el, k) { el.classList.toggle('on', k === current); });
+        }
+
+        function stop() {
+            if (timer) { clearInterval(timer); timer = null; }
+        }
+
+        function play() {
+            stop();
+            if (!calm) {
+                timer = setInterval(function () { go(current + 1); }, DURATION);
+            }
+        }
+
+        // 手动切换后重新计时，避免刚点完就自动跳走
+        function jump(i) {
+            go(i);
+            play();
+        }
+
+        var prev = document.getElementById('dailyPrev');
+        var next = document.getElementById('dailyNext');
+        if (prev) prev.addEventListener('click', function () { jump(current - 1); });
+        if (next) next.addEventListener('click', function () { jump(current + 1); });
+
+        dots.forEach(function (el, k) {
+            el.addEventListener('click', function () { jump(k); });
+        });
+        ranks.forEach(function (el, k) {
+            el.addEventListener('click', function () { jump(k); });
+        });
+
+        // 悬停暂停；切到后台标签页也停，不空转
+        [stage, document.getElementById('dailyRank')].forEach(function (el) {
+            if (!el) return;
+            el.addEventListener('mouseenter', stop);
+            el.addEventListener('mouseleave', play);
+        });
+        document.addEventListener('visibilitychange', function () {
+            if (document.hidden) { stop(); } else { play(); }
+        });
+
+        // 方向键切换，焦点在输入框里时不抢
+        document.addEventListener('keydown', function (e) {
+            var tag = (document.activeElement && document.activeElement.tagName) || '';
+            if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return;
+            if (e.key === 'ArrowLeft') { jump(current - 1); }
+            if (e.key === 'ArrowRight') { jump(current + 1); }
+        });
+
+        // 移动端左右滑动
+        var startX = null;
+        stage.addEventListener('touchstart', function (e) {
+            startX = e.touches[0].clientX;
+            stop();
+        }, { passive: true });
+        stage.addEventListener('touchend', function (e) {
+            if (startX === null) return;
+            var dx = e.changedTouches[0].clientX - startX;
+            if (Math.abs(dx) > 40) { jump(current + (dx < 0 ? 1 : -1)); }
+            startX = null;
+            play();
+        }, { passive: true });
+
+        play();
     })();
 </script>
 
